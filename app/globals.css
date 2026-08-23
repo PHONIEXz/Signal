@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-paper: #F7F7F4;
+  --color-surface: #FFFFFF;
+  --color-ink: #14151A;
+  --color-ink-muted: #6B6D76;
+  --color-navy: #2C4A6E;
+  --color-navy-dark: #1F3752;
+  --color-amber: #E0793C;
+  --color-connected: #3E8E64;
+  --color-border: #E3E2DD;
+
+  --font-display: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", "Consolas", monospace;
+
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+}
+
+.dark {
+  --color-paper: #14161B;
+  --color-surface: #1C1F26;
+  --color-ink: #F2F1ED;
+  --color-ink-muted: #9A9CA6;
+  --color-navy: #5B8AC0;
+  --color-navy-dark: #7BA3D1;
+  --color-amber: #E0793C;
+  --color-connected: #4FAE7A;
+  --color-border: #2E323C;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

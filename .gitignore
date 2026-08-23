@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Environment variables — never commit real secrets
+.env
+.env.local
+.env.*.local
+
+# Database — contains real user data, hashed passwords, encrypted tokens
+*.db
+*.db-journal
+prisma/dev.db
+
+# Prisma generated client (regenerated via `npx prisma generate`)
+generated/
+
+# TypeScript
+next-env.d.ts
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+
+# Windows download tagging (shows up when files are moved via File Explorer)
+*:Zone.Identifier
+
+# Our own one-off build scripts — not part of the actual app
+add-*.sh
+fix-*.sh
+rebuild-*.sh
+
