@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   LineChart,
   Line,
@@ -9,42 +10,176 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-type Point = { date: string; followers: number };
+type Point = {
+  date: string;
+  followers: number;
+  likes: number;
+  views: number;
+  posts: number;
+};
+
+const metrics = {
+  followers: {
+    label: "Followers",
+    key: "followers",
+  },
+  views: {
+    label: "Views",
+    key: "views",
+  },
+  likes: {
+    label: "Likes",
+    key: "likes",
+  },
+  posts: {
+    label: "Posts",
+    key: "posts",
+  },
+} as const;
+
+type MetricKey = keyof typeof metrics;
 
 export default function GrowthChart({ data }: { data: Point[] }) {
+  const [activeMetric, setActiveMetric] =
+    useState<MetricKey>("followers");
+
+  const current = data[data.length - 1];
+  const previous = data[data.length - 2];
+
+  const values = useMemo(() => {
+    if (!current || !previous) {
+      return {
+        change: 0,
+        percentage: 0,
+      };
+    }
+
+    const currentValue = current[metrics[activeMetric].key];
+    const previousValue = previous[metrics[activeMetric].key];
+
+    const change = currentValue - previousValue;
+
+    const percentage =
+      previousValue > 0
+        ? (change / previousValue) * 100
+        : 0;
+
+    return {
+      change,
+      percentage,
+    };
+  }, [activeMetric, current, previous]);
+
   if (data.length < 2) {
     return (
       <div className="rounded-lg border border-border bg-surface p-6">
         <p className="font-display text-lg font-medium text-ink">
-          Follower growth
+          Growth Intelligence
         </p>
+
         <p className="mt-4 text-sm text-ink-muted">
-          Check back after a few more refreshes to see your growth trend here.
+          Signal will build your growth timeline after more metric
+          refreshes are collected.
         </p>
       </div>
     );
   }
 
+  const positive = values.change > 0;
+  const negative = values.change < 0;
+
   return (
     <div className="rounded-lg border border-border bg-surface p-6">
-      <p className="font-display text-lg font-medium text-ink">
-        Follower growth
-      </p>
-      <div className="mt-4 h-48">
+      <div className="flex flex-col gap-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-display text-lg font-medium text-ink">
+              Growth Intelligence
+            </p>
+
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-medium text-ink">
+                {current[metrics[activeMetric].key].toLocaleString()}
+              </span>
+
+              <span className="text-sm text-ink-muted">
+                {metrics[activeMetric].label}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-md border border-border px-3 py-2 text-right">
+            <p className="text-xs text-ink-muted">
+              Momentum
+            </p>
+
+            <p
+              className={`mt-1 text-sm font-medium ${
+                positive
+                  ? "text-connected"
+                  : negative
+                    ? "text-red-600"
+                    : "text-ink"
+              }`}
+            >
+              {positive
+                ? "Growing"
+                : negative
+                  ? "Declining"
+                  : "Stable"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(metrics) as MetricKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveMetric(key)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeMetric === key
+                  ? "bg-navy text-white"
+                  : "border border-border text-ink-muted hover:text-ink"
+              }`}
+            >
+              {metrics[key].label}
+            </button>
+          ))}
+        </div>
+
+        <div>
+          <p className="text-sm text-ink-muted">
+            Change since last refresh:
+          </p>
+
+          <p className="mt-1 text-lg font-medium text-ink">
+            {values.change >= 0 ? "+" : ""}
+            {values.change.toLocaleString()}
+            <span className="ml-2 text-sm text-ink-muted">
+              ({values.percentage.toFixed(1)}%)
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fill: "var(--color-ink-muted)" }}
-              axisLine={{ stroke: "var(--color-border)" }}
+              tick={{ fontSize: 11 }}
+              axisLine={false}
               tickLine={false}
             />
+
             <YAxis
-              tick={{ fontSize: 11, fill: "var(--color-ink-muted)" }}
+              tick={{ fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               width={40}
             />
+
             <Tooltip
               contentStyle={{
                 fontSize: 12,
@@ -54,11 +189,12 @@ export default function GrowthChart({ data }: { data: Point[] }) {
                 color: "var(--color-ink)",
               }}
             />
+
             <Line
               type="monotone"
-              dataKey="followers"
+              dataKey={metrics[activeMetric].key}
               stroke="var(--color-navy)"
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3 }}
             />
           </LineChart>
@@ -67,4 +203,3 @@ export default function GrowthChart({ data }: { data: Point[] }) {
     </div>
   );
 }
-

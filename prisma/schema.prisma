@@ -13,6 +13,9 @@ model User {
   email          String    @unique
   hashedPassword String?
   image          String?
+  aiInsightsEnabled                 Boolean   @default(true)
+  personalizedRecommendationsEnabled Boolean   @default(true)
+  analyticsCollectionEnabled        Boolean   @default(true)
   accounts       Account[]
   sessions       Session[]
   connectedAccounts ConnectedAccount[]

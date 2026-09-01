@@ -1,3 +1,4 @@
+import AccountAIAnalysis from "@/components/dashboard/AccountAIAnalysis";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -42,12 +43,15 @@ export default async function AccountDetailPage({
   });
 
   const growthData = snapshotHistory.map((s) => ({
-    date: s.fetchedAt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
-    followers: s.followersCount,
-  }));
+  date: s.fetchedAt.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  }),
+  followers: s.followersCount,
+  likes: s.totalLikes,
+  views: s.totalViews,
+  posts: s.postCount,
+}));
 
   const topPost = await prisma.post.findFirst({
     where: { connectedAccountId: connectedAccount.id },
@@ -76,6 +80,9 @@ export default async function AccountDetailPage({
         }
       />
       <GrowthChart data={growthData} />
+
+      <AccountAIAnalysis platform={platform} />
+
       <TopPost
         post={
           topPost

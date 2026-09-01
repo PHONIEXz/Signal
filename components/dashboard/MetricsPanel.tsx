@@ -100,7 +100,7 @@ export default function MetricsPanel({
         </>
       ) : (
         <p className="mt-6 text-sm text-ink-muted">
-          No data yet — click Refresh to pull your first snapshot.
+          No data yet - click Refresh to pull your first snapshot.
         </p>
       )}
     </div>

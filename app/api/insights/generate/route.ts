@@ -3,6 +3,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
 
+function cleanAiText(value: string) {
+  return value.replace(/[—–]/g, "-").trim();
+}
+
 export async function POST(request: Request) {
   const session = await auth();
 
@@ -16,15 +20,14 @@ export async function POST(request: Request) {
   try {
     const { platform = "x" } = await request.json();
 
-    const connectedAccount =
-      await prisma.connectedAccount.findUnique({
-        where: {
-          userId_platform: {
-            userId: session.user.id,
-            platform,
-          },
+    const connectedAccount = await prisma.connectedAccount.findUnique({
+      where: {
+        userId_platform: {
+          userId: session.user.id,
+          platform,
         },
-      });
+      },
+    });
 
     if (!connectedAccount) {
       return NextResponse.json(
@@ -33,34 +36,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const latestSnapshot =
-      await prisma.metricSnapshot.findFirst({
-        where: {
-          connectedAccountId: connectedAccount.id,
-        },
-        orderBy: {
-          fetchedAt: "desc",
-        },
-      });
+    const latestSnapshot = await prisma.metricSnapshot.findFirst({
+      where: { connectedAccountId: connectedAccount.id },
+      orderBy: { fetchedAt: "desc" },
+    });
 
-    const previousSnapshot =
-      await prisma.metricSnapshot.findFirst({
-        where: {
-          connectedAccountId: connectedAccount.id,
-        },
-        orderBy: {
-          fetchedAt: "desc",
-        },
-        skip: 1,
-      });
+    const previousSnapshot = await prisma.metricSnapshot.findFirst({
+      where: { connectedAccountId: connectedAccount.id },
+      orderBy: { fetchedAt: "desc" },
+      skip: 1,
+    });
 
     const posts = await prisma.post.findMany({
-      where: {
-        connectedAccountId: connectedAccount.id,
-      },
-      orderBy: {
-        postedAt: "desc",
-      },
+      where: { connectedAccountId: connectedAccount.id },
+      orderBy: { postedAt: "desc" },
       take: 10,
     });
 
@@ -72,21 +61,18 @@ export async function POST(request: Request) {
     }
 
     const followerChange = previousSnapshot
-      ? latestSnapshot.followersCount -
-        previousSnapshot.followersCount
+      ? latestSnapshot.followersCount - previousSnapshot.followersCount
       : 0;
 
     const engagementRate =
       latestSnapshot.totalViews > 0
-        ? (latestSnapshot.totalLikes /
-            latestSnapshot.totalViews) *
-          100
+        ? (latestSnapshot.totalLikes / latestSnapshot.totalViews) * 100
         : 0;
 
     const postsSummary = posts
       .map(
         (post, index) =>
-          `${index + 1}. "${post.text.slice(0, 250)}" — ${post.likeCount} likes, ${post.viewCount} views, ${post.replyCount} replies, ${post.retweetCount} reposts`
+          `${index + 1}. "${post.text.slice(0, 250)}" - ${post.likeCount} likes, ${post.viewCount} views, ${post.replyCount} replies, ${post.retweetCount} reposts`
       )
       .join("\n");
 
@@ -101,11 +87,29 @@ Your response must contain:
 2. Why it matters
 3. One specific next action
 
-Be concise, practical and confident.
-Do not invent information that isn't provided.
-Do not guarantee future growth or virality.
+Writing rules:
 
-ACCOUNT DATA
+- Be concise, practical, and professional.
+- Use short clear sentences.
+- Never use em dashes or en dashes.
+- Avoid dramatic AI language.
+- Avoid phrases like "unlock growth", "game changer", "skyrocket", or "revolutionary".
+- Do not invent missing information.
+- Do not treat missing data as zero performance.
+- If data is unavailable, clearly say it is unavailable.
+- Give specific actions based only on the available data.
+
+Writing rules:
+
+- Be concise, practical, and professional.
+- Use short clear sentences.
+- Never use em dashes or en dashes.
+- Avoid dramatic AI language.
+- Avoid phrases like "unlock growth", "game changer", "skyrocket", or "revolutionary".
+- Do not invent missing information.
+- Do not treat missing data as zero performance.
+- If data is unavailable, clearly say it is unavailable.
+- Give specific actions based only on the available data.ACCOUNT DATA
 
 Followers: ${latestSnapshot.followersCount}
 Following: ${latestSnapshot.followingCount}
@@ -133,9 +137,10 @@ ${postsSummary || "No recent posts available."}
       ],
     });
 
-    const insight =
+    const insight = cleanAiText(
       response.text?.trim() ||
-      "Signal couldn't generate an insight right now.";
+        "Signal couldn't generate an insight right now."
+    );
 
     return NextResponse.json({ insight });
   } catch (error) {

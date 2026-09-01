@@ -22,7 +22,7 @@ export default function PrivacyPage() {
             that way). When you connect a social media account, we receive
             and store an access token for that account, along with public
             metrics the platform makes available to you as the account owner
-            — such as follower counts, post text, and engagement numbers
+            - such as follower counts, post text, and engagement numbers
             (likes, views, replies, shares).
           </p>
         </section>
@@ -34,8 +34,8 @@ export default function PrivacyPage() {
           <p className="mt-2 text-ink-muted">
             We use this information solely to operate the Service: to
             authenticate you, to fetch and display your own social media
-            metrics back to you, and — if you use the optional AI assistant
-            feature — to answer questions you ask about your own account data.
+            metrics back to you, and - if you use the optional AI assistant
+            feature - to answer questions you ask about your own account data.
             We do not use your data for advertising, and we do not sell your
             data to third parties.
           </p>

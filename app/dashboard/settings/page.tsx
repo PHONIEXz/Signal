@@ -1,15 +1,23 @@
+import SettingsPanel from "@/components/dashboard/SettingsPanel";
+
 export default function SettingsPage() {
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="rounded-lg border border-dashed border-border bg-surface px-8 py-16 text-center">
-        <p className="font-display text-xl font-medium text-ink">
-          Settings coming soon
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-8">
+        <p className="font-mono text-xs uppercase tracking-wider text-ink-muted">
+          Preferences
         </p>
-        <p className="mt-2 text-sm text-ink-muted">
-          Account preferences and notification settings will live here.
+
+        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-ink">
+          Settings
+        </h1>
+
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+          Manage your account and control how Signal AI works with your data.
         </p>
       </div>
+
+      <SettingsPanel />
     </div>
   );
 }
-

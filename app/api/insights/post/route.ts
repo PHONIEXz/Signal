@@ -79,6 +79,15 @@ Be useful, honest and specific.
 
 Do not invent metrics or facts that are not provided.
 
+Writing rules:
+
+- Use short professional sentences.
+- Never use em dashes or en dashes.
+- Avoid hype language.
+- Focus on measurable observations.
+- Separate facts from recommendations.
+- Do not claim something caused growth unless the data supports it.
+
 POST:
 "${post.text}"
 

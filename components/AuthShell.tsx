@@ -15,7 +15,7 @@ export default function AuthShell({
       <div className="absolute right-6 top-6 z-10">
         <ThemeToggle />
       </div>
-      {/* Left panel — brand + signature signal dots, hidden on small screens */}
+      {/* Left panel - brand + signature signal dots, hidden on small screens */}
       <div className="hidden w-[380px] flex-col justify-between bg-navy px-10 py-12 text-white lg:flex">
         <div>
           <span className="font-display text-lg font-medium">Signal</span>
@@ -33,7 +33,7 @@ export default function AuthShell({
         </div>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel - form */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <h1 className="font-display text-2xl font-medium text-ink">
@@ -44,6 +44,15 @@ export default function AuthShell({
         </div>
       </div>
     </div>
-  );
+  ); 
 }
 
+<footer className="mt-8 text-center text-xs text-ink-muted">
+  <a href="/privacy" className="hover:text-ink">
+    Privacy
+  </a>
+  {" · "}
+  <a href="/terms" className="hover:text-ink">
+    Terms
+  </a>
+</footer>

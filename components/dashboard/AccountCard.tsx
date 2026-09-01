@@ -9,16 +9,25 @@ type AccountCardProps = {
   followers: number | null;
 };
 
+const PLATFORM_LABELS: Record<string, string> = {
+  x: "X",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+};
+
 export default function AccountCard({
-  id,
   platform,
   followers,
 }: AccountCardProps) {
   const [unlinking, setUnlinking] = useState(false);
 
+  const platformLabel =
+    PLATFORM_LABELS[platform] ??
+    platform.charAt(0).toUpperCase() + platform.slice(1);
+
   async function unlinkAccount() {
     const confirmed = window.confirm(
-      `Are you sure you want to unlink your ${platform.toUpperCase()} account?`
+      `Are you sure you want to unlink your ${platformLabel} account?`
     );
 
     if (!confirmed) {
@@ -42,7 +51,7 @@ export default function AccountCard({
     } catch (error) {
       console.error("Unlink error:", error);
 
-      alert(
+      window.alert(
         error instanceof Error
           ? error.message
           : "Failed to unlink account"
@@ -53,9 +62,7 @@ export default function AccountCard({
   }
 
   return (
-    <div
-      className="flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4"
-    >
+    <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4">
       <Link
         href={`/dashboard/accounts/${platform}`}
         className="flex min-w-0 flex-1 items-center justify-between"
@@ -66,8 +73,8 @@ export default function AccountCard({
             aria-hidden="true"
           />
 
-          <span className="font-mono text-sm capitalize text-ink">
-            {platform}
+          <span className="font-mono text-sm text-ink">
+            {platformLabel}
           </span>
         </div>
 
@@ -78,16 +85,14 @@ export default function AccountCard({
         </span>
       </Link>
 
-      {platform === "x" && (
-        <button
-          type="button"
-          onClick={unlinkAccount}
-          disabled={unlinking}
-          className="ml-4 rounded-md border border-red-500/30 px-3 py-1.5 text-xs text-red-500 transition-colors hover:border-red-500 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {unlinking ? "Unlinking..." : "Unlink"}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={unlinkAccount}
+        disabled={unlinking}
+        className="ml-4 rounded-md border border-red-500/30 px-3 py-1.5 text-xs text-red-500 transition-colors hover:border-red-500 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {unlinking ? "Unlinking..." : "Unlink"}
+      </button>
     </div>
   );
 }

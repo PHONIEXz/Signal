@@ -8,7 +8,7 @@ export default function EmptyState() {
       </p>
       <p className="mt-2 max-w-sm text-sm text-ink-muted">
         Connect a platform to start pulling in your metrics. You can add more
-        later — each one shows up here as its own signal.
+        later - each one shows up here as its own signal.
       </p>
       <div className="mt-8">
         <a

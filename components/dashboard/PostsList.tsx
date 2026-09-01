@@ -31,7 +31,7 @@ export default function PostsList({ posts }: { posts: Post[] }) {
   if (posts.length === 0) {
     return (
       <p className="text-sm text-ink-muted">
-        No posts recorded yet — click Refresh on the Overview page to pull
+        No posts recorded yet - click Refresh on the Overview page to pull
         your recent posts.
       </p>
     );

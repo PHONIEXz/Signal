@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Signal — your platforms, one dashboard",
+  title: "Signal | your platforms, one dashboard",
   description: "Connect your social accounts and see every metric in one place.",
 };
 

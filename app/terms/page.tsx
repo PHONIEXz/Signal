@@ -29,8 +29,8 @@ export default function TermsPage() {
           </h2>
           <p className="mt-2 text-ink-muted">
             Signal lets you connect your own social media accounts (such as X,
-            Facebook, and TikTok) and view analytics about those accounts —
-            such as follower counts, post engagement, and growth trends — in
+            Facebook, and TikTok) and view analytics about those accounts -
+            such as follower counts, post engagement, and growth trends - in
             one dashboard.
           </p>
         </section>
@@ -43,7 +43,7 @@ export default function TermsPage() {
             When you connect a third-party platform account, you authorize
             Signal to read data from that account on your behalf, using the
             permissions you explicitly grant during that platform&apos;s own
-            authorization process. Signal only reads data — it does not post,
+            authorization process. Signal only reads data - it does not post,
             follow, or perform actions on your connected accounts unless a
             feature explicitly says otherwise. You can disconnect any account
             at any time from your dashboard.

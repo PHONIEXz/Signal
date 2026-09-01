@@ -54,7 +54,7 @@ export default function InsightsChat({ platform = "x" }: { platform?: string }) 
       <div className="mt-4 flex max-h-80 flex-col gap-3 overflow-y-auto">
         {messages.length === 0 && (
           <p className="text-sm text-ink-muted">
-            No questions yet — try asking one below.
+            No questions yet - try asking one below.
           </p>
         )}
         {messages.map((m, i) => (

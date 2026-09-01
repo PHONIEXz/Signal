@@ -3,23 +3,40 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
 
+function cleanAiText(value: string) {
+  return value.replace(/[—–]/g, "-").trim();
+}
+
 export async function POST(request: Request) {
   const session = await auth();
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   const { messages, platform = "x" } = await request.json();
+
   if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json({ error: "No messages provided" }, { status: 400 });
+    return NextResponse.json(
+      { error: "No messages provided" },
+      { status: 400 }
+    );
   }
 
   const connectedAccount = await prisma.connectedAccount.findUnique({
-    where: { userId_platform: { userId: session.user.id, platform } },
+    where: {
+      userId_platform: {
+        userId: session.user.id,
+        platform,
+      },
+    },
   });
 
   if (!connectedAccount) {
-    return NextResponse.json({ error: `No ${platform} account connected` }, { status: 404 });
+    return NextResponse.json(
+      { error: `No ${platform} account connected` },
+      { status: 404 }
+    );
   }
 
   const latestSnapshot = await prisma.metricSnapshot.findFirst({
@@ -46,14 +63,30 @@ export async function POST(request: Request) {
   const postsSummary = posts
     .map((p, i) => {
       const tags = p.tags ? ` [tags: ${p.tags}]` : "";
-      return `${i + 1}. "${p.text.slice(0, 200)}"${tags} — ${p.likeCount} likes, ${p.viewCount} views, ${p.replyCount} replies, ${p.retweetCount} reposts`;
+
+      return `${i + 1}. "${p.text.slice(0, 200)}"${tags} - ${p.likeCount} likes, ${p.viewCount} views, ${p.replyCount} replies, ${p.retweetCount} reposts`;
     })
     .join("\n");
 
   const platformLabel =
-    platform === "x" ? "X (Twitter)" : platform === "facebook" ? "Facebook Page" : platform;
+    platform === "x"
+      ? "X"
+      : platform === "facebook"
+        ? "Facebook Page"
+        : platform;
 
-  const systemPrompt = `You are a social media growth assistant built into this user's own analytics dashboard for their ${platformLabel} account. Answer their questions helpfully and specifically, using the data below. Be concise — a few sentences unless they ask for more detail. If something isn't in the data provided, say so rather than guessing.
+  const systemPrompt = `You are Signal AI, a social media growth assistant built into this user's analytics dashboard for their ${platformLabel} account.
+
+Answer questions helpfully and specifically using the data below.
+Writing rules:
+
+- Be concise unless the user requests detail.
+- Use professional natural language.
+- Never use em dashes or en dashes.
+- Avoid generic motivational statements.
+- Do not exaggerate results.
+- Do not make assumptions beyond the available analytics.
+- Explain missing data clearly.
 
 Current stats:
 - Followers: ${latestSnapshot?.followersCount ?? "unknown"}
@@ -76,14 +109,16 @@ ${postsSummary || "No posts recorded yet."}`;
       },
     });
 
-    const reply = response.text ?? "";
-
-    return NextResponse.json({ reply });
+    return NextResponse.json({
+      reply: cleanAiText(response.text ?? ""),
+    });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to get a response" },
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to get a response",
+      },
       { status: 500 }
     );
   }
 }
-

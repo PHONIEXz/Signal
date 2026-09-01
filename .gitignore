@@ -38,3 +38,9 @@ add-*.sh
 fix-*.sh
 rebuild-*.sh
 
+# Local backup files
+.backup-*/
+*.bak
+*.settings-backup
+
+

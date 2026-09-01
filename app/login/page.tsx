@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Log in"
-      subtitle="Welcome back — pick up where you left off."
+      subtitle="Welcome back - pick up where you left off."
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
