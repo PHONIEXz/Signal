@@ -13,52 +13,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
-      const userId =
-        user?.id ?? (typeof token.id === "string" ? token.id : null);
-
-      if (!userId) {
-        return null;
-      }
-
-      if (user) {
-        const currentUser = await prisma.user.update({
-          where: { id: userId },
-          data: {
-            sessionVersion: {
-              increment: 1,
-            },
-          },
-          select: {
-            sessionVersion: true,
-          },
-        });
-
-        token.id = userId;
-        token.sessionVersion = currentUser.sessionVersion;
-        return token;
-      }
-
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          sessionVersion: true,
-        },
-      });
-
-      if (
-        !currentUser ||
-        currentUser.sessionVersion !== token.sessionVersion
-      ) {
-        return null;
-      }
-
+      if (user) token.id = user.id;
       return token;
     },
     async session({ session, token }) {
-      if (session.user && typeof token.id === "string") {
-        session.user.id = token.id;
-      }
-
+      if (session.user) session.user.id = token.id as string;
       return session;
     },
   },
