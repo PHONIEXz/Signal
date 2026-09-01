@@ -2,6 +2,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import UserMenu from "@/components/dashboard/UserMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
   children,
@@ -9,6 +10,10 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
 
   return (
     <div className="flex min-h-screen bg-paper">

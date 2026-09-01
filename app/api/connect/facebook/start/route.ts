@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { auth } from "@/auth";
+import { getAccountConnectionAccess } from "@/lib/account-access";
 
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const connectionAccess = await getAccountConnectionAccess(
+    session.user.id,
+    "facebook"
+  );
+
+  if (!connectionAccess.allowed) {
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?error=free_account_limit", request.url)
+    );
   }
 
   const state = crypto.randomUUID();

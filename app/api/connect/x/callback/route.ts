@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
+import { getAccountConnectionAccess } from "@/lib/account-access";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -21,6 +22,20 @@ export async function GET(request: Request) {
     return NextResponse.redirect(
       new URL("/dashboard?error=x_connect_failed", request.url)
     );
+  }
+
+  const connectionAccess = await getAccountConnectionAccess(
+    session.user.id,
+    "x"
+  );
+
+  if (!connectionAccess.allowed) {
+    const response = NextResponse.redirect(
+      new URL("/dashboard/accounts?error=free_account_limit", request.url)
+    );
+    response.cookies.delete("x_oauth_verifier");
+    response.cookies.delete("x_oauth_state");
+    return response;
   }
 
   const redirectUri = `${process.env.APP_URL}/api/connect/x/callback`;

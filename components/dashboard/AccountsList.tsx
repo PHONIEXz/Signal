@@ -48,17 +48,46 @@ const ALL_PLATFORMS = [
 
 export default function AccountsList({
   connections,
+  plan,
 }: {
   connections: Connection[];
+  plan: string;
 }) {
-  const connectedKeys = new Set(connections.map((c) => c.platform));
-
+  const connectedKeys = new Set(connections.map((connection) => connection.platform));
   const remaining = ALL_PLATFORMS.filter(
     (platform) => !connectedKeys.has(platform.key)
   );
+  const isPro = plan.toUpperCase() === "PRO";
+  const freeLimitReached = !isPro && connections.length >= 1;
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="rounded-lg border border-border bg-surface px-5 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-muted">
+              Current plan
+            </p>
+            <p className="mt-1 font-display text-lg font-medium text-ink">
+              {isPro ? "Pro" : "Free"}
+            </p>
+          </div>
+
+          <span className="rounded-full border border-border px-3 py-1 text-xs text-ink-muted">
+            {isPro
+              ? "Multiple accounts"
+              : `${connections.length}/1 account used`}
+          </span>
+        </div>
+
+        {freeLimitReached && (
+          <p className="mt-3 text-sm leading-6 text-ink-muted">
+            The Free plan includes one linked social account. Upgrade to Pro
+            to connect more platforms.
+          </p>
+        )}
+      </div>
+
       <div>
         <h2 className="font-display text-lg font-medium text-ink">
           Connected
@@ -89,29 +118,37 @@ export default function AccountsList({
           </h2>
 
           <div className="mt-3 flex flex-col gap-3">
-            {remaining.map((platform) => (
-              <div
-                key={platform.key}
-                className="flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4"
-              >
-                <span className="font-mono text-sm text-ink">
-                  {platform.label}
-                </span>
+            {remaining.map((platform) => {
+              const requiresPro = platform.available && freeLimitReached;
 
-                {platform.available ? (
-                  <a
-                    href={platform.connectHref!}
-                    className="rounded-md bg-navy px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-navy-dark"
-                  >
-                    Connect
-                  </a>
-                ) : (
-                  <span className="rounded-md border border-border px-4 py-1.5 text-xs text-ink-muted">
-                    Coming soon
+              return (
+                <div
+                  key={platform.key}
+                  className="flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4"
+                >
+                  <span className="font-mono text-sm text-ink">
+                    {platform.label}
                   </span>
-                )}
-              </div>
-            ))}
+
+                  {!platform.available ? (
+                    <span className="rounded-md border border-border px-4 py-1.5 text-xs text-ink-muted">
+                      Coming soon
+                    </span>
+                  ) : requiresPro ? (
+                    <span className="rounded-md border border-border bg-paper px-4 py-1.5 text-xs font-medium text-ink-muted">
+                      Pro required
+                    </span>
+                  ) : (
+                    <a
+                      href={platform.connectHref!}
+                      className="rounded-md bg-navy px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-navy-dark"
+                    >
+                      Connect
+                    </a>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
