@@ -13,6 +13,8 @@ model User {
   email          String    @unique
   hashedPassword String?
   image          String?
+  plan            String    @default("FREE")
+  sessionVersion  Int       @default(0)
   aiInsightsEnabled                 Boolean   @default(true)
   personalizedRecommendationsEnabled Boolean   @default(true)
   analyticsCollectionEnabled        Boolean   @default(true)
