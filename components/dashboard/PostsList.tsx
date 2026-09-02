@@ -6,9 +6,10 @@ type Post = {
   id: string;
   text: string;
   likeCount: number;
-  viewCount: number;
+  viewCount: number | null;
   replyCount: number;
   retweetCount: number;
+  quoteCount: number;
   tags: string | null;
 };
 
@@ -47,9 +48,16 @@ export default function PostsList({ posts }: { posts: Post[] }) {
           <p className="text-sm text-ink">{post.text}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
             <span>{post.likeCount.toLocaleString()} likes</span>
-            <span>{post.viewCount.toLocaleString()} views</span>
+            <span>
+              {post.viewCount === null
+                ? "Views unavailable"
+                : `${post.viewCount.toLocaleString()} views`}
+            </span>
             <span>{post.replyCount.toLocaleString()} replies</span>
             <span>{post.retweetCount.toLocaleString()} reposts</span>
+            {post.quoteCount > 0 && (
+              <span>{post.quoteCount.toLocaleString()} quotes</span>
+            )}
           </div>
           <div className="mt-3 flex items-center gap-2">
             <input
@@ -70,4 +78,3 @@ export default function PostsList({ posts }: { posts: Post[] }) {
     </div>
   );
 }
-

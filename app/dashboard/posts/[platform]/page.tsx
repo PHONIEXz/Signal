@@ -77,9 +77,10 @@ export default async function PlatformPostsPage({
           id: p.id,
           text: p.text,
           likeCount: p.likeCount,
-          viewCount: p.viewCount,
+          viewCount: platform === "facebook" ? null : p.viewCount,
           replyCount: p.replyCount,
           retweetCount: p.retweetCount,
+          quoteCount: p.quoteCount,
           tags: p.tags,
         }))}
       />

@@ -1,9 +1,10 @@
 type Post = {
   text: string;
   likeCount: number;
-  viewCount: number;
+  viewCount: number | null;
   replyCount: number;
   retweetCount: number;
+  quoteCount: number;
   url: string;
 };
 
@@ -16,9 +17,16 @@ export default function TopPost({ post }: { post: Post | null }) {
       <p className="mt-3 line-clamp-3 text-sm text-ink">{post.text}</p>
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-muted">
         <span>{post.likeCount.toLocaleString()} likes</span>
-        <span>{post.viewCount.toLocaleString()} views</span>
+        <span>
+          {post.viewCount === null
+            ? "Views unavailable"
+            : `${post.viewCount.toLocaleString()} views`}
+        </span>
         <span>{post.replyCount.toLocaleString()} replies</span>
         <span>{post.retweetCount.toLocaleString()} reposts</span>
+        {post.quoteCount > 0 && (
+          <span>{post.quoteCount.toLocaleString()} quotes</span>
+        )}
       </div>
       <a
         href={post.url}
@@ -31,4 +39,3 @@ export default function TopPost({ post }: { post: Post | null }) {
     </div>
   );
 }
-

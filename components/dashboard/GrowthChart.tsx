@@ -13,9 +13,9 @@ import {
 type Point = {
   date: string;
   followers: number;
-  likes: number;
-  views: number;
-  posts: number;
+  likes: number | null;
+  views: number | null;
+  posts: number | null;
 };
 
 const metrics = {
@@ -49,20 +49,22 @@ export default function GrowthChart({ data }: { data: Point[] }) {
   const values = useMemo(() => {
     if (!current || !previous) {
       return {
-        change: 0,
-        percentage: 0,
+        change: null,
+        percentage: null,
       };
     }
 
     const currentValue = current[metrics[activeMetric].key];
     const previousValue = previous[metrics[activeMetric].key];
 
+    if (currentValue === null || previousValue === null) {
+      return { change: null, percentage: null };
+    }
+
     const change = currentValue - previousValue;
 
     const percentage =
-      previousValue > 0
-        ? (change / previousValue) * 100
-        : 0;
+      previousValue > 0 ? (change / previousValue) * 100 : null;
 
     return {
       change,
@@ -85,8 +87,9 @@ export default function GrowthChart({ data }: { data: Point[] }) {
     );
   }
 
-  const positive = values.change > 0;
-  const negative = values.change < 0;
+  const positive = values.change !== null && values.change > 0;
+  const negative = values.change !== null && values.change < 0;
+  const currentValue = current[metrics[activeMetric].key];
 
   return (
     <div className="rounded-lg border border-border bg-surface p-6">
@@ -99,7 +102,7 @@ export default function GrowthChart({ data }: { data: Point[] }) {
 
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-medium text-ink">
-                {current[metrics[activeMetric].key].toLocaleString()}
+                {currentValue === null ? "Unavailable" : currentValue.toLocaleString()}
               </span>
 
               <span className="text-sm text-ink-muted">
@@ -122,7 +125,9 @@ export default function GrowthChart({ data }: { data: Point[] }) {
                     : "text-ink"
               }`}
             >
-              {positive
+              {values.change === null
+                ? "Unavailable"
+                : positive
                 ? "Growing"
                 : negative
                   ? "Declining"
@@ -154,11 +159,19 @@ export default function GrowthChart({ data }: { data: Point[] }) {
           </p>
 
           <p className="mt-1 text-lg font-medium text-ink">
-            {values.change >= 0 ? "+" : ""}
-            {values.change.toLocaleString()}
-            <span className="ml-2 text-sm text-ink-muted">
-              ({values.percentage.toFixed(1)}%)
-            </span>
+            {values.change === null ? (
+              "Unavailable for this sample"
+            ) : (
+              <>
+                {values.change >= 0 ? "+" : ""}
+                {values.change.toLocaleString()}
+                <span className="ml-2 text-sm text-ink-muted">
+                  {values.percentage === null
+                    ? "(no percentage baseline)"
+                    : `(${values.percentage.toFixed(1)}%)`}
+                </span>
+              </>
+            )}
           </p>
         </div>
       </div>

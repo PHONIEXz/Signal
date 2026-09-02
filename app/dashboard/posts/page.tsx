@@ -108,7 +108,9 @@ export default async function PostsPage() {
                       </span>
 
                       <span>
-                        {connection.posts[0].viewCount.toLocaleString()} views
+                        {connection.platform === "facebook"
+                          ? "Views unavailable"
+                          : `${connection.posts[0].viewCount.toLocaleString()} views`}
                       </span>
 
                       <span>
@@ -118,6 +120,12 @@ export default async function PostsPage() {
                       <span>
                         {connection.posts[0].retweetCount.toLocaleString()} reposts
                       </span>
+
+                      {connection.posts[0].quoteCount > 0 && (
+                        <span>
+                          {connection.posts[0].quoteCount.toLocaleString()} quotes
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}

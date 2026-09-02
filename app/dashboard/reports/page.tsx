@@ -1,9 +1,17 @@
+import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import SignalReport from "@/components/dashboard/SignalReport";
+import PostSampleSelector from "@/components/dashboard/PostSampleSelector";
+import { normalizePlan, normalizeSampleSize } from "@/lib/metrics";
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ posts?: string }>;
+}) {
   const session = await auth();
+  const query = await searchParams;
 
   if (!session?.user?.id) {
     return (
@@ -20,10 +28,18 @@ export default async function ReportsPage() {
     );
   }
 
-  const connections = await prisma.connectedAccount.findMany({
-    where: { userId: session.user.id },
-    select: { id: true, platform: true },
-  });
+  const [user, connections] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { plan: true },
+    }),
+    prisma.connectedAccount.findMany({
+      where: { userId: session.user.id },
+      select: { id: true, platform: true },
+    }),
+  ]);
+  const plan = normalizePlan(user?.plan);
+  const sampleSize = normalizeSampleSize(query.posts, plan);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -40,6 +56,8 @@ export default async function ReportsPage() {
         </p>
       </div>
 
+      <PostSampleSelector plan={plan} selected={sampleSize} />
+
       {connections.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy/10 text-xl text-navy">
@@ -51,15 +69,15 @@ export default async function ReportsPage() {
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">
             Signal AI needs account data before it can generate your report.
           </p>
-          <a
+          <Link
             href="/dashboard/accounts"
             className="mt-5 inline-flex rounded-md bg-navy px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Connect an account
-          </a>
+          </Link>
         </div>
       ) : (
-        <SignalReport />
+        <SignalReport key={sampleSize} sampleSize={sampleSize} />
       )}
     </div>
   );

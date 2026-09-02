@@ -2,9 +2,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
+import {
+  calculateEngagementRate,
+  normalizeSampleSize,
+} from "@/lib/metrics";
 
 function cleanAiText(value: string) {
   return value.replace(/[—–]/g, "-").trim();
+}
+
+function formatMetric(value: number | null) {
+  return value === null ? "Unavailable" : String(value);
 }
 
 export async function POST(request: Request) {
@@ -18,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { platform = "x" } = await request.json();
+    const { platform = "x", postLimit } = await request.json();
 
     const connectedAccount = await prisma.connectedAccount.findUnique({
       where: {
@@ -27,6 +35,7 @@ export async function POST(request: Request) {
           platform,
         },
       },
+      include: { user: { select: { plan: true } } },
     });
 
     if (!connectedAccount) {
@@ -36,13 +45,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const sampleSize = normalizeSampleSize(
+      typeof postLimit === "number" || typeof postLimit === "string"
+        ? postLimit
+        : undefined,
+      connectedAccount.user.plan
+    );
+
     const latestSnapshot = await prisma.metricSnapshot.findFirst({
-      where: { connectedAccountId: connectedAccount.id },
+      where: { connectedAccountId: connectedAccount.id, sampleSize },
       orderBy: { fetchedAt: "desc" },
     });
 
     const previousSnapshot = await prisma.metricSnapshot.findFirst({
-      where: { connectedAccountId: connectedAccount.id },
+      where: { connectedAccountId: connectedAccount.id, sampleSize },
       orderBy: { fetchedAt: "desc" },
       skip: 1,
     });
@@ -50,29 +66,35 @@ export async function POST(request: Request) {
     const posts = await prisma.post.findMany({
       where: { connectedAccountId: connectedAccount.id },
       orderBy: { postedAt: "desc" },
-      take: 10,
+      take: sampleSize,
     });
 
     if (!latestSnapshot) {
       return NextResponse.json({
         insight:
-          "Signal needs at least one metrics refresh before it can analyze your account.",
+          `Refresh metrics for the last ${sampleSize} posts before Signal analyzes this sample.`,
       });
     }
 
     const followerChange = previousSnapshot
       ? latestSnapshot.followersCount - previousSnapshot.followersCount
-      : 0;
+      : null;
 
-    const engagementRate =
-      latestSnapshot.totalViews > 0
-        ? (latestSnapshot.totalLikes / latestSnapshot.totalViews) * 100
-        : 0;
+    const engagementRate = calculateEngagementRate(
+      latestSnapshot.totalEngagements,
+      latestSnapshot.totalViews
+    );
 
     const postsSummary = posts
       .map(
-        (post, index) =>
-          `${index + 1}. "${post.text.slice(0, 250)}" - ${post.likeCount} likes, ${post.viewCount} views, ${post.replyCount} replies, ${post.retweetCount} reposts`
+        (post, index) => {
+          const views =
+            platform === "facebook"
+              ? "views unavailable"
+              : `${post.viewCount} views`;
+
+          return `${index + 1}. "${post.text.slice(0, 250)}" - ${post.likeCount} likes, ${views}, ${post.replyCount} replies, ${post.retweetCount} reposts, ${post.quoteCount} quotes`;
+        }
       )
       .join("\n");
 
@@ -99,28 +121,22 @@ Writing rules:
 - If data is unavailable, clearly say it is unavailable.
 - Give specific actions based only on the available data.
 
-Writing rules:
-
-- Be concise, practical, and professional.
-- Use short clear sentences.
-- Never use em dashes or en dashes.
-- Avoid dramatic AI language.
-- Avoid phrases like "unlock growth", "game changer", "skyrocket", or "revolutionary".
-- Do not invent missing information.
-- Do not treat missing data as zero performance.
-- If data is unavailable, clearly say it is unavailable.
-- Give specific actions based only on the available data.ACCOUNT DATA
+ACCOUNT DATA
 
 Followers: ${latestSnapshot.followersCount}
-Following: ${latestSnapshot.followingCount}
-Total posts: ${latestSnapshot.postCount}
+Following: ${formatMetric(latestSnapshot.followingCount)}
+Total posts: ${formatMetric(latestSnapshot.postCount)}
 
-Likes: ${latestSnapshot.totalLikes}
-Views: ${latestSnapshot.totalViews}
-Engagement rate: ${engagementRate.toFixed(1)}%
+Requested recent-post sample: ${sampleSize}
+Posts actually analyzed: ${latestSnapshot.postsAnalyzed}
+Post metric availability: ${latestSnapshot.postMetricsStatus}
+Likes in sample: ${formatMetric(latestSnapshot.totalLikes)}
+Views in sample: ${formatMetric(latestSnapshot.totalViews)}
+Interactions in sample: ${formatMetric(latestSnapshot.totalEngagements)}
+Engagement rate by views: ${engagementRate === null ? "Unavailable" : `${engagementRate.toFixed(1)}%`}
 
 Follower change since previous snapshot:
-${followerChange >= 0 ? "+" : ""}${followerChange}
+${followerChange === null ? "Unavailable" : `${followerChange >= 0 ? "+" : ""}${followerChange}`}
 
 RECENT POSTS
 

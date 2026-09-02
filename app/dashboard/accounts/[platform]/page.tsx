@@ -6,6 +6,7 @@ import MetricsPanel from "@/components/dashboard/MetricsPanel";
 import GrowthChart from "@/components/dashboard/GrowthChart";
 import TopPost from "@/components/dashboard/TopPost";
 import InsightsChat from "@/components/dashboard/InsightsChat";
+import { normalizePlan, normalizeSampleSize } from "@/lib/metrics";
 
 function postUrl(platform: string, platformPostId: string): string {
   if (platform === "x") return `https://x.com/i/web/status/${platformPostId}`;
@@ -15,15 +16,19 @@ function postUrl(platform: string, platformPostId: string): string {
 
 export default async function AccountDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ platform: string }>;
+  searchParams: Promise<{ posts?: string }>;
 }) {
   const { platform } = await params;
+  const query = await searchParams;
   const session = await auth();
 
   const connectedAccount = session?.user?.id
-    ? await prisma.connectedAccount.findUnique({
+      ? await prisma.connectedAccount.findUnique({
         where: { userId_platform: { userId: session.user.id, platform } },
+        include: { user: { select: { plan: true } } },
       })
     : null;
 
@@ -31,32 +36,38 @@ export default async function AccountDetailPage({
     notFound();
   }
 
-  const latestSnapshot = await prisma.metricSnapshot.findFirst({
-    where: { connectedAccountId: connectedAccount.id },
-    orderBy: { fetchedAt: "desc" },
-  });
+  const plan = normalizePlan(connectedAccount.user.plan);
+  const sampleSize = normalizeSampleSize(query.posts, plan);
 
-  const snapshotHistory = await prisma.metricSnapshot.findMany({
-    where: { connectedAccountId: connectedAccount.id },
-    orderBy: { fetchedAt: "asc" },
+  const recentSnapshotHistory = await prisma.metricSnapshot.findMany({
+    where: { connectedAccountId: connectedAccount.id, sampleSize },
+    orderBy: { fetchedAt: "desc" },
     take: 30,
   });
+  const snapshotHistory = recentSnapshotHistory.reverse();
+  const latestSnapshot = snapshotHistory.at(-1) ?? null;
 
   const growthData = snapshotHistory.map((s) => ({
-  date: s.fetchedAt.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  }),
-  followers: s.followersCount,
-  likes: s.totalLikes,
-  views: s.totalViews,
-  posts: s.postCount,
-}));
+    date: s.fetchedAt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    followers: s.followersCount,
+    likes: s.totalLikes,
+    views: s.totalViews,
+    posts: s.postCount,
+  }));
 
-  const topPost = await prisma.post.findFirst({
+  const sampledPosts = await prisma.post.findMany({
     where: { connectedAccountId: connectedAccount.id },
-    orderBy: { likeCount: "desc" },
+    orderBy: { postedAt: "desc" },
+    take: sampleSize,
   });
+  const topPost = sampledPosts.sort(
+    (a, b) =>
+      b.likeCount + b.replyCount + b.retweetCount + b.quoteCount -
+      (a.likeCount + a.replyCount + a.retweetCount + a.quoteCount)
+  )[0];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -65,6 +76,8 @@ export default async function AccountDetailPage({
       </h1>
       <MetricsPanel
         platform={platform}
+        plan={plan}
+        sampleSize={sampleSize}
         snapshot={
           latestSnapshot
             ? {
@@ -73,7 +86,10 @@ export default async function AccountDetailPage({
                 postCount: latestSnapshot.postCount,
                 totalLikes: latestSnapshot.totalLikes,
                 totalViews: latestSnapshot.totalViews,
+                totalEngagements: latestSnapshot.totalEngagements,
                 postsAnalyzed: latestSnapshot.postsAnalyzed,
+                sampleSize: latestSnapshot.sampleSize,
+                postMetricsStatus: latestSnapshot.postMetricsStatus,
                 fetchedAt: latestSnapshot.fetchedAt.toISOString(),
               }
             : null
@@ -81,7 +97,11 @@ export default async function AccountDetailPage({
       />
       <GrowthChart data={growthData} />
 
-      <AccountAIAnalysis platform={platform} />
+      <AccountAIAnalysis
+        key={`${platform}-${sampleSize}`}
+        platform={platform}
+        sampleSize={sampleSize}
+      />
 
       <TopPost
         post={
@@ -89,16 +109,16 @@ export default async function AccountDetailPage({
             ? {
                 text: topPost.text,
                 likeCount: topPost.likeCount,
-                viewCount: topPost.viewCount,
+                viewCount: platform === "facebook" ? null : topPost.viewCount,
                 replyCount: topPost.replyCount,
                 retweetCount: topPost.retweetCount,
+                quoteCount: topPost.quoteCount,
                 url: topPost.url ?? postUrl(platform, topPost.platformPostId),
               }
             : null
         }
       />
-      <InsightsChat platform={platform} />
+      <InsightsChat platform={platform} sampleSize={sampleSize} />
     </div>
   );
 }
-

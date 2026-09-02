@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import PostSampleSelector from "@/components/dashboard/PostSampleSelector";
+import {
+  calculateEngagementRate,
+  normalizePlan,
+  normalizeSampleSize,
+  sumAvailable,
+  summarizePosts,
+} from "@/lib/metrics";
 
 type Snapshot = {
   followersCount: number;
-  followingCount: number;
-  postCount: number;
-  totalLikes: number;
-  totalViews: number;
+  followingCount: number | null;
+  postCount: number | null;
+  totalLikes: number | null;
+  totalViews: number | null;
+  totalEngagements: number | null;
   postsAnalyzed: number;
   fetchedAt: Date;
 };
@@ -23,21 +32,13 @@ function platformName(platform: string) {
   return platform.charAt(0).toUpperCase() + platform.slice(1);
 }
 
-function getGrowth(current: number, previous?: number | null) {
-  if (previous === undefined || previous === null) return null;
-  return current - previous;
-}
-
-function getEngagement(snapshot: Snapshot) {
-  if (snapshot.followersCount <= 0) return 0;
-
-  const interactions = snapshot.totalLikes + snapshot.totalViews;
-
-  return (interactions / snapshot.followersCount) * 100;
-}
-
-export default async function InsightsPage() {
+export default async function InsightsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ posts?: string }>;
+}) {
   const session = await auth();
+  const query = await searchParams;
 
   const userId = session?.user?.id;
 
@@ -57,6 +58,13 @@ export default async function InsightsPage() {
     );
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { plan: true },
+  });
+  const plan = normalizePlan(user?.plan);
+  const sampleSize = normalizeSampleSize(query.posts, plan);
+
   const connections = await prisma.connectedAccount.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
@@ -67,7 +75,7 @@ export default async function InsightsPage() {
       },
       posts: {
         orderBy: { postedAt: "desc" },
-        take: 10,
+        take: sampleSize,
       },
     },
   });
@@ -114,51 +122,59 @@ export default async function InsightsPage() {
     .map((connection) => connection.metricSnapshots[0])
     .filter(Boolean) as Snapshot[];
 
-  const previousSnapshots = connections
-    .map((connection) => connection.metricSnapshots[1])
-    .filter(Boolean) as Snapshot[];
-
-  const totalFollowers = currentSnapshots.reduce(
-    (sum, snapshot) => sum + snapshot.followersCount,
-    0
+  const totalFollowers = sumAvailable(
+    connections.map(
+      (connection) => connection.metricSnapshots[0]?.followersCount ?? null
+    )
   );
 
-  const totalFollowing = currentSnapshots.reduce(
-    (sum, snapshot) => sum + snapshot.followingCount,
-    0
+  const totalFollowing = sumAvailable(
+    currentSnapshots.map((snapshot) => snapshot.followingCount)
+  );
+  const totalPosts = sumAvailable(
+    currentSnapshots.map((snapshot) => snapshot.postCount)
   );
 
-  const totalPosts = currentSnapshots.reduce(
-    (sum, snapshot) => sum + snapshot.postCount,
+  const pairedSnapshots = connections.filter(
+    (connection) => connection.metricSnapshots.length >= 2
+  );
+  const followerGrowth = pairedSnapshots.length
+    ? pairedSnapshots.reduce(
+        (sum, connection) =>
+          sum +
+          (connection.metricSnapshots[0].followersCount -
+            connection.metricSnapshots[1].followersCount),
+        0
+      )
+    : null;
+  const growthDirection =
+    followerGrowth === null
+      ? "unknown"
+      : followerGrowth > 0
+        ? "positive"
+        : followerGrowth < 0
+          ? "negative"
+          : "stable";
+
+  const postSummaries = connections.map((connection) =>
+    summarizePosts(connection.posts, connection.platform)
+  );
+  const rateEligible = postSummaries.filter(
+    (summary) =>
+      summary.engagements !== null && summary.views !== null
+  );
+  const totalEngagements = rateEligible.reduce(
+    (sum, summary) => sum + (summary.engagements ?? 0),
     0
   );
-
-  const totalLikes = currentSnapshots.reduce(
-    (sum, snapshot) => sum + snapshot.totalLikes,
+  const totalViews = rateEligible.reduce(
+    (sum, summary) => sum + (summary.views ?? 0),
     0
   );
-
-  const totalViews = currentSnapshots.reduce(
-    (sum, snapshot) => sum + snapshot.totalViews,
-    0
+  const totalEngagement = calculateEngagementRate(
+    rateEligible.length ? totalEngagements : null,
+    rateEligible.length ? totalViews : null
   );
-
-  const previousFollowers = previousSnapshots.reduce(
-    (sum, snapshot) => sum + snapshot.followersCount,
-    0
-  );
-
-  const followerGrowth =
-    previousSnapshots.length > 0
-      ? totalFollowers - previousFollowers
-      : null;
-
-  const growthPositive = followerGrowth !== null && followerGrowth >= 0;
-
-  const totalEngagement =
-    totalFollowers > 0
-      ? ((totalLikes + totalViews) / totalFollowers) * 100
-      : 0;
 
   const analyzedPosts = connections.reduce(
     (sum, connection) => sum + connection.posts.length,
@@ -170,13 +186,13 @@ export default async function InsightsPage() {
     .sort((a, b) => b.getTime() - a.getTime())[0];
 
   const strongestPlatform = connections
+    .filter((connection) => connection.metricSnapshots.length > 0)
     .map((connection) => {
       const snapshot = connection.metricSnapshots[0];
 
       return {
         platform: connection.platform,
-        followers: snapshot?.followersCount ?? 0,
-        engagement: snapshot ? getEngagement(snapshot) : 0,
+        followers: snapshot.followersCount,
       };
     })
     .sort((a, b) => b.followers - a.followers)[0];
@@ -193,8 +209,7 @@ export default async function InsightsPage() {
       const bDate = b.postedAt?.getTime() ?? 0;
 
       return bDate - aDate;
-    })
-    .slice(0, 5);
+    });
 
   const strongestPost = recentPosts
     .slice()
@@ -202,8 +217,9 @@ export default async function InsightsPage() {
       (a, b) =>
         b.likeCount +
         b.replyCount +
-        b.retweetCount -
-        (a.likeCount + a.replyCount + a.retweetCount)
+        b.retweetCount +
+        b.quoteCount -
+        (a.likeCount + a.replyCount + a.retweetCount + a.quoteCount)
     )[0];
 
   return (
@@ -211,6 +227,8 @@ export default async function InsightsPage() {
       <PageHeader
         latestSnapshotDate={latestSnapshotDate}
       />
+
+      <PostSampleSelector plan={plan} selected={sampleSize} />
 
       {/* Hero insight */}
       <section className="overflow-hidden rounded-xl border border-border bg-surface">
@@ -236,23 +254,27 @@ export default async function InsightsPage() {
           <h2 className="max-w-2xl font-display text-2xl font-medium tracking-tight text-ink">
             {followerGrowth === null
               ? "Your Signal profile is starting to take shape."
-              : growthPositive
+              : growthDirection === "positive"
                 ? `Your audience is moving in the right direction.`
-                : `Your audience needs attention right now.`}
+                : growthDirection === "negative"
+                  ? `Your audience needs attention right now.`
+                  : `Your audience is stable right now.`}
           </h2>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-muted">
             {followerGrowth === null
               ? "Signal has your current performance data, but it needs another snapshot before it can confidently compare growth over time."
-              : growthPositive
-                ? `You currently have ${formatNumber(
-                    totalFollowers
-                  )} followers across your connected platforms. Your latest available snapshots show a net change of ${formatNumber(
+                : growthDirection === "positive"
+                  ? `You currently have ${formatNumber(
+                    totalFollowers.value ?? 0
+                  )} measured followers across platforms with available data. Your latest available snapshots show a net change of ${formatNumber(
                     Math.abs(followerGrowth)
                   )} follower${Math.abs(followerGrowth) === 1 ? "" : "s"}.`
-                : `Your latest snapshots show a decrease of ${formatNumber(
-                    Math.abs(followerGrowth)
-                  )} follower${Math.abs(followerGrowth) === 1 ? "" : "s"}. This is a good reason to look at your recent content and platform performance.`}
+                : growthDirection === "negative"
+                  ? `Your latest snapshots show a decrease of ${formatNumber(
+                      Math.abs(followerGrowth)
+                    )} follower${Math.abs(followerGrowth) === 1 ? "" : "s"}. This is a good reason to look at your recent content and platform performance.`
+                  : "Your latest matching snapshots show no follower change."}
           </p>
         </div>
       </section>
@@ -266,8 +288,12 @@ export default async function InsightsPage() {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
-            label="Followers"
-            value={formatNumber(totalFollowers)}
+            label={totalFollowers.complete ? "Followers" : "Followers (partial)"}
+            value={
+              totalFollowers.value === null
+                ? "Unavailable"
+                : formatNumber(totalFollowers.value)
+            }
             change={
               followerGrowth !== null
                 ? `${followerGrowth >= 0 ? "+" : ""}${formatNumber(
@@ -278,18 +304,18 @@ export default async function InsightsPage() {
           />
 
           <MetricCard
-            label="Following"
-            value={formatNumber(totalFollowing)}
+            label={totalFollowing.complete ? "Following" : "Following (partial)"}
+            value={totalFollowing.value === null ? "Unavailable" : formatNumber(totalFollowing.value)}
           />
 
           <MetricCard
-            label="Posts"
-            value={formatNumber(totalPosts)}
+            label={totalPosts.complete ? "Posts" : "Posts (partial)"}
+            value={totalPosts.value === null ? "Unavailable" : formatNumber(totalPosts.value)}
           />
 
           <MetricCard
-            label="Engagement signal"
-            value={`${totalEngagement.toFixed(1)}%`}
+            label={`Engagement from last ${sampleSize}`}
+            value={totalEngagement === null ? "Unavailable" : `${totalEngagement.toFixed(1)}%`}
           />
         </div>
       </section>
@@ -303,13 +329,15 @@ export default async function InsightsPage() {
 
         <div className="mt-6 space-y-5">
           <InsightRow
-            icon={growthPositive ? "↑" : "↓"}
+            icon={growthDirection === "positive" ? "↑" : growthDirection === "negative" ? "↓" : "="}
             title={
               followerGrowth === null
                 ? "Growth history is building"
-                : growthPositive
+                : growthDirection === "positive"
                   ? "Audience growth is positive"
-                  : "Audience growth is negative"
+                  : growthDirection === "negative"
+                    ? "Audience growth is negative"
+                    : "Audience is stable"
             }
             description={
               followerGrowth === null
@@ -317,10 +345,10 @@ export default async function InsightsPage() {
                 : `${formatNumber(
                     Math.abs(followerGrowth)
                   )} follower${Math.abs(followerGrowth) === 1 ? "" : "s"} ${
-                    growthPositive ? "were added" : "were lost"
+                    growthDirection === "positive" ? "were added" : growthDirection === "negative" ? "were lost" : "changed"
                   } between the latest available snapshots.`
             }
-            tone={growthPositive ? "positive" : "attention"}
+            tone={growthDirection === "positive" ? "positive" : growthDirection === "negative" ? "attention" : "neutral"}
           />
 
           <InsightRow
@@ -374,7 +402,7 @@ export default async function InsightsPage() {
             title="Study your strongest content"
             description={
               strongestPost
-                ? `Your strongest stored post currently has ${strongestPost.likeCount} likes, ${strongestPost.replyCount} replies and ${strongestPost.retweetCount} reposts.`
+                ? `Your strongest stored post currently has ${strongestPost.likeCount} likes, ${strongestPost.replyCount} replies, ${strongestPost.retweetCount} reposts and ${strongestPost.quoteCount} quotes.`
                 : "Once posts are stored, Signal can identify which content deserves to be repeated."
             }
           />
@@ -430,7 +458,9 @@ export default async function InsightsPage() {
 
                 <div className="text-right">
                   <p className="text-sm font-medium text-ink">
-                    {formatNumber(snapshot?.followersCount ?? 0)}
+                    {snapshot
+                      ? formatNumber(snapshot.followersCount)
+                      : "Unavailable"}
                   </p>
 
                   <p className="text-xs text-ink-muted">

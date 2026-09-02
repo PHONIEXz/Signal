@@ -20,7 +20,23 @@ function cleanText(value: string) {
   return value.replace(/[—–]/g, "-");
 }
 
-export default function SignalReport() {
+async function requestReport(sampleSize: number) {
+  const response = await fetch("/api/reports/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ postLimit: sampleSize }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Could not generate the report.");
+  }
+
+  return data.report as Report;
+}
+
+export default function SignalReport({ sampleSize }: { sampleSize: number }) {
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -30,18 +46,7 @@ export default function SignalReport() {
     setError("");
 
     try {
-      const response = await fetch("/api/reports/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Could not generate the report.");
-      }
-
-      setReport(data.report);
+      setReport(await requestReport(sampleSize));
     } catch (err) {
       setError(
         err instanceof Error
@@ -54,8 +59,29 @@ export default function SignalReport() {
   }
 
   useEffect(() => {
-    generateReport();
-  }, []);
+    let cancelled = false;
+
+    requestReport(sampleSize)
+      .then((nextReport) => {
+        if (!cancelled) setReport(nextReport);
+      })
+      .catch((requestError: unknown) => {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Could not generate the report."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sampleSize]);
 
   if (loading) {
     return (

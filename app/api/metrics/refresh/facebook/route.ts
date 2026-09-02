@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
+import { normalizeSampleSize } from "@/lib/metrics";
 
-export async function POST() {
+export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -11,6 +12,7 @@ export async function POST() {
 
   const connectedAccount = await prisma.connectedAccount.findUnique({
     where: { userId_platform: { userId: session.user.id, platform: "facebook" } },
+    include: { user: { select: { plan: true } } },
   });
 
   if (!connectedAccount || !connectedAccount.platformUserId) {
@@ -18,6 +20,19 @@ export async function POST() {
   }
 
   try {
+    let body: { postLimit?: unknown } = {};
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+    const postLimit = normalizeSampleSize(
+      typeof body.postLimit === "number" || typeof body.postLimit === "string"
+        ? body.postLimit
+        : undefined,
+      connectedAccount.user.plan
+    );
+
     const accessToken = decrypt(connectedAccount.accessToken);
     const pageId = connectedAccount.platformUserId;
 
@@ -29,11 +44,13 @@ export async function POST() {
     }
     const pageData = await pageRes.json();
 
-    let totalLikes = 0;
+    let totalLikes: number | null = null;
+    let totalEngagements: number | null = null;
     let postsAnalyzed = 0;
+    let postMetricsStatus = "UNAVAILABLE";
 
     const postsRes = await fetch(
-      `https://graph.facebook.com/v25.0/${pageId}/posts?fields=message,created_time,reactions.summary(total_count),comments.summary(total_count),shares&limit=10&access_token=${accessToken}`
+      `https://graph.facebook.com/v25.0/${pageId}/posts?fields=message,created_time,reactions.summary(total_count),comments.summary(total_count),shares&limit=${postLimit}&access_token=${accessToken}`
     );
 
     if (postsRes.ok) {
@@ -47,11 +64,15 @@ export async function POST() {
         shares?: { count?: number };
       }> = postsData.data ?? [];
 
+      totalLikes = 0;
+      totalEngagements = 0;
+
       for (const post of posts) {
         const likeCount = post.reactions?.summary?.total_count ?? 0;
         const replyCount = post.comments?.summary?.total_count ?? 0;
         const retweetCount = post.shares?.count ?? 0;
         totalLikes += likeCount;
+        totalEngagements += likeCount + replyCount + retweetCount;
 
         await prisma.post.upsert({
           where: {
@@ -79,21 +100,33 @@ export async function POST() {
         });
       }
       postsAnalyzed = posts.length;
+      postMetricsStatus = "PARTIAL";
     }
 
     await prisma.metricSnapshot.create({
       data: {
         connectedAccountId: connectedAccount.id,
         followersCount: pageData.followers_count ?? 0,
-        followingCount: 0,
-        postCount: postsAnalyzed,
+        followingCount: null,
+        postCount: null,
         totalLikes,
-        totalViews: 0,
+        totalViews: null,
+        totalEngagements,
         postsAnalyzed,
+        sampleSize: postLimit,
+        postMetricsStatus,
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      sampleSize: postLimit,
+      postsAnalyzed,
+      warning:
+        postMetricsStatus === "UNAVAILABLE"
+          ? "Page followers were updated, but recent post metrics were unavailable."
+          : "Facebook views and total post count are not available from this connection.",
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unknown error" },
@@ -101,4 +134,3 @@ export async function POST() {
     );
   }
 }
-

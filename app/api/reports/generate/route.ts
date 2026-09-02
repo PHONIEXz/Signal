@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
+import {
+  normalizeSampleSize,
+  summarizePosts,
+} from "@/lib/metrics";
 
 function cleanAiText(value: string) {
   return value
@@ -10,7 +14,7 @@ function cleanAiText(value: string) {
     .trim();
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -18,6 +22,24 @@ export async function POST() {
   }
 
   try {
+    let body: { postLimit?: unknown } = {};
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { plan: true },
+    });
+    const sampleSize = normalizeSampleSize(
+      typeof body.postLimit === "number" || typeof body.postLimit === "string"
+        ? body.postLimit
+        : undefined,
+      user?.plan
+    );
+
     const connections = await prisma.connectedAccount.findMany({
       where: { userId: session.user.id },
       include: {
@@ -27,7 +49,7 @@ export async function POST() {
         },
         posts: {
           orderBy: { postedAt: "desc" },
-          take: 12,
+          take: sampleSize,
         },
       },
       orderBy: { createdAt: "asc" },
@@ -43,18 +65,22 @@ export async function POST() {
     const accountData = connections.map((account) => {
       const current = account.metricSnapshots[0];
       const previous = account.metricSnapshots[1];
+      const postMetrics = summarizePosts(account.posts, account.platform);
 
       return {
         platform: account.platform,
         displayName: account.displayName,
+        requestedPostSample: sampleSize,
         current: current
           ? {
               followers: current.followersCount,
               following: current.followingCount,
               posts: current.postCount,
-              likes: current.totalLikes,
-              views: current.totalViews,
-              postsAnalyzed: current.postsAnalyzed,
+              selectedPostLikes: postMetrics.likes,
+              selectedPostViews: postMetrics.views,
+              selectedPostEngagements: postMetrics.engagements,
+              selectedPostEngagementRate: postMetrics.engagementRate,
+              postsAnalyzed: postMetrics.postsAnalyzed,
               fetchedAt: current.fetchedAt.toISOString(),
             }
           : null,
@@ -63,8 +89,6 @@ export async function POST() {
               followers: previous.followersCount,
               following: previous.followingCount,
               posts: previous.postCount,
-              likes: previous.totalLikes,
-              views: previous.totalViews,
               fetchedAt: previous.fetchedAt.toISOString(),
             }
           : null,
@@ -74,6 +98,7 @@ export async function POST() {
           views: post.viewCount,
           replies: post.replyCount,
           reposts: post.retweetCount,
+          quotes: post.quoteCount,
           tags: post.tags,
           postedAt: post.postedAt?.toISOString() ?? null,
         })),
@@ -110,6 +135,8 @@ Rules:
 - Avoid hype and marketing language.
 - Do not confuse unavailable data with poor performance.
 - Do not create conclusions from missing information.
+- Likes, views and engagement are calculated only from each platform's selected recent-post sample.
+- State the actual posts analyzed when it is less than the requested sample.
 - Do not use markdown fences.
 - Do not include any keys other than the requested keys.
 

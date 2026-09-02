@@ -1,88 +1,30 @@
 "use client";
 
-type SignalScoreProps = {
-  followers: number;
-  posts: number;
-  likes: number;
-  views: number;
-  engagementRate: number;
-};
+import type { SignalScoreResult } from "@/lib/metrics";
 
-export default function SignalScore({
-  followers,
-  posts,
-  likes,
-  views,
-  engagementRate,
-}: SignalScoreProps) {
-  /*
-   * Signal Score is intentionally deterministic.
-   *
-   * Engagement:      40 points
-   * Content activity: 25 points
-   * Reach:            20 points
-   * Audience:         15 points
-   */
+export default function SignalScore({ result }: { result: SignalScoreResult }) {
+  const score = result.score;
 
-  const engagementScore = Math.min(
-    40,
-    Math.round(engagementRate * 4)
-  );
-
-  const activityScore = Math.min(
-    25,
-    posts > 50
-      ? 25
-      : Math.round((posts / 50) * 25)
-  );
-
-  const reachScore = Math.min(
-    20,
-    views > 0
-      ? Math.round(
-          Math.min(1, views / Math.max(followers * 10, 1)) * 20
-        )
-      : 0
-  );
-
-  const audienceScore = Math.min(
-    15,
-    followers > 1000
-      ? 15
-      : Math.round((followers / 1000) * 15)
-  );
-
-  const score = Math.min(
-    100,
-    engagementScore +
-      activityScore +
-      reachScore +
-      audienceScore
-  );
-
-  const getLabel = () => {
+  function label() {
+    if (score === null) return "Waiting for data";
     if (score >= 85) return "Excellent";
     if (score >= 70) return "Strong";
     if (score >= 50) return "Growing";
     if (score >= 30) return "Needs attention";
     return "Early stage";
-  };
+  }
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-display text-lg font-medium text-ink">
-            Signal Score
-          </p>
-
+          <p className="font-display text-lg font-medium text-ink">Signal Score</p>
           <p className="mt-1 text-sm text-ink-muted">
-            Overall account health
+            Size-neutral account health from available recent data
           </p>
         </div>
-
         <div className="rounded-full bg-paper px-3 py-1 text-xs font-medium text-ink">
-          {getLabel()}
+          {label()}
         </div>
       </div>
 
@@ -90,41 +32,23 @@ export default function SignalScore({
         <div className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[8px] border-navy/10">
           <div className="text-center">
             <p className="font-display text-3xl font-semibold text-ink">
-              {score}
+              {score ?? "--"}
             </p>
-
-            <p className="text-[10px] text-ink-muted">
-              / 100
-            </p>
+            <p className="text-[10px] text-ink-muted">/ 100</p>
           </div>
         </div>
 
         <div className="flex-1 space-y-3">
-          <ScoreRow
-            label="Engagement"
-            value={engagementScore}
-            max={40}
-          />
-
-          <ScoreRow
-            label="Activity"
-            value={activityScore}
-            max={25}
-          />
-
-          <ScoreRow
-            label="Reach"
-            value={reachScore}
-            max={20}
-          />
-
-          <ScoreRow
-            label="Audience"
-            value={audienceScore}
-            max={15}
-          />
+          <ScoreRow label="Engagement" {...result.engagement} />
+          <ScoreRow label="Follower growth" {...result.growth} />
+          <ScoreRow label="30-day activity" {...result.activity} />
+          <ScoreRow label="Reach" {...result.reach} />
         </div>
       </div>
+
+      <p className="mt-5 text-xs text-ink-muted">
+        Data confidence: {result.confidence}%. Unavailable metrics are excluded instead of scored as zero.
+      </p>
     </div>
   );
 }
@@ -135,21 +59,19 @@ function ScoreRow({
   max,
 }: {
   label: string;
-  value: number;
+  value: number | null;
   max: number;
 }) {
-  const percentage = Math.round((value / max) * 100);
+  const percentage = value === null ? 0 : Math.round((value / max) * 100);
 
   return (
     <div>
       <div className="mb-1 flex justify-between text-xs">
         <span className="text-ink-muted">{label}</span>
-
         <span className="font-medium text-ink">
-          {value}/{max}
+          {value === null ? "Unavailable" : `${value}/${max}`}
         </span>
       </div>
-
       <div className="h-1.5 overflow-hidden rounded-full bg-paper">
         <div
           className="h-full rounded-full bg-navy transition-all duration-700"

@@ -81,6 +81,7 @@ model Post {
   viewCount          Int               @default(0)
   replyCount         Int               @default(0)
   retweetCount       Int               @default(0)
+  quoteCount         Int               @default(0)
   postedAt           DateTime?
   fetchedAt          DateTime          @default(now())
   connectedAccount   ConnectedAccount  @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
@@ -92,13 +93,18 @@ model MetricSnapshot {
   id                 String           @id @default(cuid())
   connectedAccountId String
   followersCount     Int
-  followingCount     Int
-  postCount          Int
-  totalLikes         Int              @default(0)
-  totalViews         Int              @default(0)
+  followingCount     Int?
+  postCount          Int?
+  totalLikes         Int?
+  totalViews         Int?
+  totalEngagements   Int?
   postsAnalyzed      Int              @default(0)
+  sampleSize         Int              @default(10)
+  postMetricsStatus  String           @default("AVAILABLE")
   fetchedAt          DateTime         @default(now())
   connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@index([connectedAccountId, sampleSize, fetchedAt])
 }
 
 model Account {

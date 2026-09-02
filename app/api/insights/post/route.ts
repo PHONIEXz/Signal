@@ -93,9 +93,10 @@ POST:
 
 POST METRICS:
 - Likes: ${post.likeCount}
-- Views: ${post.viewCount}
+- Views: ${account.platform === "facebook" ? "Unavailable" : post.viewCount}
 - Replies: ${post.replyCount}
 - Reposts: ${post.retweetCount}
+- Quotes: ${post.quoteCount}
 - Posted: ${
     post.postedAt
       ? post.postedAt.toISOString()

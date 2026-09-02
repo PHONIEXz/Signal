@@ -4,7 +4,13 @@ import { useState, useRef, useEffect } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-export default function InsightsChat({ platform = "x" }: { platform?: string }) {
+export default function InsightsChat({
+  platform = "x",
+  sampleSize = 10,
+}: {
+  platform?: string;
+  sampleSize?: number;
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +34,7 @@ export default function InsightsChat({ platform = "x" }: { platform?: string }) 
     const res = await fetch("/api/insights/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: nextMessages, platform }),
+      body: JSON.stringify({ messages: nextMessages, platform, postLimit: sampleSize }),
     });
 
     const data = await res.json();
@@ -104,4 +110,3 @@ export default function InsightsChat({ platform = "x" }: { platform?: string }) 
     </div>
   );
 }
-

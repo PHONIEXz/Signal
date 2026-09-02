@@ -2,10 +2,33 @@
 
 import { useEffect, useState } from "react";
 
+async function requestAnalysis(platform: string, sampleSize: number) {
+  const response = await fetch("/api/insights/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      platform,
+      postLimit: sampleSize,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to generate analysis");
+  }
+
+  return data.insight as string;
+}
+
 export default function AccountAIAnalysis({
   platform = "x",
+  sampleSize = 10,
 }: {
   platform?: string;
+  sampleSize?: number;
 }) {
   const [insight, setInsight] = useState("");
   const [loading, setLoading] = useState(true);
@@ -16,25 +39,7 @@ export default function AccountAIAnalysis({
     setError("");
 
     try {
-      const response = await fetch("/api/insights/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          platform,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to generate analysis"
-        );
-      }
-
-      setInsight(data.insight);
+      setInsight(await requestAnalysis(platform, sampleSize));
     } catch (error) {
       setError(
         error instanceof Error
@@ -47,8 +52,29 @@ export default function AccountAIAnalysis({
   }
 
   useEffect(() => {
-    generateAnalysis();
-  }, [platform]);
+    let cancelled = false;
+
+    requestAnalysis(platform, sampleSize)
+      .then((nextInsight) => {
+        if (!cancelled) setInsight(nextInsight);
+      })
+      .catch((requestError: unknown) => {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Something went wrong."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [platform, sampleSize]);
 
   return (
     <div className="rounded-lg border border-border bg-surface p-6">

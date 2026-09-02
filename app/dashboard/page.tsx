@@ -3,9 +3,33 @@ import AccountCard from "@/components/dashboard/AccountCard";
 import SignalScore from "@/components/dashboard/SignalScore";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import PostSampleSelector from "@/components/dashboard/PostSampleSelector";
+import {
+  calculateChangePercent,
+  calculateEngagementRate,
+  calculateSignalScore,
+  normalizePlan,
+  normalizeSampleSize,
+  sumAvailable,
+  summarizePosts,
+} from "@/lib/metrics";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ posts?: string }>;
+}) {
   const session = await auth();
+  const query = await searchParams;
+
+  const user = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { plan: true },
+      })
+    : null;
+  const plan = normalizePlan(user?.plan);
+  const sampleSize = normalizeSampleSize(query.posts, plan);
 
   const connections = session?.user?.id
     ? await prisma.connectedAccount.findMany({
@@ -14,7 +38,11 @@ export default async function DashboardPage() {
         include: {
           metricSnapshots: {
             orderBy: { fetchedAt: "desc" },
-            take: 1,
+            take: 2,
+          },
+          posts: {
+            orderBy: { postedAt: "desc" },
+            take: sampleSize,
           },
         },
       })
@@ -33,36 +61,85 @@ export default async function DashboardPage() {
     platform: connection.platform,
     followers: connection.metricSnapshots[0]?.followersCount ?? null,
     snapshot: connection.metricSnapshots[0] ?? null,
+    previousSnapshot: connection.metricSnapshots[1] ?? null,
+    postMetrics: summarizePosts(connection.posts, connection.platform),
   }));
 
-  const snapshots = accounts
-    .map((account) => account.snapshot)
-    .filter(Boolean);
-
-  const totalFollowers = snapshots.reduce(
-    (sum, snapshot) => sum + (snapshot?.followersCount ?? 0),
-    0
+  const totalFollowers = sumAvailable(
+    accounts.map((account) => account.followers)
   );
 
-  const totalPosts = snapshots.reduce(
-    (sum, snapshot) => sum + (snapshot?.postCount ?? 0),
+  const totalPosts = sumAvailable(
+    accounts.map((account) => account.snapshot?.postCount ?? null)
+  );
+  const totalLikes = sumAvailable(
+    accounts.map((account) => account.postMetrics.likes)
+  );
+  const viewEligible = accounts.filter(
+    (account) =>
+      account.postMetrics.views !== null &&
+      account.postMetrics.engagements !== null
+  );
+  const totalViews = sumAvailable(
+    accounts.map((account) => account.postMetrics.views)
+  );
+  const engagementsForRate = viewEligible.reduce(
+    (sum, account) => sum + (account.postMetrics.engagements ?? 0),
     0
   );
-
-  const totalLikes = snapshots.reduce(
-    (sum, snapshot) => sum + (snapshot?.totalLikes ?? 0),
+  const followersForRate = viewEligible.reduce(
+    (sum, account) => sum + (account.followers ?? 0),
     0
   );
-
-  const totalViews = snapshots.reduce(
-    (sum, snapshot) => sum + (snapshot?.totalViews ?? 0),
+  const postsForRate = viewEligible.reduce(
+    (sum, account) => sum + account.postMetrics.postsAnalyzed,
     0
   );
+  const engagementRate = calculateEngagementRate(
+    viewEligible.length ? engagementsForRate : null,
+    totalViews.value
+  );
 
-  const engagementRate =
-    totalViews > 0
-      ? (totalLikes / totalViews) * 100
-      : 0;
+  const pairedSnapshots = accounts.filter(
+    (account) => account.snapshot && account.previousSnapshot
+  );
+  const pairedCurrentFollowers = pairedSnapshots.reduce(
+    (sum, account) => sum + account.snapshot!.followersCount,
+    0
+  );
+  const pairedPreviousFollowers = pairedSnapshots.reduce(
+    (sum, account) => sum + account.previousSnapshot!.followersCount,
+    0
+  );
+  const followerGrowthRate = pairedSnapshots.length
+    ? calculateChangePercent(pairedCurrentFollowers, pairedPreviousFollowers)
+    : null;
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const postsLast30Days = session?.user?.id
+    ? await prisma.post.count({
+        where: {
+          connectedAccount: { userId: session.user.id },
+          postedAt: { gte: thirtyDaysAgo },
+        },
+      })
+    : 0;
+  const activityDataAvailable = accounts.every(
+    (account) =>
+      account.snapshot && account.snapshot.postMetricsStatus !== "UNAVAILABLE"
+  );
+  const averageViewsPerPost =
+    totalViews.value !== null && postsForRate > 0
+      ? totalViews.value / postsForRate
+      : null;
+  const score = calculateSignalScore({
+    engagementRate,
+    followerGrowthRate,
+    postsLast30Days: activityDataAvailable ? postsLast30Days : null,
+    averageViewsPerPost,
+    followers: viewEligible.length ? followersForRate : null,
+  });
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -79,6 +156,8 @@ export default async function DashboardPage() {
           A quick view of how your connected platforms are performing.
         </p>
       </div>
+
+      <PostSampleSelector plan={plan} selected={sampleSize} />
 
       <section>
         <div className="mb-4 flex items-end justify-between">
@@ -107,29 +186,26 @@ export default async function DashboardPage() {
       </section>
 
       <section>
-        <SignalScore
-          followers={totalFollowers}
-          posts={totalPosts}
-          likes={totalLikes}
-          views={totalViews}
-          engagementRate={engagementRate}
-        />
+        <SignalScore result={score} />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-3">
         <SummaryCard
           label="Total followers"
-          value={totalFollowers}
+          value={totalFollowers.value}
+          note={totalFollowers.complete ? undefined : "Partial across connected platforms"}
         />
 
         <SummaryCard
-          label="Total posts"
-          value={totalPosts}
+          label="Account posts"
+          value={totalPosts.value}
+          note={totalPosts.complete ? undefined : "Partial across connected platforms"}
         />
 
         <SummaryCard
-          label="Total likes"
-          value={totalLikes}
+          label={`Likes from selected last ${sampleSize}`}
+          value={totalLikes.value}
+          note={totalLikes.complete ? undefined : "Partial across connected platforms"}
         />
       </section>
 
@@ -146,28 +222,33 @@ export default async function DashboardPage() {
           </div>
 
           <span className="rounded-full bg-paper px-3 py-1 text-xs font-medium text-ink">
-            {connections.length} platforms
+            {totalViews.knownCount} of {connections.length} platforms
           </span>
         </div>
 
         <div className="mt-6 flex items-end justify-between gap-4">
           <div>
             <p className="font-display text-3xl font-semibold text-ink">
-              {totalViews.toLocaleString()}
+              {totalViews.value === null ? "Unavailable" : totalViews.value.toLocaleString()}
             </p>
 
             <p className="mt-1 text-xs text-ink-muted">
-              total views
+              views from selected post samples
             </p>
+            {!totalViews.complete && totalViews.value !== null && (
+              <p className="mt-1 text-[11px] text-amber-600">
+                Partial total because some platforms do not provide views
+              </p>
+            )}
           </div>
 
           <div className="text-right">
             <p className="font-display text-xl font-medium text-ink">
-              {engagementRate.toFixed(1)}%
+              {engagementRate === null ? "Unavailable" : `${engagementRate.toFixed(1)}%`}
             </p>
 
             <p className="mt-1 text-xs text-ink-muted">
-              likes / views
+              interactions / views
             </p>
           </div>
         </div>
@@ -179,19 +260,22 @@ export default async function DashboardPage() {
 function SummaryCard({
   label,
   value,
+  note,
 }: {
   label: string;
-  value: number;
+  value: number | null;
+  note?: string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-5">
       <p className="font-display text-2xl font-semibold text-ink">
-        {value.toLocaleString()}
+        {value === null ? "Unavailable" : value.toLocaleString()}
       </p>
 
       <p className="mt-1 text-xs text-ink-muted">
         {label}
       </p>
+      {note && <p className="mt-1 text-[11px] text-amber-600">{note}</p>}
     </div>
   );
 }
