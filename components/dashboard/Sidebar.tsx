@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { label: "Overview", href: "/dashboard" },
   { label: "Posts", href: "/dashboard/posts" },
+  { label: "Content Studio", href: "/dashboard/content" },
   { label: "Accounts", href: "/dashboard/accounts" },
   { label: "Reports", href: "/dashboard/reports" },
   { label: "Settings", href: "/dashboard/settings" },
@@ -21,7 +22,9 @@ export default function Sidebar() {
       </span>
       <nav className="flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.href}
@@ -40,4 +43,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

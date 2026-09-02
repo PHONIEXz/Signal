@@ -20,6 +20,7 @@ model User {
   accounts       Account[]
   sessions       Session[]
   connectedAccounts ConnectedAccount[]
+  contentDrafts  ContentDraft[]
   createdAt      DateTime  @default(now())
 }
 
@@ -37,8 +38,35 @@ model ConnectedAccount {
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   metricSnapshots MetricSnapshot[]
   posts          Post[]
+  draftTargets   ContentDraftTarget[]
 
   @@unique([userId, platform])
+}
+
+model ContentDraft {
+  id           String               @id @default(cuid())
+  userId       String
+  text         String
+  mediaUrl     String?
+  status       String               @default("DRAFT")
+  scheduledFor DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targets      ContentDraftTarget[]
+
+  @@index([userId, scheduledFor])
+}
+
+model ContentDraftTarget {
+  id                 String           @id @default(cuid())
+  contentDraftId     String
+  connectedAccountId String
+  contentDraft       ContentDraft     @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([contentDraftId, connectedAccountId])
+  @@index([connectedAccountId])
 }
 
 model Post {
@@ -106,4 +134,3 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
-
