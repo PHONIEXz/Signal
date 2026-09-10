@@ -11,12 +11,13 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "w-full rounded-md px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    "min-h-11 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px";
 
   const variants = {
-    primary: "bg-navy text-white hover:bg-navy-dark",
+    primary:
+      "bg-navy text-white shadow-lg shadow-navy/15 hover:-translate-y-0.5 hover:bg-navy-dark hover:shadow-xl hover:shadow-navy/20",
     secondary:
-      "bg-transparent text-ink border border-border hover:border-navy",
+      "border border-border bg-surface text-ink shadow-sm hover:-translate-y-0.5 hover:border-navy/30 hover:bg-paper",
   };
 
   return (
@@ -25,4 +26,3 @@ export default function Button({
     </button>
   );
 }
-

@@ -4,34 +4,54 @@ type Platform = {
 };
 
 const PLATFORMS: Platform[] = [
-  { name: "instagram", connected: false },
-  { name: "x", connected: true },
-  { name: "tiktok", connected: false },
-  { name: "linkedin", connected: false },
-  { name: "youtube", connected: false },
+  { name: "Facebook", connected: true },
+  { name: "X", connected: true },
+  { name: "TikTok", connected: false },
+  { name: "Instagram", connected: false },
 ];
 
-export default function SignalDots() {
+export default function SignalDots({ inverse = false }: { inverse?: boolean }) {
   return (
-    <ul className="flex flex-col gap-3">
-      {PLATFORMS.map((platform) => (
-        <li key={platform.name} className="flex items-center gap-3">
+    <ul className="grid gap-2.5">
+      {PLATFORMS.map((platform, index) => (
+        <li
+          key={platform.name}
+          className="flex items-center justify-between gap-4 animate-rise-in"
+          style={{ animationDelay: `${index * 80}ms` }}
+        >
+          <span className="flex items-center gap-3">
+            <span
+              className={
+                platform.connected
+                  ? "h-2.5 w-2.5 rounded-full bg-connected animate-pulse-dot"
+                  : `h-2.5 w-2.5 rounded-full border ${
+                      inverse ? "border-white/25" : "border-ink-muted/35"
+                    }`
+              }
+              aria-hidden="true"
+            />
+            <span
+              className={`font-mono text-xs ${
+                inverse ? "text-white/72" : "text-ink-muted"
+              }`}
+            >
+              {platform.name}
+            </span>
+          </span>
+
           <span
-            className={
+            className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] ${
               platform.connected
-                ? "h-2.5 w-2.5 rounded-full bg-connected animate-pulse-dot"
-                : "h-2.5 w-2.5 rounded-full border border-ink-muted/40"
-            }
-            aria-hidden="true"
-          />
-          <span className="font-mono text-xs text-ink-muted">
-            {platform.name}
-            <span className="mx-2 text-ink-muted/50">·</span>
-            {platform.connected ? "connected" : "not connected"}
+                ? "bg-connected/15 text-connected"
+                : inverse
+                  ? "bg-white/[0.08] text-white/35"
+                  : "bg-paper text-ink-muted"
+            }`}
+          >
+            {platform.connected ? "live" : "ready"}
           </span>
         </li>
       ))}
     </ul>
   );
 }
-
