@@ -12,6 +12,8 @@ import { emailDeliveryReady, resetOrigin } from "./reset-config.ts";
 // Never load .env or use a developer's database. Every run migrates fresh storage.
 const directory = mkdtempSync(join(tmpdir(), "signal-reset-test-"));
 process.env.DATABASE_URL = "file:" + join(directory, "test.db");
+process.env.DATABASE_PROVIDER = "sqlite";
+delete process.env.VERCEL;
 process.env.APP_URL = "https://signal.example";
 process.env.EMAIL_PROVIDER = "disabled";
 const require = createRequire(import.meta.url);

@@ -1,9 +1,10 @@
 import { emailValue } from "../lib/auth-policy.ts";
 import { isLoopback, resetOrigin } from "../lib/reset-config.ts";
+import { databaseConfig } from "../lib/database-config.ts";
 
 // Deliberate local developer action only. No HTTP route ever prints a token.
 if (process.env.NODE_ENV === "production" || process.env.EMAIL_PROVIDER !== "local" ||
-    !isLoopback(new URL(resetOrigin())) || !process.env.DATABASE_URL?.startsWith("file:")) {
+    !isLoopback(new URL(resetOrigin())) || databaseConfig().provider !== "sqlite" || !process.env.DATABASE_URL?.startsWith("file:")) {
   throw new Error("Use only a local development database, EMAIL_PROVIDER=local, and a localhost APP_URL.");
 }
 const email = emailValue(process.argv[2]);

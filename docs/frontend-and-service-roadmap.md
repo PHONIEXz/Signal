@@ -4,7 +4,7 @@
 
 Password recovery, password visibility controls, recoverable login/signup errors, consistent Signal icons and tagline, dashboard loading/error screens, a keyboard skip link, and readable primary buttons in both themes. Existing entrance/hover animations and reduced-motion support are retained. Public auth screens describe platforms without pretending they are live connected accounts.
 
-No runtime dependency was added. Local recovery tests and these visual improvements need no paid API. Resend delivery is implemented and can be enabled with a verified sender and server configuration. Test real delivery before relying on it.
+Local recovery tests and these visual improvements need no paid API. The subsequent Turso setup adds the libSQL client and matching Prisma adapter for hosted storage. Resend delivery is implemented and can be enabled with a verified sender and server configuration. Test real delivery before relying on it.
 
 ## What adding credentials can activate
 

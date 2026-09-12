@@ -11,6 +11,8 @@ import { createServer } from "node:net";
 // Run after npm run build. Never uses .env or sends email.
 const folder = mkdtempSync(join(tmpdir(), "signal-http-test-"));
 process.env.DATABASE_URL = "file:" + join(folder, "test.db");
+process.env.DATABASE_PROVIDER = "sqlite";
+delete process.env.VERCEL;
 process.env.APP_URL = "https://signal.example";
 process.env.EMAIL_PROVIDER = "disabled";
 const require = createRequire(import.meta.url);

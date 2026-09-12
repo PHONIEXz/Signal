@@ -2,6 +2,8 @@
 
 This change stays on `feat/frontend-polish` / PR #5. It does not merge the separate Facebook OAuth fix, publish the app, activate a service, or change plan entitlements.
 
+For a Turso/Vercel deployment, follow [the hosted database guide](turso-vercel-setup.md) first. The migration commands below apply to local SQLite only.
+
 ## Before starting the updated app
 
 Use Node 24 and keep the existing `.env`. Back up the SQLite database named by `DATABASE_URL` before applying the new migration. Stop your dev server while making the backup. Do not reset the database or run `prisma migrate reset`.
