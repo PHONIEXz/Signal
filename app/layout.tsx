@@ -3,7 +3,9 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Signal | your platforms, one dashboard",
+  title: "Signal | Your platforms, one dashboard",
+  applicationName: "Signal",
+  icons: { icon: "/signal-icon.svg", apple: "/apple-touch-icon.png" },
   description: "Connect your social accounts and see every metric in one place.",
 };
 
@@ -33,4 +35,3 @@ export default function RootLayout({
     </html>
   );
 }
-

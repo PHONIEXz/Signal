@@ -18,6 +18,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-paper">
+      <a href="#dashboard-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-surface focus:p-3">Skip to content</a>
       <Sidebar />
 
       <div className="min-h-screen sm:pl-64">
@@ -39,7 +40,7 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        <main className="animate-rise-in px-4 py-7 pb-28 sm:px-7 sm:py-9 sm:pb-10 lg:px-10 lg:py-11">
+        <main id="dashboard-content" tabIndex={-1} className="animate-rise-in px-4 py-7 pb-28 sm:px-7 sm:py-9 sm:pb-10 lg:px-10 lg:py-11">
           {children}
         </main>
       </div>

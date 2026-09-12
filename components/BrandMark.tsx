@@ -11,7 +11,7 @@ export default function BrandMark({
 }: BrandMarkProps) {
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
-      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-navy text-white shadow-lg shadow-navy/20">
+      <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-action text-white shadow-lg shadow-navy/20">
         <span className="absolute inset-1 rounded-[10px] border border-white/15" />
         <svg
           viewBox="0 0 32 32"
@@ -39,11 +39,11 @@ export default function BrandMark({
             Signal
           </span>
           <span
-            className={`mt-1 text-[10px] uppercase tracking-[0.2em] ${
+            className={`mt-1 max-w-40 text-xs leading-4 ${
               inverse ? "text-white/50" : "text-ink-muted"
             }`}
           >
-            Social intelligence
+            Your platforms, one dashboard
           </span>
         </span>
       )}

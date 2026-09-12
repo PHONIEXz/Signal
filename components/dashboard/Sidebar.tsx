@@ -37,7 +37,7 @@ export default function Sidebar() {
                 aria-current={active ? "page" : undefined}
                 className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   active
-                    ? "bg-navy text-white shadow-md shadow-navy/15"
+                    ? "bg-action text-white shadow-md shadow-navy/15"
                     : "text-ink-muted hover:bg-paper hover:text-ink"
                 }`}
               >
@@ -51,8 +51,7 @@ export default function Sidebar() {
 
         <div className="mt-auto rounded-2xl border border-border bg-paper/70 p-4">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-connected animate-pulse-dot" />
-            <span className="text-xs font-semibold text-ink">Workspace live</span>
+            <span className="text-sm font-semibold text-ink">Your workspace</span>
           </div>
           <p className="mt-2 text-xs leading-5 text-ink-muted">
             Your connected signals stay together here.
@@ -72,7 +71,7 @@ export default function Sidebar() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[9px] font-semibold transition-colors ${
-                active ? "bg-navy text-white" : "text-ink-muted"
+                active ? "bg-action text-white" : "text-ink-muted"
               }`}
             >
               <NavIcon name={item.icon} />

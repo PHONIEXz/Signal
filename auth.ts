@@ -5,6 +5,8 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
+import { emailValue, sessionVersionMatches } from "@/lib/auth-policy";
+import { findPasswordUser } from "@/lib/password-reset";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -13,7 +15,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        const record = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { passwordVersion: true },
+        });
+        if (!record) return null;
+        // Credentials carries the version checked alongside the password.
+        token.passwordVersion = user.passwordVersion ?? record.passwordVersion;
+        if (!sessionVersionMatches(token.passwordVersion, record.passwordVersion)) return null;
+      } else {
+        if (typeof token.id !== "string") return null;
+        const record = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { passwordVersion: true },
+        });
+        if (!record || !sessionVersionMatches(token.passwordVersion, record.passwordVersion)) return null;
+      }
       return token;
     },
     async session({ session, token }) {
@@ -32,11 +51,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        if (!credentials?.email || !credentials?.password) return null;
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        const email = emailValue(credentials?.email);
+        if (!email || typeof credentials?.password !== "string") return null;
+        const user = await findPasswordUser(email);
 
         if (!user || !user.hashedPassword) return null;
 
@@ -47,9 +64,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name, passwordVersion: user.passwordVersion };
       },
     }),
   ],
 });
-

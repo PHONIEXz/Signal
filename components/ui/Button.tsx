@@ -15,7 +15,7 @@ export default function Button({
 
   const variants = {
     primary:
-      "bg-navy text-white shadow-lg shadow-navy/15 hover:-translate-y-0.5 hover:bg-navy-dark hover:shadow-xl hover:shadow-navy/20",
+      "bg-action text-white shadow-lg shadow-navy/15 hover:-translate-y-0.5 hover:bg-action-hover hover:shadow-xl hover:shadow-navy/20",
     secondary:
       "border border-border bg-surface text-ink shadow-sm hover:-translate-y-0.5 hover:border-navy/30 hover:bg-paper",
   };

@@ -12,6 +12,7 @@ model User {
   name           String?
   email          String    @unique
   hashedPassword String?
+  passwordVersion Int      @default(0)
   image          String?
   plan            String    @default("FREE")
   aiInsightsEnabled                 Boolean   @default(true)
@@ -21,7 +22,25 @@ model User {
   sessions       Session[]
   connectedAccounts ConnectedAccount[]
   contentDrafts  ContentDraft[]
+  passwordReset  PasswordResetToken?
   createdAt      DateTime  @default(now())
+}
+
+model PasswordResetToken {
+  userId    String   @id
+  tokenHash String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model AuthRateLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 model ConnectedAccount {

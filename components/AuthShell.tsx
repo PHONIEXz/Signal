@@ -15,7 +15,7 @@ export default function AuthShell({
     <div className="relative flex min-h-screen overflow-hidden bg-paper">
       <div className="pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full bg-amber/10 blur-3xl lg:hidden" />
 
-      <aside className="relative hidden min-h-screen w-[46%] max-w-[640px] flex-col justify-between overflow-hidden bg-navy px-12 py-11 text-white lg:flex xl:px-16 xl:py-14">
+      <aside className="relative hidden min-h-screen w-[46%] max-w-[640px] flex-col justify-between overflow-hidden bg-action px-12 py-11 text-white lg:flex xl:px-16 xl:py-14">
         <div className="auth-grid pointer-events-none absolute inset-0 opacity-70" />
         <div className="pointer-events-none absolute -left-36 bottom-[-10rem] h-[28rem] w-[28rem] rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-24 top-24 h-64 w-64 rounded-full bg-amber/20 blur-3xl" />
@@ -36,9 +36,9 @@ export default function AuthShell({
 
           <div className="mt-9 grid max-w-md grid-cols-3 gap-3">
             {[
-              ["6", "platforms"],
-              ["1", "clear view"],
-              ["24/7", "signal"],
+              ["Track", "performance"],
+              ["Explore", "insights"],
+              ["Create", "drafts"],
             ].map(([value, label], index) => (
               <div
                 key={label}
@@ -46,7 +46,7 @@ export default function AuthShell({
                 style={{ animationDelay: `${180 + index * 90}ms` }}
               >
                 <p className="font-display text-xl font-semibold">{value}</p>
-                <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-white/50">
+                <p className="mt-1 text-xs text-white/75">
                   {label}
                 </p>
               </div>
@@ -56,10 +56,9 @@ export default function AuthShell({
 
         <div className="relative z-10 max-w-md rounded-2xl border border-white/12 bg-white/[0.07] p-5 backdrop-blur-md">
           <div className="mb-4 flex items-center justify-between">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/48">
-              Live connections
+            <p className="text-sm font-semibold text-white/80">
+              Platforms in Signal
             </p>
-            <span className="h-1.5 w-1.5 rounded-full bg-connected animate-pulse-dot" />
           </div>
           <SignalDots inverse />
         </div>
