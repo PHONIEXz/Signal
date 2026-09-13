@@ -46,7 +46,15 @@ If authentication fails, check that the token is valid for this database and has
 
 ## 3. Decide what happens to existing data
 
-Initializing Turso makes tables, not copies of your existing accounts, drafts or metrics. `dev.db` stays untouched. Choose whether to start fresh or import the existing data before changing the app to Turso. This update does not implement or run a data transfer.
+Initializing Turso makes tables, not copies of your existing accounts, drafts or metrics. To transfer existing data, stop every Signal app process and keep DATABASE_PROVIDER=sqlite and your original DATABASE_URL. Run:
+
+```sh
+npm run db:turso:transfer -- --app-stopped
+```
+
+The command saves original.db and transfer.db in a private, Git-ignored `.backup-turso-*` directory. It applies pending Prisma migrations only to transfer.db, checks local integrity and token decryption, then copies all 11 application tables in a single remote transaction. Password hashes, IDs, dates and encrypted tokens are preserved. Every column value is compared before commit. A retry accepts an identical destination; different existing records stop the transfer without overwriting anything. Migration metadata stays local. No secret values are logged.
+
+Keep the app stopped until the command reports verified success and you switch to Turso. Do not sign up or write to the destination before copying. Remote transaction limits can cause a large transfer to fail and roll back; send the error for a staged migration if retries cannot finish. Backups contain private records and should stay on your machine. Keep your original TOKEN_ENCRYPTION_KEY and use it on Vercel too. No new dependencies are needed for this command.
 
 For a transfer, keep the same token-encryption key, pause app writes, back up the source, apply any missing local migrations to a copy, transfer records in relationship order to an empty destination, and compare counts and representative dates/relationships before switching. The baseline uses the same ISO-8601 Prisma adapter timestamp format as local SQLite. Never run historical Prisma table-rebuild migrations against the populated Turso database as an import shortcut.
 

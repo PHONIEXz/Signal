@@ -4,6 +4,8 @@
   "private": true,
   "engines": { "node": "24.x" },
   "scripts": {
+    "db:turso:transfer": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-transfer.mts",
+    "test:turso-transfer": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/turso-transfer.test.mts",
     "postinstall": "prisma generate",
     "db:turso:setup": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-database.mts setup",
     "db:turso:check": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-database.mts check",
