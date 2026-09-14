@@ -2,18 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
+import { normalizeSampleSize } from "@/lib/metrics";
 import {
-  calculateEngagementRate,
-  normalizeSampleSize,
-} from "@/lib/metrics";
-
-function cleanAiText(value: string) {
-  return value.replace(/[—–]/g, "-").trim();
-}
-
-function formatMetric(value: number | null) {
-  return value === null ? "Unavailable" : String(value);
-}
+  BALANCED_INTELLIGENCE_RULES,
+  buildAccountEvidence,
+  cleanAiText,
+  SIGNAL_AI_MODEL,
+} from "@/lib/signal-intelligence";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -52,15 +47,10 @@ export async function POST(request: Request) {
       connectedAccount.user.plan
     );
 
-    const latestSnapshot = await prisma.metricSnapshot.findFirst({
+    const snapshots = await prisma.metricSnapshot.findMany({
       where: { connectedAccountId: connectedAccount.id, sampleSize },
       orderBy: { fetchedAt: "desc" },
-    });
-
-    const previousSnapshot = await prisma.metricSnapshot.findFirst({
-      where: { connectedAccountId: connectedAccount.id, sampleSize },
-      orderBy: { fetchedAt: "desc" },
-      skip: 1,
+      take: 12,
     });
 
     const posts = await prisma.post.findMany({
@@ -69,39 +59,28 @@ export async function POST(request: Request) {
       take: sampleSize,
     });
 
-    if (!latestSnapshot) {
+    if (!snapshots[0]) {
       return NextResponse.json({
         insight:
           `Refresh metrics for the last ${sampleSize} posts before Signal analyzes this sample.`,
+        meta: {
+          mode: "balanced",
+          dataConfidence: { score: 0, label: "limited" },
+        },
       });
     }
 
-    const followerChange = previousSnapshot
-      ? latestSnapshot.followersCount - previousSnapshot.followersCount
-      : null;
-
-    const engagementRate = calculateEngagementRate(
-      latestSnapshot.totalEngagements,
-      latestSnapshot.totalViews
-    );
-
-    const postsSummary = posts
-      .map(
-        (post, index) => {
-          const views =
-            platform === "facebook"
-              ? "views unavailable"
-              : `${post.viewCount} views`;
-
-          return `${index + 1}. "${post.text.slice(0, 250)}" - ${post.likeCount} likes, ${views}, ${post.replyCount} replies, ${post.retweetCount} reposts, ${post.quoteCount} quotes`;
-        }
-      )
-      .join("\n");
+    const evidence = buildAccountEvidence({
+      platform,
+      requestedSampleSize: sampleSize,
+      snapshots,
+      posts,
+    });
 
     const prompt = `
-You are Signal AI, an intelligent social media growth analyst.
+${BALANCED_INTELLIGENCE_RULES}
 
-Analyze this user's ${platform} account and give ONE useful insight.
+Analyze this user's ${platform} account and give one useful insight.
 
 Your response must contain:
 
@@ -109,42 +88,15 @@ Your response must contain:
 2. Why it matters
 3. One specific next action
 
-Writing rules:
+Start with "Evidence confidence: [label] ([score]/100)."
+Do not expose your hidden reasoning process.
 
-- Be concise, practical, and professional.
-- Use short clear sentences.
-- Never use em dashes or en dashes.
-- Avoid dramatic AI language.
-- Avoid phrases like "unlock growth", "game changer", "skyrocket", or "revolutionary".
-- Do not invent missing information.
-- Do not treat missing data as zero performance.
-- If data is unavailable, clearly say it is unavailable.
-- Give specific actions based only on the available data.
-
-ACCOUNT DATA
-
-Followers: ${latestSnapshot.followersCount}
-Following: ${formatMetric(latestSnapshot.followingCount)}
-Total posts: ${formatMetric(latestSnapshot.postCount)}
-
-Requested recent-post sample: ${sampleSize}
-Posts actually analyzed: ${latestSnapshot.postsAnalyzed}
-Post metric availability: ${latestSnapshot.postMetricsStatus}
-Likes in sample: ${formatMetric(latestSnapshot.totalLikes)}
-Views in sample: ${formatMetric(latestSnapshot.totalViews)}
-Interactions in sample: ${formatMetric(latestSnapshot.totalEngagements)}
-Engagement rate by views: ${engagementRate === null ? "Unavailable" : `${engagementRate.toFixed(1)}%`}
-
-Follower change since previous snapshot:
-${followerChange === null ? "Unavailable" : `${followerChange >= 0 ? "+" : ""}${followerChange}`}
-
-RECENT POSTS
-
-${postsSummary || "No recent posts available."}
+VERIFIED ACCOUNT EVIDENCE
+${JSON.stringify(evidence, null, 2)}
 `;
 
     const response = await gemini.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: SIGNAL_AI_MODEL,
       contents: [
         {
           role: "user",
@@ -158,7 +110,14 @@ ${postsSummary || "No recent posts available."}
         "Signal couldn't generate an insight right now."
     );
 
-    return NextResponse.json({ insight });
+    return NextResponse.json({
+      insight,
+      meta: {
+        mode: evidence.mode,
+        dataConfidence: evidence.dataConfidence,
+        sample: evidence.sample,
+      },
+    });
   } catch (error) {
     console.error("Signal AI insight error:", error);
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
+import { waitForSignalAnalysis } from "@/lib/minimum-duration";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -31,21 +33,39 @@ export default function InsightsChat({
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/insights/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: nextMessages, platform, postLimit: sampleSize }),
-    });
+    try {
+      const [res] = await Promise.all([
+        fetch("/api/insights/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: nextMessages,
+            platform,
+            postLimit: sampleSize,
+          }),
+        }),
+        waitForSignalAnalysis(),
+      ]);
 
-    const data = await res.json();
-    setLoading(false);
+      const data = await res.json();
 
-    if (!res.ok) {
-      setError(data.error || "Something went wrong.");
-      return;
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong.");
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.reply },
+      ]);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Something went wrong."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
   }
 
   return (
@@ -76,8 +96,8 @@ export default function InsightsChat({
           </div>
         ))}
         {loading && (
-          <div className="mr-auto max-w-[85%] rounded-lg bg-paper px-4 py-2 text-sm text-ink-muted">
-            Thinking...
+          <div className="mr-auto w-full max-w-[85%]">
+            <SignalThinkingState compact />
           </div>
         )}
         <div ref={bottomRef} />

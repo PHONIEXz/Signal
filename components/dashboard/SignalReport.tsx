@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
+import { waitForSignalAnalysis } from "@/lib/minimum-duration";
 
 type PlatformNote = {
   platform: string;
@@ -46,7 +48,11 @@ export default function SignalReport({ sampleSize }: { sampleSize: number }) {
     setError("");
 
     try {
-      setReport(await requestReport(sampleSize));
+      const [nextReport] = await Promise.all([
+        requestReport(sampleSize),
+        waitForSignalAnalysis(),
+      ]);
+      setReport(nextReport);
     } catch (err) {
       setError(
         err instanceof Error
@@ -61,8 +67,8 @@ export default function SignalReport({ sampleSize }: { sampleSize: number }) {
   useEffect(() => {
     let cancelled = false;
 
-    requestReport(sampleSize)
-      .then((nextReport) => {
+    Promise.all([requestReport(sampleSize), waitForSignalAnalysis()])
+      .then(([nextReport]) => {
         if (!cancelled) setReport(nextReport);
       })
       .catch((requestError: unknown) => {
@@ -86,25 +92,10 @@ export default function SignalReport({ sampleSize }: { sampleSize: number }) {
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-surface p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy/10 text-navy">
-            ✦
-          </div>
-          <div>
-            <p className="font-display text-lg font-medium text-ink">
-              Signal AI is analyzing your accounts
-            </p>
-            <p className="mt-1 text-sm text-ink-muted">
-              Comparing your latest metrics, history and recent content.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-3">
-          <div className="h-3 animate-pulse rounded bg-paper" />
-          <div className="h-3 w-5/6 animate-pulse rounded bg-paper" />
-          <div className="h-3 w-2/3 animate-pulse rounded bg-paper" />
-        </div>
+        <SignalThinkingState />
+        <p className="mt-3 text-sm text-ink-muted">
+          Comparing every connected account using Balanced Intelligence.
+        </p>
       </div>
     );
   }

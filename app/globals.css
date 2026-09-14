@@ -100,6 +100,20 @@
   82% { transform: translateX(185%) rotate(18deg); }
 }
 
+@keyframes signal-thinking-flow {
+  to { stroke-dashoffset: -52; }
+}
+
+@keyframes signal-thinking-pop {
+  0%, 100% { opacity: 0.28; transform: translateY(0); }
+  50% { opacity: 0.9; transform: translateY(-2px); }
+}
+
+@keyframes signal-thinking-label {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -192,6 +206,23 @@
   .brand-mark:hover .brand-mark-icon {
     box-shadow: 0 18px 34px -16px rgb(23 54 81 / 0.72);
     transform: translateY(-2px) rotate(-2deg) scale(1.035);
+  }
+
+  .signal-thinking-wave {
+    stroke-dasharray: 44 8;
+    animation: signal-thinking-flow 1.15s linear infinite;
+  }
+
+  .signal-thinking-dot {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-amber) 70%, transparent));
+  }
+
+  .signal-thinking-label {
+    animation: signal-thinking-label 0.24s ease-out both;
+  }
+
+  .signal-thinking-bubble {
+    animation: signal-thinking-pop 0.9s ease-in-out infinite;
   }
 
   .surface-card {
