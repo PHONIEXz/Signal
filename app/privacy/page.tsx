@@ -1,15 +1,28 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import BrandMark from "@/components/BrandMark";
+import LegalLinks from "@/components/LegalLinks";
+import SupportContact from "@/components/SupportContact";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | Signal",
+  description: "How Signal collects, uses, protects and deletes account and social analytics data.",
+};
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
-      <Link href="/" className="font-display text-lg font-medium text-ink">
-        Signal
-      </Link>
-      <h1 className="mt-8 font-display text-2xl font-medium text-ink">
+    <main className="min-h-screen px-5 py-8 sm:px-8 sm:py-12">
+      <div className="mx-auto max-w-3xl">
+      <header className="flex items-center justify-between gap-4">
+        <Link href="/login" aria-label="Signal login"><BrandMark /></Link>
+        <Link href="/login" className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-ink transition-colors hover:border-navy/30">Log in</Link>
+      </header>
+      <article className="surface-card mt-10 p-6 sm:p-10">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">Legal</p>
+      <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
         Privacy Policy
       </h1>
-      <p className="mt-2 text-sm text-ink-muted">Last updated: August 2026</p>
+      <p className="mt-2 text-sm text-ink-muted">Last updated: September 2026</p>
 
       <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-ink">
         <section>
@@ -105,11 +118,13 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-2 text-ink-muted">
             Questions about this policy or requests regarding your data can be
-            sent to [your contact email].
+            sent using <SupportContact />.
           </p>
         </section>
       </div>
-    </div>
+      </article>
+      <footer className="mt-8"><LegalLinks /></footer>
+      </div>
+    </main>
   );
 }
-

@@ -1,6 +1,7 @@
 import BrandMark from "./BrandMark";
 import SignalDots from "./SignalDots";
 import ThemeToggle from "./ThemeToggle";
+import LegalLinks from "./LegalLinks";
 
 export default function AuthShell({
   title,
@@ -84,16 +85,9 @@ export default function AuthShell({
               <div className="mt-8">{children}</div>
             </div>
 
-            <footer className="mt-7 flex items-center justify-center gap-3 text-xs text-ink-muted">
-              <a href="/privacy" className="transition-colors hover:text-ink">
-                Privacy
-              </a>
-              <span aria-hidden="true">·</span>
-              <a href="/terms" className="transition-colors hover:text-ink">
-                Terms
-              </a>
-              <span aria-hidden="true">·</span>
-              <span>Built for focused creators</span>
+            <footer className="mt-7 space-y-3 text-center">
+              <LegalLinks />
+              <p className="text-[11px] text-ink-muted">Built for focused creators</p>
             </footer>
           </div>
         </div>
