@@ -15,7 +15,8 @@ export default function SignalScore({ result }: { result: SignalScoreResult }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <div className="surface-card relative overflow-hidden p-5 sm:p-6">
+      <div className="pointer-events-none absolute -left-20 -top-20 h-48 w-48 rounded-full bg-navy/[0.06] blur-3xl" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="font-display text-lg font-medium text-ink">Signal Score</p>
@@ -28,13 +29,20 @@ export default function SignalScore({ result }: { result: SignalScoreResult }) {
         </div>
       </div>
 
-      <div className="mt-6 flex items-center gap-6">
-        <div className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[8px] border-navy/10">
-          <div className="text-center">
+      <div className="relative mt-6 flex flex-col gap-6 sm:flex-row sm:items-center">
+        <div
+          className="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center rounded-full p-[9px] shadow-inner sm:mx-0"
+          style={{ background: `conic-gradient(var(--color-navy) ${(score ?? 0) * 3.6}deg, color-mix(in srgb, var(--color-navy) 10%, transparent) 0deg)` }}
+          role="img"
+          aria-label={score === null ? "Signal Score unavailable" : `Signal Score ${score} out of 100`}
+        >
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-surface shadow-sm">
+            <div className="text-center">
             <p className="font-display text-3xl font-semibold text-ink">
               {score ?? "--"}
             </p>
             <p className="text-[10px] text-ink-muted">/ 100</p>
+            </div>
           </div>
         </div>
 
