@@ -6,6 +6,7 @@ import Link from "next/link";
 import AuthShell from "@/components/AuthShell";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,20 +19,22 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-    setLoading(false);
+      if (result?.error) {
+        setError("Incorrect email or password.");
+        return;
+      }
 
-    if (result?.error) {
-      setError("Incorrect email or password.");
-      return;
-    }
-
-    window.location.href = "/dashboard";
+      window.location.href = "/dashboard";
+    } catch {
+      setError("Could not reach Signal. Please try again.");
+    } finally { setLoading(false); }
   }
 
   return (
@@ -49,16 +52,16 @@ export default function LoginPage() {
           autoComplete="email"
           required
         />
-        <Input
+        <PasswordInput
           id="password"
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           required
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <Link href="/forgot-password" className="self-end text-sm font-semibold text-navy hover:underline">Forgot password?</Link>
+        {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
         <Button type="submit" disabled={loading} className="mt-2">
           {loading ? "Logging in..." : "Log in"}
         </Button>
@@ -87,4 +90,3 @@ export default function LoginPage() {
     </AuthShell>
   );
 }
-

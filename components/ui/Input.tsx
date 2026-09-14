@@ -7,16 +7,15 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export default function Input({ label, id, ...props }: InputProps) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="text-sm font-semibold text-ink">
         {label}
       </label>
       <input
         id={id}
-        className="rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-navy"
+        className="min-h-11 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-ink shadow-sm outline-none transition-all duration-200 placeholder:text-ink-muted/55 hover:border-navy/25 focus:border-navy focus:ring-4 focus:ring-navy/10"
         {...props}
       />
     </div>
   );
 }
-

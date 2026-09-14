@@ -9,79 +9,61 @@ type AccountCardProps = {
   followers: number | null;
 };
 
-const PLATFORM_LABELS: Record<string, string> = {
-  x: "X",
-  facebook: "Facebook",
-  tiktok: "TikTok",
+const PLATFORM_DETAILS: Record<string, { label: string; mark: string; style: string }> = {
+  x: { label: "X", mark: "X", style: "bg-ink text-surface" },
+  facebook: { label: "Facebook", mark: "f", style: "bg-[#1877F2] text-white" },
+  tiktok: { label: "TikTok", mark: "♪", style: "bg-[#111111] text-white" },
 };
 
-export default function AccountCard({
-  platform,
-  followers,
-}: AccountCardProps) {
+export default function AccountCard({ platform, followers }: AccountCardProps) {
   const [unlinking, setUnlinking] = useState(false);
-
-  const platformLabel =
-    PLATFORM_LABELS[platform] ??
-    platform.charAt(0).toUpperCase() + platform.slice(1);
+  const fallbackLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
+  const details = PLATFORM_DETAILS[platform] ?? {
+    label: fallbackLabel,
+    mark: fallbackLabel.charAt(0),
+    style: "bg-navy text-white",
+  };
 
   async function unlinkAccount() {
     const confirmed = window.confirm(
-      `Are you sure you want to unlink your ${platformLabel} account?`
+      `Are you sure you want to unlink your ${details.label} account?`
     );
 
-    if (!confirmed) {
-      return;
-    }
-
+    if (!confirmed) return;
     setUnlinking(true);
 
     try {
-      const response = await fetch(`/api/connect/${platform}`, {
-        method: "DELETE",
-      });
-
+      const response = await fetch(`/api/connect/${platform}`, { method: "DELETE" });
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to unlink account");
-      }
-
+      if (!response.ok) throw new Error(data.error || "Failed to unlink account");
       window.location.reload();
     } catch (error) {
       console.error("Unlink error:", error);
-
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : "Failed to unlink account"
-      );
-
+      window.alert(error instanceof Error ? error.message : "Failed to unlink account");
       setUnlinking(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4">
-      <Link
-        href={`/dashboard/accounts/${platform}`}
-        className="flex min-w-0 flex-1 items-center justify-between"
-      >
-        <div className="flex items-center gap-3">
-          <span
-            className="h-2.5 w-2.5 rounded-full bg-connected"
-            aria-hidden="true"
-          />
+    <div className="surface-card group flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <Link href={`/dashboard/accounts/${platform}`} className="flex min-w-0 flex-1 items-center gap-4">
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-base font-bold shadow-sm ${details.style}`}>
+          {details.mark}
+        </span>
 
-          <span className="font-mono text-sm text-ink">
-            {platformLabel}
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="font-display text-sm font-semibold text-ink">{details.label}</span>
+            <span className="h-2 w-2 rounded-full bg-connected animate-pulse-dot" aria-label="Connected" />
           </span>
-        </div>
+          <span className="mt-1 block text-xs text-ink-muted">
+            {followers !== null ? `${followers.toLocaleString()} followers` : "Connected, waiting for metrics"}
+          </span>
+        </span>
 
-        <span className="text-sm text-ink-muted">
-          {followers !== null
-            ? `${followers.toLocaleString()} followers`
-            : "No data yet"}
+        <span className="mr-2 hidden text-lg text-navy transition-transform duration-200 group-hover:translate-x-1 sm:block" aria-hidden="true">
+          →
         </span>
       </Link>
 
@@ -89,7 +71,7 @@ export default function AccountCard({
         type="button"
         onClick={unlinkAccount}
         disabled={unlinking}
-        className="ml-4 rounded-md border border-red-500/30 px-3 py-1.5 text-xs text-red-500 transition-colors hover:border-red-500 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-xl border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-500 transition-colors hover:border-red-500/45 hover:bg-red-500/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {unlinking ? "Unlinking..." : "Unlink"}
       </button>

@@ -6,6 +6,8 @@ import Link from "next/link";
 import AuthShell from "@/components/AuthShell";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import PasswordInput from "@/components/PasswordInput";
+import { passwordError, PASSWORD_MIN_LENGTH } from "@/lib/auth-policy";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -17,36 +19,42 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    const validation = passwordError(password);
+    if (validation) { setError(validation); return; }
     setLoading(true);
 
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setLoading(false);
+        setError(data.error || "Something went wrong.");
+        return;
+      }
+
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
       setLoading(false);
-      setError(data.error || "Something went wrong.");
-      return;
-    }
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+      if (result?.error) {
+        window.location.href = "/login";
+        return;
+      }
 
-    setLoading(false);
-
-    if (result?.error) {
-      window.location.href = "/login";
-      return;
-    }
-
-    window.location.href = "/dashboard";
+      window.location.href = "/dashboard";
+    } catch {
+      setError("Could not complete signup. Please try again or sign in if the account was created.");
+    } finally { setLoading(false); }
   }
 
   return (
@@ -73,17 +81,18 @@ export default function SignupPage() {
           autoComplete="email"
           required
         />
-        <Input
+        <PasswordInput
           id="password"
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
-          minLength={8}
+          minLength={PASSWORD_MIN_LENGTH}
+          aria-describedby="signup-password-help"
           required
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <p id="signup-password-help" className="text-sm text-ink-muted">Use at least 12 characters. Try a few unrelated words.</p>
+        {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
         <Button type="submit" disabled={loading} className="mt-2">
           {loading ? "Creating account..." : "Create account"}
         </Button>
@@ -112,4 +121,3 @@ export default function SignupPage() {
     </AuthShell>
   );
 }
-
