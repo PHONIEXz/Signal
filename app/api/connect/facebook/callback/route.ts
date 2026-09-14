@@ -1,25 +1,65 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 import { getAccountConnectionAccess } from "@/lib/account-access";
 
-export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", request.url));
+type FacebookTokenResponse = {
+  access_token?: string;
+  error?: { message?: string };
+};
+
+type FacebookPage = {
+  id?: string;
+  name?: string;
+  access_token?: string;
+  tasks?: string[];
+};
+
+type FacebookPagesResponse = {
+  data?: FacebookPage[];
+  error?: { message?: string };
+};
+
+export async function GET(request: NextRequest) {
+  const appUrl = process.env.APP_URL?.replace(/\/+$/, "");
+  const facebookAppId = process.env.FACEBOOK_APP_ID;
+  const facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
+
+  if (!appUrl || !facebookAppId || !facebookAppSecret) {
+    return NextResponse.json(
+      { error: "Facebook connection is not configured" },
+      { status: 500 }
+    );
   }
 
-  const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
+  function redirect(path: string, clearState = false) {
+    const response = NextResponse.redirect(new URL(path, appUrl));
+    if (clearState) response.cookies.delete("fb_oauth_state");
+    return response;
+  }
 
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const storedState = cookieHeader.match(/fb_oauth_state=([^;]+)/)?.[1];
+  const session = await auth();
+  if (!session?.user?.id) {
+    return redirect("/login", true);
+  }
 
-  if (!code || !state || state !== storedState) {
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=facebook_connect_failed", request.url)
+  const code = request.nextUrl.searchParams.get("code");
+  const state = request.nextUrl.searchParams.get("state");
+  const oauthError = request.nextUrl.searchParams.get("error");
+  const storedState = request.cookies.get("fb_oauth_state")?.value;
+
+  if (oauthError) {
+    return redirect(
+      "/dashboard/accounts?error=facebook_authorization_denied",
+      true
+    );
+  }
+
+  if (!code || !state || !storedState || state !== storedState) {
+    return redirect(
+      "/dashboard/accounts?error=facebook_state_mismatch",
+      true
     );
   }
 
@@ -29,45 +69,83 @@ export async function GET(request: Request) {
   );
 
   if (!connectionAccess.allowed) {
-    const response = NextResponse.redirect(
-      new URL("/dashboard/accounts?error=free_account_limit", request.url)
-    );
-    response.cookies.delete("fb_oauth_state");
-    return response;
+    return redirect("/dashboard/accounts?error=free_account_limit", true);
   }
 
-  const redirectUri = `${process.env.APP_URL}/api/connect/facebook/callback`;
+  const redirectUri = `${appUrl}/api/connect/facebook/callback`;
+  let stage = "authorization-code exchange";
 
   try {
-    // Step 1: exchange the code for a short-lived user access token
-    const shortLivedRes = await fetch(
-      `https://graph.facebook.com/v25.0/oauth/access_token?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${process.env.FACEBOOK_APP_SECRET}&code=${code}`
+    const shortLivedUrl = new URL(
+      "https://graph.facebook.com/v26.0/oauth/access_token"
     );
-    if (!shortLivedRes.ok) throw new Error("Failed to exchange code for a token");
-    const shortLivedData = await shortLivedRes.json();
+    shortLivedUrl.searchParams.set("client_id", facebookAppId);
+    shortLivedUrl.searchParams.set("client_secret", facebookAppSecret);
+    shortLivedUrl.searchParams.set("redirect_uri", redirectUri);
+    shortLivedUrl.searchParams.set("code", code);
 
-    // Step 2: exchange for a long-lived user access token (~60 days)
-    const longLivedRes = await fetch(
-      `https://graph.facebook.com/v25.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.FACEBOOK_APP_ID}&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${shortLivedData.access_token}`
-    );
-    if (!longLivedRes.ok) throw new Error("Failed to get a long-lived token");
-    const longLivedData = await longLivedRes.json();
+    const shortLivedRes = await fetch(shortLivedUrl, { cache: "no-store" });
+    const shortLivedData = (await shortLivedRes.json()) as FacebookTokenResponse;
 
-    // Step 3: get the Pages this user manages, with a Page-specific access token for each
-    const pagesRes = await fetch(
-      `https://graph.facebook.com/v25.0/me/accounts?access_token=${longLivedData.access_token}`
-    );
-    if (!pagesRes.ok) throw new Error("Failed to fetch Pages");
-    const pagesData = await pagesRes.json();
-
-    const page = pagesData.data?.[0];
-    if (!page) {
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=no_facebook_page", request.url)
+    if (!shortLivedRes.ok || !shortLivedData.access_token) {
+      throw new Error(
+        shortLivedData.error?.message ?? "Facebook rejected the authorization code"
       );
     }
 
-    // Page tokens derived from a long-lived user token don't expire under normal use
+    stage = "long-lived token exchange";
+    const longLivedUrl = new URL(
+      "https://graph.facebook.com/v26.0/oauth/access_token"
+    );
+    longLivedUrl.searchParams.set("grant_type", "fb_exchange_token");
+    longLivedUrl.searchParams.set("client_id", facebookAppId);
+    longLivedUrl.searchParams.set("client_secret", facebookAppSecret);
+    longLivedUrl.searchParams.set(
+      "fb_exchange_token",
+      shortLivedData.access_token
+    );
+
+    const longLivedRes = await fetch(longLivedUrl, { cache: "no-store" });
+    const longLivedData = (await longLivedRes.json()) as FacebookTokenResponse;
+
+    if (!longLivedRes.ok || !longLivedData.access_token) {
+      throw new Error(
+        longLivedData.error?.message ?? "Facebook rejected the token exchange"
+      );
+    }
+
+    stage = "managed Page discovery";
+    const pagesUrl = new URL("https://graph.facebook.com/v26.0/me/accounts");
+    pagesUrl.searchParams.set("fields", "id,name,access_token,tasks");
+    pagesUrl.searchParams.set("limit", "100");
+
+    const pagesRes = await fetch(pagesUrl, {
+      headers: { Authorization: `Bearer ${longLivedData.access_token}` },
+      cache: "no-store",
+    });
+    const pagesData = (await pagesRes.json()) as FacebookPagesResponse;
+
+    if (!pagesRes.ok) {
+      throw new Error(
+        pagesData.error?.message ?? "Facebook rejected the Page request"
+      );
+    }
+
+    const page = pagesData.data?.find(
+      (candidate) => candidate.id && candidate.access_token
+    );
+
+    if (!page?.id || !page.access_token) {
+      console.warn(
+        "Facebook connection found no manageable Pages. Check Page full control, business portfolio assignment, and pages_show_list approval."
+      );
+      return redirect(
+        "/dashboard/accounts?error=facebook_no_managed_pages",
+        true
+      );
+    }
+
+    stage = "account storage";
     await prisma.connectedAccount.upsert({
       where: {
         userId_platform: { userId: session.user.id, platform: "facebook" },
@@ -75,6 +153,7 @@ export async function GET(request: Request) {
       update: {
         accessToken: encrypt(page.access_token),
         platformUserId: page.id,
+        displayName: page.name ?? "Facebook Page",
         expiresAt: null,
       },
       create: {
@@ -82,16 +161,19 @@ export async function GET(request: Request) {
         platform: "facebook",
         accessToken: encrypt(page.access_token),
         platformUserId: page.id,
+        displayName: page.name ?? "Facebook Page",
       },
     });
 
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    response.cookies.delete("fb_oauth_state");
-    return response;
-  } catch {
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=facebook_connect_failed", request.url)
+    return redirect("/dashboard/accounts?connected=facebook", true);
+  } catch (error) {
+    console.error(
+      `Facebook connection failed during ${stage}:`,
+      error instanceof Error ? error.message : "Unknown error"
+    );
+    return redirect(
+      "/dashboard/accounts?error=facebook_connect_failed",
+      true
     );
   }
 }
-
