@@ -4,6 +4,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import BrandMark from "@/components/BrandMark";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import LegalLinks from "@/components/LegalLinks";
 
 export default async function DashboardLayout({
   children,
@@ -43,6 +44,12 @@ export default async function DashboardLayout({
         <main id="dashboard-content" tabIndex={-1} className="animate-rise-in px-4 py-7 pb-28 sm:px-7 sm:py-9 sm:pb-10 lg:px-10 lg:py-11">
           {children}
         </main>
+        <footer className="border-t border-border/70 px-4 py-7 pb-28 sm:px-7 sm:pb-7 lg:px-10">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">
+            <p className="text-xs text-ink-muted">© {new Date().getFullYear()} Signal</p>
+            <LegalLinks />
+          </div>
+        </footer>
       </div>
     </div>
   );
