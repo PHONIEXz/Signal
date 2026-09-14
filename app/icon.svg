@@ -1,18 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
   <style>
-    .signal-wave {
+    .wave {
       stroke-dasharray: 44 8;
-      animation: wave 3.2s linear infinite;
+      animation: flow 3.2s linear infinite;
     }
-    .signal-halo,
-    .signal-dot {
+    .halo {
+      opacity: .3;
       transform-box: fill-box;
       transform-origin: center;
-    }
-    .signal-halo {
       animation: pulse 2.2s ease-out infinite;
     }
-    @keyframes wave {
+    @keyframes flow {
       to { stroke-dashoffset: -52; }
     }
     @keyframes pulse {
@@ -20,16 +18,16 @@
       50% { opacity: 0; transform: scale(1.55); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .signal-wave,
-      .signal-halo { animation: none; }
-      .signal-halo { opacity: 0; }
+      .wave,
+      .halo { animation: none; }
+      .halo { opacity: 0; }
     }
   </style>
   <rect width="40" height="40" rx="14" fill="#214b76"/>
   <rect x="4.5" y="4.5" width="31" height="31" rx="10" stroke="#fff" stroke-opacity=".15"/>
   <g transform="translate(6 6) scale(.875)">
-    <path class="signal-wave" d="M5 20.5c3.4 0 3.4-9 6.8-9s3.4 12 6.8 12 3.4-15 6.8-15" stroke="#fff" stroke-width="2.3" stroke-linecap="round"/>
-    <circle class="signal-halo" cx="25.4" cy="8.5" r="4.2" fill="#eb8a47" opacity=".3"/>
-    <circle class="signal-dot" cx="25.4" cy="8.5" r="2.4" fill="#eb8a47"/>
+    <path class="wave" d="M5 20.5c3.4 0 3.4-9 6.8-9s3.4 12 6.8 12 3.4-15 6.8-15" stroke="#fff" stroke-width="2.3" stroke-linecap="round"/>
+    <circle class="halo" cx="25.4" cy="8.5" r="4.2" fill="#eb8a47"/>
+    <circle cx="25.4" cy="8.5" r="2.4" fill="#eb8a47"/>
   </g>
 </svg>
