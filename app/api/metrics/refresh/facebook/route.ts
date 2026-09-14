@@ -36,9 +36,15 @@ export async function POST(request: Request) {
     const accessToken = decrypt(connectedAccount.accessToken);
     const pageId = connectedAccount.platformUserId;
 
-    const pageRes = await fetch(
-      `https://graph.facebook.com/v25.0/${pageId}?fields=followers_count&access_token=${accessToken}`
-    );
+    const pageUrl = new URL(`https://graph.facebook.com/v26.0/${pageId}`);
+    pageUrl.searchParams.set("fields", "followers_count");
+
+    const facebookRequest = {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store" as const,
+    };
+
+    const pageRes = await fetch(pageUrl, facebookRequest);
     if (!pageRes.ok) {
       return NextResponse.json({ error: "Facebook API request failed" }, { status: 502 });
     }
@@ -49,9 +55,16 @@ export async function POST(request: Request) {
     let postsAnalyzed = 0;
     let postMetricsStatus = "UNAVAILABLE";
 
-    const postsRes = await fetch(
-      `https://graph.facebook.com/v25.0/${pageId}/posts?fields=message,created_time,reactions.summary(total_count),comments.summary(total_count),shares&limit=${postLimit}&access_token=${accessToken}`
+    const postsUrl = new URL(
+      `https://graph.facebook.com/v26.0/${pageId}/posts`
     );
+    postsUrl.searchParams.set(
+      "fields",
+      "message,created_time,reactions.summary(total_count),comments.summary(total_count),shares"
+    );
+    postsUrl.searchParams.set("limit", String(postLimit));
+
+    const postsRes = await fetch(postsUrl, facebookRequest);
 
     if (postsRes.ok) {
       const postsData = await postsRes.json();
