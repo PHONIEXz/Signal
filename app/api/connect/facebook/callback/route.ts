@@ -1,25 +1,48 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 import { getAccountConnectionAccess } from "@/lib/account-access";
 
-export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", request.url));
+export async function GET(request: NextRequest) {
+  const appUrl = process.env.APP_URL?.replace(/\/+$/, "");
+  const facebookAppId = process.env.FACEBOOK_APP_ID;
+  const facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
+
+  if (!appUrl || !facebookAppId || !facebookAppSecret) {
+    return NextResponse.json(
+      {
+        error:
+          "Missing APP_URL, FACEBOOK_APP_ID, or FACEBOOK_APP_SECRET",
+      },
+      { status: 500 }
+    );
   }
 
-  const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
+  function redirect(path: string, clearState = false) {
+    const response = NextResponse.redirect(new URL(path, appUrl));
 
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const storedState = cookieHeader.match(/fb_oauth_state=([^;]+)/)?.[1];
+    if (clearState) {
+      response.cookies.delete("fb_oauth_state");
+    }
 
-  if (!code || !state || state !== storedState) {
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=facebook_connect_failed", request.url)
+    return response;
+  }
+
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return redirect("/login", true);
+  }
+
+  const code = request.nextUrl.searchParams.get("code");
+  const state = request.nextUrl.searchParams.get("state");
+  const storedState = request.cookies.get("fb_oauth_state")?.value;
+
+  if (!code || !state || !storedState || state !== storedState) {
+    return redirect(
+      "/dashboard/accounts?error=facebook_connect_failed",
+      true
     );
   }
 
@@ -29,48 +52,103 @@ export async function GET(request: Request) {
   );
 
   if (!connectionAccess.allowed) {
-    const response = NextResponse.redirect(
-      new URL("/dashboard/accounts?error=free_account_limit", request.url)
+    return redirect(
+      "/dashboard/accounts?error=free_account_limit",
+      true
     );
-    response.cookies.delete("fb_oauth_state");
-    return response;
   }
 
-  const redirectUri = `${process.env.APP_URL}/api/connect/facebook/callback`;
+  const redirectUri = `${appUrl}/api/connect/facebook/callback`;
 
   try {
-    // Step 1: exchange the code for a short-lived user access token
-    const shortLivedRes = await fetch(
-      `https://graph.facebook.com/v25.0/oauth/access_token?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${process.env.FACEBOOK_APP_SECRET}&code=${code}`
+    const shortLivedUrl = new URL(
+      "https://graph.facebook.com/v25.0/oauth/access_token"
     );
-    if (!shortLivedRes.ok) throw new Error("Failed to exchange code for a token");
+
+    shortLivedUrl.searchParams.set("client_id", facebookAppId);
+    shortLivedUrl.searchParams.set(
+      "client_secret",
+      facebookAppSecret
+    );
+    shortLivedUrl.searchParams.set("redirect_uri", redirectUri);
+    shortLivedUrl.searchParams.set("code", code);
+
+    const shortLivedRes = await fetch(shortLivedUrl, {
+      cache: "no-store",
+    });
     const shortLivedData = await shortLivedRes.json();
 
-    // Step 2: exchange for a long-lived user access token (~60 days)
-    const longLivedRes = await fetch(
-      `https://graph.facebook.com/v25.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${process.env.FACEBOOK_APP_ID}&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${shortLivedData.access_token}`
-    );
-    if (!longLivedRes.ok) throw new Error("Failed to get a long-lived token");
-    const longLivedData = await longLivedRes.json();
-
-    // Step 3: get the Pages this user manages, with a Page-specific access token for each
-    const pagesRes = await fetch(
-      `https://graph.facebook.com/v25.0/me/accounts?access_token=${longLivedData.access_token}`
-    );
-    if (!pagesRes.ok) throw new Error("Failed to fetch Pages");
-    const pagesData = await pagesRes.json();
-
-    const page = pagesData.data?.[0];
-    if (!page) {
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=no_facebook_page", request.url)
+    if (!shortLivedRes.ok || !shortLivedData.access_token) {
+      throw new Error(
+        shortLivedData?.error?.message ??
+          "Failed to exchange Facebook authorization code"
       );
     }
 
-    // Page tokens derived from a long-lived user token don't expire under normal use
+    const longLivedUrl = new URL(
+      "https://graph.facebook.com/v25.0/oauth/access_token"
+    );
+
+    longLivedUrl.searchParams.set(
+      "grant_type",
+      "fb_exchange_token"
+    );
+    longLivedUrl.searchParams.set("client_id", facebookAppId);
+    longLivedUrl.searchParams.set(
+      "client_secret",
+      facebookAppSecret
+    );
+    longLivedUrl.searchParams.set(
+      "fb_exchange_token",
+      shortLivedData.access_token
+    );
+
+    const longLivedRes = await fetch(longLivedUrl, {
+      cache: "no-store",
+    });
+    const longLivedData = await longLivedRes.json();
+
+    if (!longLivedRes.ok || !longLivedData.access_token) {
+      throw new Error(
+        longLivedData?.error?.message ??
+          "Failed to obtain a long-lived Facebook token"
+      );
+    }
+
+    const pagesUrl = new URL(
+      "https://graph.facebook.com/v25.0/me/accounts"
+    );
+    pagesUrl.searchParams.set("fields", "id,name,access_token");
+
+    const pagesRes = await fetch(pagesUrl, {
+      headers: {
+        Authorization: `Bearer ${longLivedData.access_token}`,
+      },
+      cache: "no-store",
+    });
+    const pagesData = await pagesRes.json();
+
+    if (!pagesRes.ok) {
+      throw new Error(
+        pagesData?.error?.message ?? "Failed to fetch Facebook Pages"
+      );
+    }
+
+    const page = pagesData.data?.[0];
+
+    if (!page?.id || !page?.access_token) {
+      return redirect(
+        "/dashboard/accounts?error=no_facebook_page",
+        true
+      );
+    }
+
     await prisma.connectedAccount.upsert({
       where: {
-        userId_platform: { userId: session.user.id, platform: "facebook" },
+        userId_platform: {
+          userId: session.user.id,
+          platform: "facebook",
+        },
       },
       update: {
         accessToken: encrypt(page.access_token),
@@ -85,13 +163,16 @@ export async function GET(request: Request) {
       },
     });
 
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    response.cookies.delete("fb_oauth_state");
-    return response;
-  } catch {
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=facebook_connect_failed", request.url)
+    return redirect("/dashboard", true);
+  } catch (error) {
+    console.error(
+      "Facebook connection failed:",
+      error instanceof Error ? error.message : error
+    );
+
+    return redirect(
+      "/dashboard/accounts?error=facebook_connect_failed",
+      true
     );
   }
 }
-
