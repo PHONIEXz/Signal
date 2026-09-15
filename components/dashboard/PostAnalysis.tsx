@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
+import { waitForSignalAnalysis } from "@/lib/minimum-duration";
 
 type PostData = {
   id: string;
@@ -53,16 +55,19 @@ export default function PostAnalysis({
     setError("");
 
     try {
-      const response = await fetch("/api/insights/post", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          postId: post.id,
-          messages: nextMessages,
+      const [response] = await Promise.all([
+        fetch("/api/insights/post", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId: post.id,
+            messages: nextMessages,
+          }),
         }),
-      });
+        waitForSignalAnalysis(),
+      ]);
 
       const data = await response.json();
 
@@ -221,8 +226,8 @@ export default function PostAnalysis({
             ))}
 
             {loading && (
-              <div className="mr-auto rounded-lg bg-paper px-4 py-3 text-sm text-ink-muted">
-                Signal is analyzing your post...
+              <div className="mr-auto w-full max-w-[90%]">
+                <SignalThinkingState compact />
               </div>
             )}
           </div>

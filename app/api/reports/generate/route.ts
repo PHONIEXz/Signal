@@ -2,17 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
+import { normalizeSampleSize } from "@/lib/metrics";
 import {
-  normalizeSampleSize,
-  summarizePosts,
-} from "@/lib/metrics";
-
-function cleanAiText(value: string) {
-  return value
-    .replace(/[—–]/g, "-")
-    .replace(/\u2014|\u2013/g, "-")
-    .trim();
-}
+  BALANCED_INTELLIGENCE_RULES,
+  buildAccountEvidence,
+  cleanAiText,
+  SIGNAL_AI_MODEL,
+} from "@/lib/signal-intelligence";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -45,7 +41,7 @@ export async function POST(request: Request) {
       include: {
         metricSnapshots: {
           orderBy: { fetchedAt: "desc" },
-          take: 2,
+          take: 12,
         },
         posts: {
           orderBy: { postedAt: "desc" },
@@ -63,49 +59,20 @@ export async function POST(request: Request) {
     }
 
     const accountData = connections.map((account) => {
-      const current = account.metricSnapshots[0];
-      const previous = account.metricSnapshots[1];
-      const postMetrics = summarizePosts(account.posts, account.platform);
-
       return {
-        platform: account.platform,
         displayName: account.displayName,
-        requestedPostSample: sampleSize,
-        current: current
-          ? {
-              followers: current.followersCount,
-              following: current.followingCount,
-              posts: current.postCount,
-              selectedPostLikes: postMetrics.likes,
-              selectedPostViews: postMetrics.views,
-              selectedPostEngagements: postMetrics.engagements,
-              selectedPostEngagementRate: postMetrics.engagementRate,
-              postsAnalyzed: postMetrics.postsAnalyzed,
-              fetchedAt: current.fetchedAt.toISOString(),
-            }
-          : null,
-        previous: previous
-          ? {
-              followers: previous.followersCount,
-              following: previous.followingCount,
-              posts: previous.postCount,
-              fetchedAt: previous.fetchedAt.toISOString(),
-            }
-          : null,
-        recentPosts: account.posts.map((post) => ({
-          text: post.text.slice(0, 280),
-          likes: post.likeCount,
-          views: post.viewCount,
-          replies: post.replyCount,
-          reposts: post.retweetCount,
-          quotes: post.quoteCount,
-          tags: post.tags,
-          postedAt: post.postedAt?.toISOString() ?? null,
-        })),
+        evidence: buildAccountEvidence({
+          platform: account.platform,
+          requestedSampleSize: sampleSize,
+          snapshots: account.metricSnapshots,
+          posts: account.posts,
+        }),
       };
     });
 
-    const prompt = `You are Signal AI, the analytics and growth intelligence engine inside a social media dashboard.
+    const prompt = `${BALANCED_INTELLIGENCE_RULES}
+
+You are Signal AI, the analytics and growth intelligence engine inside a social media dashboard.
 
 Create a concise but useful cross-platform performance report from ONLY the supplied data.
 
@@ -145,7 +112,7 @@ ${JSON.stringify(accountData, null, 2)}
 `;
 
     const response = await gemini.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+      model: SIGNAL_AI_MODEL,
       contents: [
         {
           role: "user",

@@ -1,6 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
+import { waitForSignalAnalysis } from "@/lib/minimum-duration";
+
+async function requestInsight(platform: string) {
+  const response = await fetch("/api/insights/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ platform }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to generate insight");
+  }
+
+  return data.insight as string;
+}
 
 export default function AIInsight({
   platform = "x",
@@ -16,23 +36,11 @@ export default function AIInsight({
     setError("");
 
     try {
-      const response = await fetch("/api/insights/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ platform }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to generate insight"
-        );
-      }
-
-      setInsight(data.insight);
+      const [nextInsight] = await Promise.all([
+        requestInsight(platform),
+        waitForSignalAnalysis(),
+      ]);
+      setInsight(nextInsight);
     } catch (error) {
       setError(
         error instanceof Error
@@ -45,7 +53,28 @@ export default function AIInsight({
   }
 
   useEffect(() => {
-    generateInsight();
+    let cancelled = false;
+
+    Promise.all([requestInsight(platform), waitForSignalAnalysis()])
+      .then(([nextInsight]) => {
+        if (!cancelled) setInsight(nextInsight);
+      })
+      .catch((requestError: unknown) => {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Something went wrong."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [platform]);
 
   return (
@@ -76,11 +105,7 @@ export default function AIInsight({
 
       <div className="mt-5">
         {loading ? (
-          <div className="space-y-3">
-            <div className="h-3 w-4/5 animate-pulse rounded bg-paper" />
-            <div className="h-3 w-full animate-pulse rounded bg-paper" />
-            <div className="h-3 w-3/5 animate-pulse rounded bg-paper" />
-          </div>
+          <SignalThinkingState />
         ) : error ? (
           <div>
             <p className="text-sm text-red-600">
@@ -114,4 +139,3 @@ export default function AIInsight({
     </div>
   );
 }
-

@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
-import { normalizeSampleSize, summarizePosts } from "@/lib/metrics";
-
-function cleanAiText(value: string) {
-  return value.replace(/[—–]/g, "-").trim();
-}
+import { normalizeSampleSize } from "@/lib/metrics";
+import {
+  BALANCED_INTELLIGENCE_RULES,
+  buildAccountEvidence,
+  cleanAiText,
+  SIGNAL_AI_MODEL,
+} from "@/lib/signal-intelligence";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -48,14 +50,10 @@ export async function POST(request: Request) {
     connectedAccount.user.plan
   );
 
-  const latestSnapshot = await prisma.metricSnapshot.findFirst({
+  const snapshots = await prisma.metricSnapshot.findMany({
     where: { connectedAccountId: connectedAccount.id, sampleSize },
     orderBy: { fetchedAt: "desc" },
-  });
-
-  const oldestSnapshot = await prisma.metricSnapshot.findFirst({
-    where: { connectedAccountId: connectedAccount.id, sampleSize },
-    orderBy: { fetchedAt: "asc" },
+    take: 12,
   });
 
   const posts = await prisma.post.findMany({
@@ -63,21 +61,12 @@ export async function POST(request: Request) {
     orderBy: { postedAt: "desc" },
     take: sampleSize,
   });
-  const postMetrics = summarizePosts(posts, platform);
-
-  const followerChange =
-    latestSnapshot && oldestSnapshot
-      ? latestSnapshot.followersCount - oldestSnapshot.followersCount
-      : null;
-
-  const postsSummary = posts
-    .map((p, i) => {
-      const tags = p.tags ? ` [tags: ${p.tags}]` : "";
-
-      const views = platform === "facebook" ? "views unavailable" : `${p.viewCount} views`;
-      return `${i + 1}. "${p.text.slice(0, 200)}"${tags} - ${p.likeCount} likes, ${views}, ${p.replyCount} replies, ${p.retweetCount} reposts, ${p.quoteCount} quotes`;
-    })
-    .join("\n");
+  const evidence = buildAccountEvidence({
+    platform,
+    requestedSampleSize: sampleSize,
+    snapshots,
+    posts,
+  });
 
   const platformLabel =
     platform === "x"
@@ -86,41 +75,29 @@ export async function POST(request: Request) {
         ? "Facebook Page"
         : platform;
 
-  const systemPrompt = `You are Signal AI, a social media growth assistant built into this user's analytics dashboard for their ${platformLabel} account.
+  const systemPrompt = `${BALANCED_INTELLIGENCE_RULES}
 
-Answer questions helpfully and specifically using the data below.
-Writing rules:
+You are answering questions inside the user's ${platformLabel} analytics dashboard.
+Answer from the verified evidence below. When useful, structure the answer as Observation, Interpretation and Next move.
+Do not expose your hidden reasoning process.
 
-- Be concise unless the user requests detail.
-- Use professional natural language.
-- Never use em dashes or en dashes.
-- Avoid generic motivational statements.
-- Do not exaggerate results.
-- Do not make assumptions beyond the available analytics.
-- Explain missing data clearly.
-
-Current stats:
-- Followers: ${latestSnapshot?.followersCount ?? "unknown"}
-- Following: ${latestSnapshot?.followingCount ?? "unknown"}
-- Total posts: ${latestSnapshot?.postCount ?? "unknown"}
-- Requested recent-post sample: ${sampleSize}
-- Posts actually available: ${posts.length}
-- Likes in available sample: ${postMetrics.likes ?? "unknown"}
-- Views in available sample: ${postMetrics.views ?? "unknown"}
-- Interactions in available sample: ${postMetrics.engagements ?? "unknown"}
-- Engagement rate by views: ${postMetrics.engagementRate === null ? "unknown" : `${postMetrics.engagementRate.toFixed(1)}%`}
-${followerChange !== null ? `- Follower change since tracking began: ${followerChange > 0 ? "+" : ""}${followerChange}` : ""}
-
-Recent posts (most recent ${posts.length}), including any tags the user has added:
-${postsSummary || "No posts recorded yet."}`;
+VERIFIED ACCOUNT EVIDENCE
+${JSON.stringify(evidence, null, 2)}`;
 
   try {
     const response = await gemini.models.generateContent({
-      model: "gemini-3.5-flash-lite",
-      contents: messages.map((m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
+      model: SIGNAL_AI_MODEL,
+      contents: messages
+        .filter(
+          (message: { role?: unknown; content?: unknown }) =>
+            (message.role === "user" || message.role === "assistant") &&
+            typeof message.content === "string"
+        )
+        .slice(-10)
+        .map((message: { role: string; content: string }) => ({
+          role: message.role === "assistant" ? "model" : "user",
+          parts: [{ text: message.content.slice(0, 2_000) }],
+        })),
       config: {
         systemInstruction: systemPrompt,
       },
@@ -128,6 +105,11 @@ ${postsSummary || "No posts recorded yet."}`;
 
     return NextResponse.json({
       reply: cleanAiText(response.text ?? ""),
+      meta: {
+        mode: evidence.mode,
+        dataConfidence: evidence.dataConfidence,
+        sample: evidence.sample,
+      },
     });
   } catch (err) {
     return NextResponse.json(

@@ -1,6 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
+import { waitForSignalAnalysis } from "@/lib/minimum-duration";
+
+type AnalysisResponse = {
+  insight: string;
+  meta?: {
+    mode?: string;
+    dataConfidence?: {
+      score?: number;
+      label?: string;
+    };
+  };
+};
 
 async function requestAnalysis(platform: string, sampleSize: number) {
   const response = await fetch("/api/insights/generate", {
@@ -20,7 +33,7 @@ async function requestAnalysis(platform: string, sampleSize: number) {
     throw new Error(data.error || "Failed to generate analysis");
   }
 
-  return data.insight as string;
+  return data as AnalysisResponse;
 }
 
 export default function AccountAIAnalysis({
@@ -33,13 +46,22 @@ export default function AccountAIAnalysis({
   const [insight, setInsight] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confidence, setConfidence] = useState<{
+    score?: number;
+    label?: string;
+  } | null>(null);
 
   async function generateAnalysis() {
     setLoading(true);
     setError("");
 
     try {
-      setInsight(await requestAnalysis(platform, sampleSize));
+      const [result] = await Promise.all([
+        requestAnalysis(platform, sampleSize),
+        waitForSignalAnalysis(),
+      ]);
+      setInsight(result.insight);
+      setConfidence(result.meta?.dataConfidence ?? null);
     } catch (error) {
       setError(
         error instanceof Error
@@ -54,9 +76,15 @@ export default function AccountAIAnalysis({
   useEffect(() => {
     let cancelled = false;
 
-    requestAnalysis(platform, sampleSize)
-      .then((nextInsight) => {
-        if (!cancelled) setInsight(nextInsight);
+    Promise.all([
+      requestAnalysis(platform, sampleSize),
+      waitForSignalAnalysis(),
+    ])
+      .then(([result]) => {
+        if (!cancelled) {
+          setInsight(result.insight);
+          setConfidence(result.meta?.dataConfidence ?? null);
+        }
       })
       .catch((requestError: unknown) => {
         if (!cancelled) {
@@ -89,18 +117,22 @@ export default function AccountAIAnalysis({
           </p>
         </div>
 
-        <span className="rounded-md border border-border px-2 py-1 text-xs text-ink-muted">
-          AI
-        </span>
+        <div className="flex items-center gap-2">
+          {confidence?.label && !loading && (
+            <span className="rounded-md border border-border px-2 py-1 text-xs capitalize text-ink-muted">
+              {confidence.label} evidence
+              {typeof confidence.score === "number" ? ` ${confidence.score}%` : ""}
+            </span>
+          )}
+          <span className="rounded-md border border-navy/15 bg-navy/5 px-2 py-1 text-xs font-medium text-navy">
+            Balanced
+          </span>
+        </div>
       </div>
 
       <div className="mt-5">
         {loading ? (
-          <div className="space-y-3">
-            <div className="h-3 w-full animate-pulse rounded bg-paper" />
-            <div className="h-3 w-5/6 animate-pulse rounded bg-paper" />
-            <div className="h-3 w-2/3 animate-pulse rounded bg-paper" />
-          </div>
+          <SignalThinkingState />
         ) : error ? (
           <div>
             <p className="text-sm text-red-600">
