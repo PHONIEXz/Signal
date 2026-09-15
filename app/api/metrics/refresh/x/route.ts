@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     // Step 1: account-level stats + confirm the platform user ID
     const meRes = await fetch(
-      "https://api.x.com/2/users/me?user.fields=public_metrics",
+      "https://api.x.com/2/users/me?user.fields=public_metrics,name,username,profile_image_url",
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
@@ -53,10 +53,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unexpected response from X" }, { status: 502 });
     }
 
-    if (connectedAccount.platformUserId !== platformUserId) {
+    const displayName =
+      typeof meData.data?.name === "string"
+        ? meData.data.name
+        : typeof meData.data?.username === "string"
+          ? `@${meData.data.username}`
+          : connectedAccount.displayName;
+
+    if (
+      connectedAccount.platformUserId !== platformUserId ||
+      connectedAccount.displayName !== displayName
+    ) {
       await prisma.connectedAccount.update({
         where: { id: connectedAccount.id },
-        data: { platformUserId },
+        data: { platformUserId, displayName },
       });
     }
 

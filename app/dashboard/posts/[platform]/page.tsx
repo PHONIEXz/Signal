@@ -82,6 +82,7 @@ export default async function PlatformPostsPage({
           retweetCount: p.retweetCount,
           quoteCount: p.quoteCount,
           tags: p.tags,
+          url: p.permalinkUrl ?? p.url,
         }))}
       />
 

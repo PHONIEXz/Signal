@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const accessToken = await getValidTikTokAccessToken(connectedAccount.id);
 
     const userRes = await fetch(
-      "https://open.tiktokapis.com/v2/user/info/?fields=open_id,follower_count,following_count,likes_count,video_count",
+      "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,avatar_url,follower_count,following_count,likes_count,video_count",
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
@@ -49,6 +49,25 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Unexpected response from TikTok" }, { status: 502 });
+    }
+
+    const displayName =
+      typeof user.display_name === "string"
+        ? user.display_name
+        : connectedAccount.displayName;
+    const platformUserId =
+      typeof user.open_id === "string"
+        ? user.open_id
+        : connectedAccount.platformUserId;
+
+    if (
+      connectedAccount.displayName !== displayName ||
+      connectedAccount.platformUserId !== platformUserId
+    ) {
+      await prisma.connectedAccount.update({
+        where: { id: connectedAccount.id },
+        data: { displayName, platformUserId },
+      });
     }
 
     let totalLikes: number | null = null;

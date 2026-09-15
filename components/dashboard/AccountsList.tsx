@@ -3,6 +3,7 @@ import AccountCard from "@/components/dashboard/AccountCard";
 type Connection = {
   id: string;
   platform: string;
+  displayName: string | null;
   createdAt: Date;
   followers: number | null;
 };
@@ -68,7 +69,13 @@ export default function AccountsList({ connections, plan }: { connections: Conne
         ) : (
           <div className="mt-4 flex flex-col gap-3">
             {connections.map((connection) => (
-              <AccountCard key={connection.id} id={connection.id} platform={connection.platform} followers={connection.followers} />
+              <AccountCard
+                key={connection.id}
+                id={connection.id}
+                platform={connection.platform}
+                displayName={connection.displayName}
+                followers={connection.followers}
+              />
             ))}
           </div>
         )}

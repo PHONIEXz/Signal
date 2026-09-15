@@ -60,6 +60,7 @@ export default async function DashboardPage({
   const accounts = connections.map((connection) => ({
     id: connection.id,
     platform: connection.platform,
+    displayName: connection.displayName,
     followers: connection.metricSnapshots[0]?.followersCount ?? null,
     snapshot: connection.metricSnapshots[0] ?? null,
     previousSnapshot: connection.metricSnapshots[1] ?? null,
@@ -201,6 +202,7 @@ export default async function DashboardPage({
               key={account.id}
               id={account.id}
               platform={account.platform}
+              displayName={account.displayName}
               followers={account.followers}
             />
           ))}

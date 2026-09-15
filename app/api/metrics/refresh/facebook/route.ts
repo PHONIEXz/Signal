@@ -3,6 +3,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { normalizeSampleSize } from "@/lib/metrics";
+import {
+  facebookApiErrorCode,
+  facebookPostsWarning,
+  type FacebookPostPayload,
+  normalizeFacebookPost,
+} from "@/lib/platform-data";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -37,7 +43,7 @@ export async function POST(request: Request) {
     const pageId = connectedAccount.platformUserId;
 
     const pageUrl = new URL(`https://graph.facebook.com/v26.0/${pageId}`);
-    pageUrl.searchParams.set("fields", "followers_count");
+    pageUrl.searchParams.set("fields", "name,followers_count");
 
     const facebookRequest = {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -50,17 +56,28 @@ export async function POST(request: Request) {
     }
     const pageData = await pageRes.json();
 
+    if (
+      typeof pageData.name === "string" &&
+      pageData.name !== connectedAccount.displayName
+    ) {
+      await prisma.connectedAccount.update({
+        where: { id: connectedAccount.id },
+        data: { displayName: pageData.name },
+      });
+    }
+
     let totalLikes: number | null = null;
     let totalEngagements: number | null = null;
     let postsAnalyzed = 0;
     let postMetricsStatus = "UNAVAILABLE";
+    let postsWarning: string | null = null;
 
     const postsUrl = new URL(
       `https://graph.facebook.com/v26.0/${pageId}/posts`
     );
     postsUrl.searchParams.set(
       "fields",
-      "message,created_time,reactions.summary(total_count),comments.summary(total_count),shares"
+      "message,created_time,permalink_url,reactions.summary(total_count),comments.summary(total_count),shares"
     );
     postsUrl.searchParams.set("limit", String(postLimit));
 
@@ -68,24 +85,15 @@ export async function POST(request: Request) {
 
     if (postsRes.ok) {
       const postsData = await postsRes.json();
-      const posts: Array<{
-        id: string;
-        message?: string;
-        created_time?: string;
-        reactions?: { summary?: { total_count?: number } };
-        comments?: { summary?: { total_count?: number } };
-        shares?: { count?: number };
-      }> = postsData.data ?? [];
+      const posts: FacebookPostPayload[] = postsData.data ?? [];
 
       totalLikes = 0;
       totalEngagements = 0;
 
       for (const post of posts) {
-        const likeCount = post.reactions?.summary?.total_count ?? 0;
-        const replyCount = post.comments?.summary?.total_count ?? 0;
-        const retweetCount = post.shares?.count ?? 0;
-        totalLikes += likeCount;
-        totalEngagements += likeCount + replyCount + retweetCount;
+        const normalized = normalizeFacebookPost(post);
+        totalLikes += normalized.likeCount;
+        totalEngagements += normalized.engagementCount;
 
         await prisma.post.upsert({
           where: {
@@ -95,25 +103,37 @@ export async function POST(request: Request) {
             },
           },
           update: {
-            text: post.message ?? "(No text)",
-            likeCount,
-            replyCount,
-            retweetCount,
-            postedAt: post.created_time ? new Date(post.created_time) : null,
+            text: normalized.text,
+            url: normalized.url,
+            permalinkUrl: normalized.url,
+            likeCount: normalized.likeCount,
+            replyCount: normalized.replyCount,
+            retweetCount: normalized.shareCount,
+            postedAt: normalized.postedAt,
           },
           create: {
             connectedAccountId: connectedAccount.id,
             platformPostId: post.id,
-            text: post.message ?? "(No text)",
-            likeCount,
-            replyCount,
-            retweetCount,
-            postedAt: post.created_time ? new Date(post.created_time) : null,
+            text: normalized.text,
+            url: normalized.url,
+            permalinkUrl: normalized.url,
+            likeCount: normalized.likeCount,
+            replyCount: normalized.replyCount,
+            retweetCount: normalized.shareCount,
+            postedAt: normalized.postedAt,
           },
         });
       }
       postsAnalyzed = posts.length;
       postMetricsStatus = "PARTIAL";
+    } else {
+      const errorPayload = await postsRes.json().catch(() => null);
+      const errorCode = facebookApiErrorCode(errorPayload);
+      postsWarning = facebookPostsWarning(errorCode);
+      console.warn("Facebook Page posts unavailable", {
+        status: postsRes.status,
+        code: errorCode,
+      });
     }
 
     await prisma.metricSnapshot.create({
@@ -137,7 +157,7 @@ export async function POST(request: Request) {
       postsAnalyzed,
       warning:
         postMetricsStatus === "UNAVAILABLE"
-          ? "Page followers were updated, but recent post metrics were unavailable."
+          ? postsWarning
           : "Facebook views and total post count are not available from this connection.",
     });
   } catch (err) {

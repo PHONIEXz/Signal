@@ -6,6 +6,7 @@ import Link from "next/link";
 type AccountCardProps = {
   id: string;
   platform: string;
+  displayName: string | null;
   followers: number | null;
 };
 
@@ -15,8 +16,9 @@ const PLATFORM_DETAILS: Record<string, { label: string; mark: string; style: str
   tiktok: { label: "TikTok", mark: "♪", style: "bg-[#111111] text-white" },
 };
 
-export default function AccountCard({ platform, followers }: AccountCardProps) {
+export default function AccountCard({ id, platform, displayName, followers }: AccountCardProps) {
   const [unlinking, setUnlinking] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const fallbackLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
   const details = PLATFORM_DETAILS[platform] ?? {
     label: fallbackLabel,
@@ -48,16 +50,29 @@ export default function AccountCard({ platform, followers }: AccountCardProps) {
   return (
     <div className="surface-card group flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
       <Link href={`/dashboard/accounts/${platform}`} className="flex min-w-0 flex-1 items-center gap-4">
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-base font-bold shadow-sm ${details.style}`}>
+        <span className={`relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-base font-bold shadow-sm ${details.style}`}>
           {details.mark}
+          {!imageFailed && (
+            // This same-origin route authenticates before redirecting to the provider image.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/accounts/${id}/profile-image`}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={() => setImageFailed(true)}
+            />
+          )}
         </span>
 
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="font-display text-sm font-semibold text-ink">{details.label}</span>
+            <span className="truncate font-display text-sm font-semibold text-ink">
+              {displayName || details.label}
+            </span>
             <span className="h-2 w-2 rounded-full bg-connected animate-pulse-dot" aria-label="Connected" />
           </span>
           <span className="mt-1 block text-xs text-ink-muted">
+            {displayName && <>{details.label} · </>}
             {followers !== null ? `${followers.toLocaleString()} followers` : "Connected, waiting for metrics"}
           </span>
         </span>
