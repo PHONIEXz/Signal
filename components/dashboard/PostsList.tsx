@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import MeasurementHistory, { type MeasurementPoint } from "./MeasurementHistory";
 
 type Post = {
   id: string;
@@ -12,9 +13,10 @@ type Post = {
   quoteCount: number | null;
   tags: string | null;
   url: string | null;
+  measurements?: MeasurementPoint[];
 };
 
-export default function PostsList({ posts }: { posts: Post[] }) {
+export default function PostsList({ posts, platform }: { posts: Post[]; platform?: string }) {
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>(
     Object.fromEntries(posts.map((p) => [p.id, p.tags ?? ""]))
   );
@@ -33,8 +35,7 @@ export default function PostsList({ posts }: { posts: Post[] }) {
   if (posts.length === 0) {
     return (
       <p className="text-sm text-ink-muted">
-        No posts recorded yet - click Refresh on the Overview page to pull
-        your recent posts.
+        No posts recorded yet. Retrieve recent posts above or import a CSV.
       </p>
     );
   }
@@ -48,7 +49,7 @@ export default function PostsList({ posts }: { posts: Post[] }) {
         >
           <p className="text-sm text-ink">{post.text}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
-            <span>{post.likeCount === null ? "Reactions unavailable" : `${post.likeCount.toLocaleString()} likes`}</span>
+            <span>{post.likeCount === null ? `${platform === "facebook" ? "Reactions" : "Likes"} unavailable` : `${post.likeCount.toLocaleString()} ${platform === "facebook" ? "reactions" : "likes"}`}</span>
             <span>
               {post.viewCount === null
                 ? "Views unavailable"
@@ -60,6 +61,8 @@ export default function PostsList({ posts }: { posts: Post[] }) {
               <span>{post.quoteCount.toLocaleString()} quotes</span>
             )}
           </div>
+          <p className="mt-3 text-xs text-ink-muted">Source: {post.measurements?.[0]?.source ?? "Unverified legacy"}. Measured: {post.measurements?.[0] ? new Date(post.measurements[0].capturedAt).toLocaleString("en-US") : "Unknown"}.</p>
+          {post.measurements && post.measurements.length > 0 && <MeasurementHistory points={post.measurements} platform={platform} />}
           {post.url && (
             <a
               href={post.url}

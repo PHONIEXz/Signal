@@ -1,3 +1,4 @@
+import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     platform,
     requestedSampleSize: sampleSize,
     snapshots,
-    posts,
+    posts: await attachMeasurementEvidence(posts),
   });
 
   const platformLabel =

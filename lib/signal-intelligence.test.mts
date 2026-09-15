@@ -128,3 +128,19 @@ test("single-post evidence marks causation and missing account data limits", () 
 test("AI text cleanup removes long dash characters", () => {
   assert.equal(cleanAiText("Signal — clear – useful"), "Signal - clear - useful");
 });
+
+test("partial evidence retains measured views and zeros while identifying CSV and missing counts", () => {
+  const evidence = buildAccountEvidence({
+    platform: "x", requestedSampleSize: 5,
+    snapshots: [{ ...snapshots[0], postMetricsStatus: "PARTIAL" }],
+    posts: [{ ...posts[0], likeCount: 0, replyCount: null, measurements: [{ source: "CSV", capturedAt: new Date("2026-09-14T12:00:00Z") }] }],
+  });
+  assert.equal(evidence.recentPostSummary.views, 200);
+  assert.equal(evidence.recentPostSummary.likes, 0);
+  assert.equal(evidence.recentPostSummary.engagements, null);
+  assert.equal(evidence.recentPostSummary.averageEngagementsPerAvailablePost, null);
+  assert.equal(evidence.recentPosts[0].source, "CSV");
+  assert.equal(evidence.recentPosts[0].measuredAt, "2026-09-14T12:00:00.000Z");
+  assert.ok(evidence.dataConfidence.score <= 70);
+  assert.ok(evidence.dataConfidence.limitations.some(limit => limit.includes("user-supplied")));
+});

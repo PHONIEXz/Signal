@@ -109,7 +109,7 @@ export default function MetricsPanel({
               <Stat label="Account posts" value={snapshot.postCount} />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
-              <Stat label="Sample likes" value={snapshot.totalLikes} />
+              <Stat label={platform === "facebook" ? "Sample reactions" : "Sample likes"} value={snapshot.totalLikes} />
               <Stat label="Sample views" value={snapshot.totalViews} />
               <Stat
                 label="Engagement by views"
@@ -127,7 +127,7 @@ export default function MetricsPanel({
               {snapshot.sampleSize
                 ? ` from the requested last ${snapshot.sampleSize}`
                 : ""}
-              .
+              . Counts are cumulative at measurement time; the selected posts may change between refreshes.
             </p>
             {snapshot.postMetricsStatus !== "AVAILABLE" && (
               <p className="mt-2 text-xs text-amber-600">

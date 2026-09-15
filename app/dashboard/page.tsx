@@ -89,7 +89,7 @@ export default async function DashboardPage({
     (sum, account) => sum + (account.postMetrics.engagements ?? 0),
     0
   );
-  const followersForRate = viewEligible.reduce(
+  const followersForRate = viewEligible.some(account => account.followers === null) ? null : viewEligible.reduce(
     (sum, account) => sum + (account.followers ?? 0),
     0
   );
@@ -99,7 +99,7 @@ export default async function DashboardPage({
   );
   const engagementRate = calculateEngagementRate(
     viewEligible.length ? engagementsForRate : null,
-    totalViews.value
+    viewEligible.length ? viewEligible.reduce((sum, account) => sum + account.postMetrics.views!, 0) : null
   );
 
   const pairedSnapshots = accounts.filter(
@@ -129,11 +129,11 @@ export default async function DashboardPage({
     : 0;
   const activityDataAvailable = accounts.every(
     (account) =>
-      account.snapshot && !["UNAVAILABLE", "CONTENT_ONLY", "EMPTY"].includes(account.snapshot.postMetricsStatus)
+      account.snapshot && !["UNAVAILABLE", "CONTENT_ONLY", "EMPTY", "LEGACY"].includes(account.snapshot.postMetricsStatus)
   );
   const averageViewsPerPost =
-    totalViews.value !== null && postsForRate > 0
-      ? totalViews.value / postsForRate
+    viewEligible.length && postsForRate > 0
+      ? viewEligible.reduce((sum, account) => sum + account.postMetrics.views!, 0) / postsForRate
       : null;
   const score = calculateSignalScore({
     engagementRate,
@@ -227,7 +227,7 @@ export default async function DashboardPage({
         />
 
         <SummaryCard
-          label={`Likes from selected last ${sampleSize}`}
+          label={`Likes/reactions from selected last ${sampleSize}`}
           value={totalLikes.value}
           note={totalLikes.complete ? undefined : "Partial across connected platforms"}
         />

@@ -1,3 +1,4 @@
+import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -58,17 +59,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const accountData = connections.map((account) => {
+    const accountData = await Promise.all(connections.map(async (account) => {
       return {
         displayName: account.displayName,
         evidence: buildAccountEvidence({
           platform: account.platform,
           requestedSampleSize: sampleSize,
           snapshots: account.metricSnapshots,
-          posts: account.posts,
+          posts: await attachMeasurementEvidence(account.posts),
         }),
       };
-    });
+    }));
 
     const prompt = `${BALANCED_INTELLIGENCE_RULES}
 

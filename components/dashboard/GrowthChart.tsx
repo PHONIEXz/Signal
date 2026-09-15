@@ -39,7 +39,7 @@ const metrics = {
 
 type MetricKey = keyof typeof metrics;
 
-export default function GrowthChart({ data }: { data: Point[] }) {
+export default function GrowthChart({ data, platform }: { data: Point[]; platform?: string }) {
   const [activeMetric, setActiveMetric] =
     useState<MetricKey>("followers");
 
@@ -47,7 +47,7 @@ export default function GrowthChart({ data }: { data: Point[] }) {
   const previous = data[data.length - 2];
 
   const values = useMemo(() => {
-    if (!current || !previous) {
+    if (!current || !previous || activeMetric === "likes" || activeMetric === "views") {
       return {
         change: null,
         percentage: null,
@@ -106,7 +106,7 @@ export default function GrowthChart({ data }: { data: Point[] }) {
               </span>
 
               <span className="text-sm text-ink-muted">
-                {metrics[activeMetric].label}
+                {activeMetric === "likes" ? platform === "facebook" ? "Sample reactions" : "Sample likes" : activeMetric === "views" ? "Sample views" : metrics[activeMetric].label}
               </span>
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function GrowthChart({ data }: { data: Point[] }) {
                   : "border border-border text-ink-muted hover:text-ink"
               }`}
             >
-              {metrics[key].label}
+              {key === "likes" ? platform === "facebook" ? "Sample reactions" : "Sample likes" : key === "views" ? "Sample views" : metrics[key].label}
             </button>
           ))}
         </div>
@@ -176,6 +176,7 @@ export default function GrowthChart({ data }: { data: Point[] }) {
         </div>
       </div>
 
+      {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
       <div className="mt-6 h-56">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
