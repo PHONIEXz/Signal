@@ -1,3 +1,4 @@
+-- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT,
@@ -12,6 +13,7 @@ CREATE TABLE "User" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- CreateTable
 CREATE TABLE "PasswordResetToken" (
     "userId" TEXT NOT NULL PRIMARY KEY,
     "tokenHash" TEXT NOT NULL,
@@ -19,12 +21,14 @@ CREATE TABLE "PasswordResetToken" (
     CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "AuthRateLimit" (
     "key" TEXT NOT NULL PRIMARY KEY,
     "count" INTEGER NOT NULL,
     "expiresAt" DATETIME NOT NULL
 );
 
+-- CreateTable
 CREATE TABLE "ConnectedAccount" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL,
@@ -39,6 +43,7 @@ CREATE TABLE "ConnectedAccount" (
     CONSTRAINT "ConnectedAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "ContentDraft" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL,
@@ -51,6 +56,7 @@ CREATE TABLE "ContentDraft" (
     CONSTRAINT "ContentDraft_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "ContentDraftTarget" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "contentDraftId" TEXT NOT NULL,
@@ -59,6 +65,7 @@ CREATE TABLE "ContentDraftTarget" (
     CONSTRAINT "ContentDraftTarget_connectedAccountId_fkey" FOREIGN KEY ("connectedAccountId") REFERENCES "ConnectedAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "Post" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "connectedAccountId" TEXT NOT NULL,
@@ -67,16 +74,17 @@ CREATE TABLE "Post" (
     "url" TEXT,
     "tags" TEXT,
     "permalinkUrl" TEXT,
-    "likeCount" INTEGER,
-    "viewCount" INTEGER,
-    "replyCount" INTEGER,
-    "retweetCount" INTEGER,
-    "quoteCount" INTEGER,
+    "likeCount" INTEGER NOT NULL DEFAULT 0,
+    "viewCount" INTEGER NOT NULL DEFAULT 0,
+    "replyCount" INTEGER NOT NULL DEFAULT 0,
+    "retweetCount" INTEGER NOT NULL DEFAULT 0,
+    "quoteCount" INTEGER NOT NULL DEFAULT 0,
     "postedAt" DATETIME,
     "fetchedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Post_connectedAccountId_fkey" FOREIGN KEY ("connectedAccountId") REFERENCES "ConnectedAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "MetricSnapshot" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "connectedAccountId" TEXT NOT NULL,
@@ -93,6 +101,7 @@ CREATE TABLE "MetricSnapshot" (
     CONSTRAINT "MetricSnapshot_connectedAccountId_fkey" FOREIGN KEY ("connectedAccountId") REFERENCES "ConnectedAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "Account" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL,
@@ -109,6 +118,7 @@ CREATE TABLE "Account" (
     CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "Session" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "sessionToken" TEXT NOT NULL,
@@ -117,11 +127,54 @@ CREATE TABLE "Session" (
     CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- CreateTable
 CREATE TABLE "VerificationToken" (
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" DATETIME NOT NULL
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "PasswordResetToken_expiresAt_idx" ON "PasswordResetToken"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "AuthRateLimit_expiresAt_idx" ON "AuthRateLimit"("expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ConnectedAccount_userId_platform_key" ON "ConnectedAccount"("userId", "platform");
+
+-- CreateIndex
+CREATE INDEX "ContentDraft_userId_scheduledFor_idx" ON "ContentDraft"("userId", "scheduledFor");
+
+-- CreateIndex
+CREATE INDEX "ContentDraftTarget_connectedAccountId_idx" ON "ContentDraftTarget"("connectedAccountId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ContentDraftTarget_contentDraftId_connectedAccountId_key" ON "ContentDraftTarget"("contentDraftId", "connectedAccountId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Post_connectedAccountId_platformPostId_key" ON "Post"("connectedAccountId", "platformPostId");
+
+-- CreateIndex
+CREATE INDEX "MetricSnapshot_connectedAccountId_sampleSize_fetchedAt_idx" ON "MetricSnapshot"("connectedAccountId", "sampleSize", "fetchedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
 
 CREATE TABLE "ContentPublication" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -139,83 +192,5 @@ CREATE TABLE "ContentPublication" (
     CONSTRAINT "ContentPublication_contentDraftId_fkey" FOREIGN KEY ("contentDraftId") REFERENCES "ContentDraft" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "ContentPublication_connectedAccountId_fkey" FOREIGN KEY ("connectedAccountId") REFERENCES "ConnectedAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-CREATE TABLE "PostMeasurement" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "postId" TEXT NOT NULL,
-    "source" TEXT NOT NULL,
-    "sampleId" TEXT NOT NULL,
-    "capturedAt" DATETIME NOT NULL,
-    "likeCount" INTEGER,
-    "viewCount" INTEGER,
-    "replyCount" INTEGER,
-    "retweetCount" INTEGER,
-    "quoteCount" INTEGER,
-    "rawLegacy" TEXT,
-    CONSTRAINT "PostMeasurement_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE "MetricSync" (
-    "connectedAccountId" TEXT NOT NULL PRIMARY KEY,
-    "lockId" TEXT,
-    "lockUntil" DATETIME,
-    "nextAllowedAt" DATETIME,
-    "lastAttemptAt" DATETIME,
-    "lastSuccessAt" DATETIME,
-    "source" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'NEVER',
-    "requestedPosts" INTEGER NOT NULL DEFAULT 0,
-    "receivedPosts" INTEGER NOT NULL DEFAULT 0,
-    "missingFields" TEXT,
-    "warning" TEXT,
-    CONSTRAINT "MetricSync_connectedAccountId_fkey" FOREIGN KEY ("connectedAccountId") REFERENCES "ConnectedAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE TABLE "PageInsight" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "connectedAccountId" TEXT NOT NULL,
-    "metric" TEXT NOT NULL,
-    "period" TEXT NOT NULL,
-    "periodEnd" DATETIME NOT NULL,
-    "value" INTEGER NOT NULL,
-    "fetchedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "PageInsight_connectedAccountId_fkey" FOREIGN KEY ("connectedAccountId") REFERENCES "ConnectedAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
-CREATE UNIQUE INDEX "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash");
-
-CREATE INDEX "PasswordResetToken_expiresAt_idx" ON "PasswordResetToken"("expiresAt");
-
-CREATE INDEX "AuthRateLimit_expiresAt_idx" ON "AuthRateLimit"("expiresAt");
-
-CREATE UNIQUE INDEX "ConnectedAccount_userId_platform_key" ON "ConnectedAccount"("userId", "platform");
-
-CREATE INDEX "ContentDraft_userId_scheduledFor_idx" ON "ContentDraft"("userId", "scheduledFor");
-
-CREATE INDEX "ContentDraftTarget_connectedAccountId_idx" ON "ContentDraftTarget"("connectedAccountId");
-
-CREATE UNIQUE INDEX "ContentDraftTarget_contentDraftId_connectedAccountId_key" ON "ContentDraftTarget"("contentDraftId", "connectedAccountId");
-
-CREATE UNIQUE INDEX "Post_connectedAccountId_platformPostId_key" ON "Post"("connectedAccountId", "platformPostId");
-
-CREATE INDEX "MetricSnapshot_connectedAccountId_sampleSize_fetchedAt_idx" ON "MetricSnapshot"("connectedAccountId", "sampleSize", "fetchedAt");
-
-CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
-
-CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
-
-CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
-
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
-
-CREATE INDEX "ContentPublication_connectedAccountId_status_idx" ON "ContentPublication"("connectedAccountId", "status");
-
 CREATE UNIQUE INDEX "ContentPublication_contentDraftId_connectedAccountId_key" ON "ContentPublication"("contentDraftId", "connectedAccountId");
-
-CREATE INDEX "PostMeasurement_postId_source_capturedAt_idx" ON "PostMeasurement"("postId", "source", "capturedAt");
-
-CREATE UNIQUE INDEX "PostMeasurement_postId_sampleId_key" ON "PostMeasurement"("postId", "sampleId");
-
-CREATE UNIQUE INDEX "PageInsight_connectedAccountId_metric_period_periodEnd_key" ON "PageInsight"("connectedAccountId", "metric", "period", "periodEnd");
+CREATE INDEX "ContentPublication_connectedAccountId_status_idx" ON "ContentPublication"("connectedAccountId", "status");

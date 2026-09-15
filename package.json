@@ -22,7 +22,9 @@
     "test:auth:http": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/auth-smoke.mts",
     "dev:reset-link": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/dev-reset-link.mts",
     "db:turso:upgrade-publishing": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-publishing-upgrade.mts",
-    "test:publishing": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/content-publishing.test.mts"
+    "test:publishing": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/content-publishing.test.mts",
+    "db:turso:upgrade-metrics": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-metrics-upgrade.mts",
+    "test:metrics-history": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/metrics-history.test.mts lib/metrics-storage.test.mts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

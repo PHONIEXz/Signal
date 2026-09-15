@@ -1,3 +1,4 @@
+import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
 
   const evidence = buildPostEvidence({
     platform: account.platform,
-    post,
+    post: (await attachMeasurementEvidence([post]))[0],
     latestSnapshot,
   });
 

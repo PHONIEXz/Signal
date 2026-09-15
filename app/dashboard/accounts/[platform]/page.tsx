@@ -1,3 +1,5 @@
+import { postEngagement } from "@/lib/metric-measurements";
+import SyncDetails from "@/components/dashboard/SyncDetails";
 import AccountAIAnalysis from "@/components/dashboard/AccountAIAnalysis";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -53,8 +55,8 @@ export default async function AccountDetailPage({
       day: "numeric",
     }),
     followers: s.followersCount,
-    likes: s.totalLikes,
-    views: s.totalViews,
+    likes: s.postMetricsStatus === "LEGACY" ? null : s.totalLikes,
+    views: s.postMetricsStatus === "LEGACY" ? null : s.totalViews,
     posts: s.postCount,
   }));
 
@@ -63,11 +65,7 @@ export default async function AccountDetailPage({
     orderBy: { postedAt: "desc" },
     take: sampleSize,
   });
-  const topPost = latestSnapshot?.postMetricsStatus === "CONTENT_ONLY" ? undefined : sampledPosts.sort(
-    (a, b) =>
-      b.likeCount + b.replyCount + b.retweetCount + b.quoteCount -
-      (a.likeCount + a.replyCount + a.retweetCount + a.quoteCount)
-  )[0];
+  const topPost = sampledPosts.filter(p => postEngagement(p) !== null).sort((a,b) => postEngagement(b)! - postEngagement(a)!)[0];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -84,9 +82,9 @@ export default async function AccountDetailPage({
                 followersCount: latestSnapshot.followersCount,
                 followingCount: latestSnapshot.followingCount,
                 postCount: latestSnapshot.postCount,
-                totalLikes: latestSnapshot.totalLikes,
-                totalViews: latestSnapshot.totalViews,
-                totalEngagements: latestSnapshot.totalEngagements,
+                totalLikes: latestSnapshot.postMetricsStatus === "LEGACY" ? null : latestSnapshot.totalLikes,
+                totalViews: latestSnapshot.postMetricsStatus === "LEGACY" ? null : latestSnapshot.totalViews,
+                totalEngagements: latestSnapshot.postMetricsStatus === "LEGACY" ? null : latestSnapshot.totalEngagements,
                 postsAnalyzed: latestSnapshot.postsAnalyzed,
                 sampleSize: latestSnapshot.sampleSize,
                 postMetricsStatus: latestSnapshot.postMetricsStatus,
@@ -95,7 +93,8 @@ export default async function AccountDetailPage({
             : null
         }
       />
-      <GrowthChart data={growthData} />
+      <SyncDetails accountId={connectedAccount.id} />
+      <GrowthChart data={growthData} platform={platform} />
 
       <AccountAIAnalysis
         key={`${platform}-${sampleSize}`}
@@ -103,7 +102,7 @@ export default async function AccountDetailPage({
         sampleSize={sampleSize}
       />
 
-      <TopPost
+      <TopPost platform={platform}
         post={
           topPost
             ? {

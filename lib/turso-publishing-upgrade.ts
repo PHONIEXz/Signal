@@ -1,7 +1,11 @@
 import type { Client } from "@libsql/client";
+import { readFileSync } from "node:fs";
 import { hashSchema, checkTursoSchema } from "./turso-setup.ts";
 const PREVIOUS_BASELINE = "b4a41a9cd87df114661840ba969b27c2923848f255c98c16386c6fd697d66696";
 export async function upgradePublishing(client: Client, sql: string, migration: string) {
+  const upgraded = await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='MetricSync'");
+  if (upgraded.rows.length) { await checkTursoSchema(client, sql); return; }
+  sql = readFileSync(new URL("../prisma/turso/pre-metrics.sql", import.meta.url), "utf8");
   const previous = sql.slice(0, sql.indexOf('\nCREATE TABLE "ContentPublication"')).trimEnd() + "\n";
   await checkTursoSchema(client, previous);
   const tx = await client.transaction("write");

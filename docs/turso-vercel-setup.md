@@ -40,7 +40,7 @@ npm run db:turso:setup
 npm run db:turso:check
 ```
 
-`setup` initializes only an empty database. Its CREATE-only baseline and marker are written in one transaction; it does not replay old Prisma table rewrites. It refuses unrelated existing tables and never copies or deletes local data. Repeating setup on the same intact baseline preserves existing records. `check` verifies the connection, required tables/columns/indexes, and foreign-key integrity without changing data. Neither command prints tokens or account records. A fresh database reports 11 Signal tables.
+`setup` initializes only an empty database. Its CREATE-only baseline and marker are written in one transaction; it does not replay old Prisma table rewrites. It refuses unrelated existing tables and never copies or deletes local data. Repeating setup on the same intact baseline preserves existing records. `check` verifies the connection, required tables/columns/indexes, and foreign-key integrity without changing data. Neither command prints tokens or account records. A fresh database reports 15 Signal tables.
 
 If authentication fails, check that the token is valid for this database and has write access for setup. If tables already exist without the Signal setup marker, stop and inspect their origin. Do not delete them to bypass the guard.
 
@@ -52,7 +52,7 @@ Initializing Turso makes tables, not copies of your existing accounts, drafts or
 npm run db:turso:transfer -- --app-stopped
 ```
 
-The command saves original.db and transfer.db in a private, Git-ignored `.backup-turso-*` directory. It applies pending Prisma migrations only to transfer.db, checks local integrity and token decryption, then copies all 11 application tables in a single remote transaction. Password hashes, IDs, dates and encrypted tokens are preserved. Every column value is compared before commit. A retry accepts an identical destination; different existing records stop the transfer without overwriting anything. Migration metadata stays local. No secret values are logged.
+The command saves original.db and transfer.db in a private, Git-ignored `.backup-turso-*` directory. It applies pending Prisma migrations only to transfer.db, checks local integrity and token decryption, then copies all 15 application tables in a single remote transaction. Password hashes, IDs, dates and encrypted tokens are preserved. Every column value is compared before commit. A retry accepts an identical destination; different existing records stop the transfer without overwriting anything. Migration metadata stays local. No secret values are logged.
 
 Keep the app stopped until the command reports verified success and you switch to Turso. Do not sign up or write to the destination before copying. Remote transaction limits can cause a large transfer to fail and roll back; send the error for a staged migration if retries cannot finish. Backups contain private records and should stay on your machine. Keep your original TOKEN_ENCRYPTION_KEY and use it on Vercel too. No new dependencies are needed for this command.
 
@@ -101,3 +101,7 @@ Update Google, Facebook, X and TikTok callback allowlists to the stable Vercel U
 ## Verification performed
 
 Local libSQL tests exercise schema creation, repeat setup preserving records, refusal of populated unknown databases, rollback on invalid schema SQL, required-column detection, Prisma writes/reads and transactions, and provider selection. The password-recovery suite also passes with explicit local isolation. These tests do not prove your remote token, network path, provider quotas, or production deployment work: `db:turso:check` on your laptop is the next remote check.
+
+## Metrics history upgrade
+
+Existing databases require the reviewed metrics upgrade before the new collector writes measurements. See [metrics collection and migration steps](metrics-collection.md). Run the publishing upgrade first if the database still has eleven application tables; the metrics upgrade takes the twelve-table baseline to fifteen tables and archives ambiguous legacy post counters.

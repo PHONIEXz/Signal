@@ -173,6 +173,35 @@ try {
   assert.equal((await session(await login(codePassword))).user.email, email);
   const studioSession = await login(codePassword);
   assert.equal((await fetch(base + "/dashboard/content", { headers: { Cookie: studioSession } })).status, 200);
+  const xAccount = await prisma.connectedAccount.create({ data: { userId: owner.id, platform: "x", platformUserId: "123", displayName: "Fixture X", accessToken: "test-only" } });
+  const metricRequest = (path: string, body: object, cookie = studioSession, origin = base) => fetch(base + path, {
+    method: "POST", headers: { "Content-Type": "application/json", Origin: origin, Cookie: cookie }, body: JSON.stringify(body),
+  });
+  const csvBody = { csv: "platform_post_id,text,likes,views,comments,shares,quotes\n987,Imported fixture,0,,1,0,0", capturedAt: new Date().toISOString() };
+  assert.equal((await metricRequest("/api/metrics/refresh/x", {}, "")).status, 401);
+  assert.equal((await metricRequest("/api/metrics/import/x", csvBody, studioSession, "https://untrusted.example")).status, 403);
+  assert.equal((await metricRequest("/api/metrics/import/x", csvBody)).status, 200);
+  assert.equal(await prisma.post.count(), 0);
+  assert.equal((await metricRequest("/api/metrics/import/x", { ...csvBody, confirm: true })).status, 200);
+  const imported = await prisma.post.findFirstOrThrow({ where: { connectedAccountId: xAccount.id } });
+  assert.equal(imported.likeCount, 0); assert.equal(imported.viewCount, null);
+  assert.equal(await prisma.metricSnapshot.count(), 0);
+  assert.equal((await metricRequest("/api/metrics/import/x", { ...csvBody, confirm: true })).status, 429);
+  const cached = await metricRequest("/api/metrics/refresh/x", {});
+  assert.equal(cached.status, 200); assert.equal((await cached.json()).cached, true);
+  assert.equal(await prisma.postMeasurement.count(), 1);
+  const postsPage = await fetch(base + "/dashboard/posts/x", { headers: { Cookie: studioSession } });
+  assert.equal(postsPage.status, 200);
+  assert.match(await postsPage.text(), /Measurement history/);
+  const other = await prisma.user.create({ data: { email: "other-owner@example.com" } });
+  await prisma.connectedAccount.create({ data: { userId: other.id, platform: "facebook", accessToken: "test-only" } });
+  assert.equal((await metricRequest("/api/metrics/import/facebook", csvBody)).status, 404);
+  await prisma.user.update({ where: { id: owner.id }, data: { analyticsCollectionEnabled: false } });
+  assert.equal((await metricRequest("/api/metrics/refresh/x", {})).status, 403);
+  await prisma.user.update({ where: { id: owner.id }, data: { analyticsCollectionEnabled: true } });
+  await prisma.$executeRawUnsafe('DROP TABLE "MetricSync"');
+  const metricsMissing = await metricRequest("/api/metrics/refresh/x", {});
+  assert.equal(metricsMissing.status, 503); assert.equal((await metricsMissing.json()).code, "METRICS_SCHEMA_PENDING");
   await prisma.$executeRawUnsafe('DROP TABLE "ContentPublication"');
   const studioMissing = await fetch(base + "/dashboard/content", { headers: { Cookie: studioSession } });
   assert.equal(studioMissing.status, 200);
@@ -181,7 +210,7 @@ try {
   assert.equal(missingApi.status, 503);
   assert.equal((await missingApi.json()).code, "STUDIO_SCHEMA_PENDING");
   assert.equal((await draftRequest("/api/drafts", draftPayload, "POST", studioSession)).status, 503);
-  console.log("HTTP smoke passed: email code/reset/reuse/session revocation, draft validation/history, optional Google, password changes, forms/icons and sign-in.");
+  console.log("HTTP smoke passed: metrics import/ownership/cooldown/history/schema protection, email code/reset/reuse/session revocation, draft validation/history, optional Google, password changes, forms/icons and sign-in.");
 } finally {
   server.kill("SIGTERM");
   if (server.exitCode === null) await once(server, "exit");
