@@ -64,7 +64,7 @@ export default async function DashboardPage({
     followers: connection.metricSnapshots[0]?.followersCount ?? null,
     snapshot: connection.metricSnapshots[0] ?? null,
     previousSnapshot: connection.metricSnapshots[1] ?? null,
-    postMetrics: summarizePosts(connection.posts, connection.platform),
+    postMetrics: summarizePosts(connection.metricSnapshots[0]?.postMetricsStatus === "CONTENT_ONLY" ? [] : connection.posts, connection.platform),
   }));
 
   const totalFollowers = sumAvailable(
@@ -129,7 +129,7 @@ export default async function DashboardPage({
     : 0;
   const activityDataAvailable = accounts.every(
     (account) =>
-      account.snapshot && account.snapshot.postMetricsStatus !== "UNAVAILABLE"
+      account.snapshot && !["UNAVAILABLE", "CONTENT_ONLY", "EMPTY"].includes(account.snapshot.postMetricsStatus)
   );
   const averageViewsPerPost =
     totalViews.value !== null && postsForRate > 0

@@ -16,6 +16,7 @@ export default async function PostsPage() {
         where: { userId: session.user.id },
         orderBy: { createdAt: "asc" },
         include: {
+          metricSnapshots: { orderBy: { fetchedAt: "desc" }, take: 1 },
           posts: {
             orderBy: { postedAt: "desc" },
             take: 10,
@@ -102,7 +103,7 @@ export default async function PostsPage() {
                       {connection.posts[0].text}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
+                    {connection.metricSnapshots[0]?.postMetricsStatus === "CONTENT_ONLY" ? <p className="mt-3 text-xs text-ink-muted">Engagement counts unavailable.</p> : <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
                       <span>
                         {connection.posts[0].likeCount.toLocaleString()} likes
                       </span>
@@ -126,7 +127,7 @@ export default async function PostsPage() {
                           {connection.posts[0].quoteCount.toLocaleString()} quotes
                         </span>
                       )}
-                    </div>
+                    </div>}
                   </div>
                 )}
               </Link>

@@ -40,6 +40,7 @@ export default function MetricsPanel({
     setError("");
     setNotice("");
 
+    try {
     const res = await fetch(`/api/metrics/refresh/${platform}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -57,6 +58,8 @@ export default function MetricsPanel({
     if (data.warning) setNotice(data.warning);
 
     router.refresh();
+    } catch { setError("Could not reach Signal. Check your connection and try again."); }
+    finally { setLoading(false); }
   }
 
   const platformLabel = platform.charAt(0).toUpperCase() + platform.slice(1);

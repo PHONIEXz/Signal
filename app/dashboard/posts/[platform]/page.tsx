@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import PostsList from "@/components/dashboard/PostsList";
 import InsightsChat from "@/components/dashboard/InsightsChat";
+import PostsRefresh from "@/components/dashboard/PostsRefresh";
 
 const PLATFORM_LABELS: Record<string, string> = {
   x: "X",
@@ -45,6 +46,8 @@ export default async function PlatformPostsPage({
     },
     take: 50,
   });
+  const snapshot = await prisma.metricSnapshot.findFirst({ where: { connectedAccountId: connectedAccount.id }, orderBy: { fetchedAt: "desc" } });
+  const contentOnly = snapshot?.postMetricsStatus === "CONTENT_ONLY";
 
   const platformLabel =
     PLATFORM_LABELS[platform] ?? platform;
@@ -72,15 +75,17 @@ export default async function PlatformPostsPage({
         </div>
       </div>
 
+      <PostsRefresh platform={platform} />
+      {contentOnly && <p className="text-sm text-ink-muted">Post content is available. Engagement counts could not be retrieved and are shown as unavailable.</p>}
       <PostsList
         posts={posts.map((p) => ({
           id: p.id,
           text: p.text,
-          likeCount: p.likeCount,
+          likeCount: contentOnly ? null : p.likeCount,
           viewCount: platform === "facebook" ? null : p.viewCount,
-          replyCount: p.replyCount,
-          retweetCount: p.retweetCount,
-          quoteCount: p.quoteCount,
+          replyCount: contentOnly ? null : p.replyCount,
+          retweetCount: contentOnly ? null : p.retweetCount,
+          quoteCount: contentOnly ? null : p.quoteCount,
           tags: p.tags,
           url: p.permalinkUrl ?? p.url,
         }))}

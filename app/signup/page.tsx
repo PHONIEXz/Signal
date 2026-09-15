@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import OptionalGoogleSignIn from "@/components/OptionalGoogleSignIn";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import AuthShell from "@/components/AuthShell";
@@ -11,6 +13,7 @@ import { passwordError, PASSWORD_MIN_LENGTH } from "@/lib/auth-policy";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -46,12 +49,14 @@ export default function SignupPage() {
 
       setLoading(false);
 
-      if (result?.error) {
-        window.location.href = "/login";
+      if (!result || !result.ok || result.error) {
+        router.replace("/login");
+        router.refresh();
         return;
       }
 
-      window.location.href = "/dashboard";
+      router.replace("/dashboard");
+      router.refresh();
     } catch {
       setError("Could not complete signup. Please try again or sign in if the account was created.");
     } finally { setLoading(false); }
@@ -98,19 +103,7 @@ export default function SignupPage() {
         </Button>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-ink-muted">or</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
-
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-      >
-        Continue with Google
-      </Button>
+      <OptionalGoogleSignIn />
 
       <p className="mt-6 text-sm text-ink-muted">
         Already have an account?{" "}

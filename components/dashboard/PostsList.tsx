@@ -5,11 +5,11 @@ import { useState } from "react";
 type Post = {
   id: string;
   text: string;
-  likeCount: number;
+  likeCount: number | null;
   viewCount: number | null;
-  replyCount: number;
-  retweetCount: number;
-  quoteCount: number;
+  replyCount: number | null;
+  retweetCount: number | null;
+  quoteCount: number | null;
   tags: string | null;
   url: string | null;
 };
@@ -48,15 +48,15 @@ export default function PostsList({ posts }: { posts: Post[] }) {
         >
           <p className="text-sm text-ink">{post.text}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
-            <span>{post.likeCount.toLocaleString()} likes</span>
+            <span>{post.likeCount === null ? "Reactions unavailable" : `${post.likeCount.toLocaleString()} likes`}</span>
             <span>
               {post.viewCount === null
                 ? "Views unavailable"
                 : `${post.viewCount.toLocaleString()} views`}
             </span>
-            <span>{post.replyCount.toLocaleString()} replies</span>
-            <span>{post.retweetCount.toLocaleString()} reposts</span>
-            {post.quoteCount > 0 && (
+            <span>{post.replyCount === null ? "Replies unavailable" : `${post.replyCount.toLocaleString()} replies`}</span>
+            <span>{post.retweetCount === null ? "Shares unavailable" : `${post.retweetCount.toLocaleString()} reposts`}</span>
+            {post.quoteCount !== null && post.quoteCount > 0 && (
               <span>{post.quoteCount.toLocaleString()} quotes</span>
             )}
           </div>

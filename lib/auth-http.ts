@@ -13,7 +13,7 @@ export class AuthInputError extends Error {
   }
 }
 
-export async function readAuthBody(request: Request): Promise<Record<string, unknown>> {
+export async function readAuthBody(request: Request, maxBytes = 4096): Promise<Record<string, unknown>> {
   if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
     throw new AuthInputError("Send a JSON request.", 415);
   }
@@ -36,7 +36,7 @@ export async function readAuthBody(request: Request): Promise<Record<string, unk
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 4096) {
+      if (size > maxBytes) {
         await reader.cancel();
         throw new AuthInputError("The request is too large.", 413);
       }

@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getValidXAccessToken } from "@/lib/x-token";
 import { normalizeSampleSize } from "@/lib/metrics";
+import { xPostsWarning } from "@/lib/post-retrieval";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -38,11 +39,11 @@ export async function POST(request: Request) {
     // Step 1: account-level stats + confirm the platform user ID
     const meRes = await fetch(
       "https://api.x.com/2/users/me?user.fields=public_metrics,name,username,profile_image_url",
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store", signal: AbortSignal.timeout(15000) }
     );
 
     if (!meRes.ok) {
-      return NextResponse.json({ error: "X API request failed" }, { status: 502 });
+      return NextResponse.json({ error: xPostsWarning(meRes.status) }, { status: 502 });
     }
 
     const meData = await meRes.json();
@@ -76,13 +77,15 @@ export async function POST(request: Request) {
     let totalEngagements: number | null = null;
     let postsAnalyzed = 0;
     let postMetricsStatus = "UNAVAILABLE";
+    let postsWarning = "X post retrieval could not reach the API. Previously retrieved posts were preserved.";
 
     const postsRes = await fetch(
       `https://api.x.com/2/users/${platformUserId}/tweets?max_results=${postLimit}&tweet.fields=public_metrics,created_at`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+      { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store", signal: AbortSignal.timeout(15000) }
+    ).catch(() => null);
 
-    if (postsRes.ok) {
+    if (postsRes && !postsRes.ok) postsWarning = xPostsWarning(postsRes.status);
+    if (postsRes?.ok) {
       const postsData = await postsRes.json();
       const posts: Array<{
         id: string;
@@ -97,15 +100,16 @@ export async function POST(request: Request) {
         };
       }> = postsData.data ?? [];
 
-      totalLikes = 0;
-      totalViews = 0;
-      totalEngagements = 0;
+      if (!Array.isArray(posts)) throw new Error("X returned an unexpected post response");
+      totalLikes = posts.length ? 0 : null;
+      totalViews = posts.length ? 0 : null;
+      totalEngagements = posts.length ? 0 : null;
 
       for (const post of posts) {
         const metrics = post.public_metrics ?? {};
-        totalLikes += metrics.like_count ?? 0;
-        totalViews += metrics.impression_count ?? 0;
-        totalEngagements +=
+        totalLikes = (totalLikes ?? 0) + (metrics.like_count ?? 0);
+        totalViews = (totalViews ?? 0) + (metrics.impression_count ?? 0);
+        totalEngagements = (totalEngagements ?? 0) +
           (metrics.like_count ?? 0) +
           (metrics.reply_count ?? 0) +
           (metrics.retweet_count ?? 0) +
@@ -141,7 +145,8 @@ export async function POST(request: Request) {
         });
       }
       postsAnalyzed = posts.length;
-      postMetricsStatus = "AVAILABLE";
+      postMetricsStatus = posts.length ? "AVAILABLE" : "EMPTY";
+      if (!posts.length) postsWarning = "X returned no recent posts for this account. Confirm you connected the intended X profile.";
     }
     // If the posts call fails (e.g. no posts yet), we still save account-level stats below.
 
@@ -165,13 +170,13 @@ export async function POST(request: Request) {
       sampleSize: postLimit,
       postsAnalyzed,
       warning:
-        postMetricsStatus === "UNAVAILABLE"
-          ? "Account metrics were updated, but recent post metrics were unavailable."
+        postMetricsStatus === "UNAVAILABLE" || postMetricsStatus === "EMPTY"
+          ? postsWarning
           : null,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
+      { error: "X refresh could not complete. Check token configuration and server availability, then try again." },
       { status: 500 }
     );
   }

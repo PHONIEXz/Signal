@@ -63,7 +63,7 @@ export default async function AccountDetailPage({
     orderBy: { postedAt: "desc" },
     take: sampleSize,
   });
-  const topPost = sampledPosts.sort(
+  const topPost = latestSnapshot?.postMetricsStatus === "CONTENT_ONLY" ? undefined : sampledPosts.sort(
     (a, b) =>
       b.likeCount + b.replyCount + b.retweetCount + b.quoteCount -
       (a.likeCount + a.replyCount + a.retweetCount + a.quoteCount)

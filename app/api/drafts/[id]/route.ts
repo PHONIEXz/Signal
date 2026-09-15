@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { MAX_DRAFT_LENGTH, normalizePlan } from "@/lib/content-drafts";
+import { LOCKED_DELIVERIES } from "@/lib/content-publishing";
+import { updateDraft } from "@/lib/draft-editing";
+import { publishingSchemaReady } from "@/lib/studio-data";
+import { readAuthBody, AuthInputError } from "@/lib/auth-http";
+import { validMediaUrl, MAX_DRAFT_LENGTH, normalizePlan } from "@/lib/content-drafts";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -19,6 +23,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
+  if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
   const existing = await prisma.contentDraft.findFirst({
     where: { id, userId: session.user.id },
     select: { id: true },
@@ -27,9 +32,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    body = await readAuthBody(request, 32768);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof AuthInputError ? error.message : "Invalid request" }, { status: error instanceof AuthInputError ? error.status : 400 });
   }
 
   const text = typeof body.text === "string" ? body.text.trim() : "";
@@ -38,6 +43,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     ? [...new Set(body.targetIds.filter((targetId): targetId is string => typeof targetId === "string"))]
     : [];
   const scheduledFor = parseScheduledFor(body.scheduledFor);
+  const expectedUpdatedAt = typeof body.expectedUpdatedAt === "string" ? new Date(body.expectedUpdatedAt) : null;
+  if (!expectedUpdatedAt || Number.isNaN(expectedUpdatedAt.getTime())) {
+    return NextResponse.json({ error: "Reload this draft before updating it.", code: "DRAFT_VERSION_REQUIRED" }, { status: 428 });
+  }
 
   if (!text || text.length > MAX_DRAFT_LENGTH) {
     return NextResponse.json(
@@ -48,12 +57,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (!targetIds.length || scheduledFor === undefined) {
     return NextResponse.json({ error: "Choose an account and provide a valid date." }, { status: 400 });
   }
-  if (mediaUrl) {
-    try {
-      new URL(mediaUrl);
-    } catch {
-      return NextResponse.json({ error: "Media URL must be a valid URL." }, { status: 400 });
-    }
+  if (!validMediaUrl(mediaUrl)) {
+    return NextResponse.json({ error: "Use a public HTTP or HTTPS media link." }, { status: 400 });
   }
 
   const [user, ownedTargets] = await Promise.all([
@@ -71,26 +76,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Multi-platform drafts are available on Pro." }, { status: 403 });
   }
 
-  const draft = await prisma.contentDraft.update({
-    where: { id },
-    data: {
-      text,
-      mediaUrl: mediaUrl || null,
-      scheduledFor,
-      status: scheduledFor ? "SCHEDULED" : "DRAFT",
-      targets: {
-        deleteMany: {},
-        create: targetIds.map((connectedAccountId) => ({ connectedAccountId })),
-      },
-    },
-    include: {
-      targets: {
-        include: {
-          connectedAccount: { select: { id: true, platform: true, displayName: true } },
-        },
-      },
-    },
-  });
+  const draft = await updateDraft(session.user.id, id, { text, mediaUrl, targetIds, scheduledFor, expectedUpdatedAt });
+  if (draft === "MISSING") return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+  if (draft === "LOCKED") return NextResponse.json({ error: "This draft has delivery history. Use a new copy to preserve the original post." }, { status: 409 });
+  if (draft === "CONFLICT") return NextResponse.json({ error: "This draft changed since you opened it. Your writing is still in the editor. Save as copy, or reload the latest draft.", code: "DRAFT_CONFLICT" }, { status: 409 });
 
   return NextResponse.json(draft);
 }
@@ -102,10 +91,17 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
-  const result = await prisma.contentDraft.deleteMany({
-    where: { id, userId: session.user.id },
+  if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
+  if (_request.headers.get("origin") !== new URL(process.env.APP_URL!).origin) return NextResponse.json({ error: "Submit this action from Signal." }, { status: 403 });
+  const result = await prisma.$transaction(async (tx) => {
+    const draft = await tx.contentDraft.findFirst({ where: { id, userId: session.user!.id } });
+    if (!draft) return "MISSING";
+    if (await tx.contentPublication.count({ where: { contentDraftId: id, status: { in: LOCKED_DELIVERIES } } })) return "LOCKED";
+    await tx.contentDraft.delete({ where: { id } });
+    return "DELETED";
   });
-  if (!result.count) return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+  if (result === "MISSING") return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+  if (result === "LOCKED") return NextResponse.json({ error: "Keep this draft to preserve delivery history. Create a new copy instead." }, { status: 409 });
 
   return NextResponse.json({ success: true });
 }

@@ -2,7 +2,9 @@
   "name": "test-app",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": "24.x" },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "db:turso:transfer": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-transfer.mts",
     "test:turso-transfer": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/turso-transfer.test.mts",
@@ -18,7 +20,9 @@
     "test:ai": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/signal-intelligence.test.mts",
     "test:auth": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/password-reset.test.mts",
     "test:auth:http": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/auth-smoke.mts",
-    "dev:reset-link": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/dev-reset-link.mts"
+    "dev:reset-link": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/dev-reset-link.mts",
+    "db:turso:upgrade-publishing": "node --env-file-if-exists=.env --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/turso-publishing-upgrade.mts",
+    "test:publishing": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/content-publishing.test.mts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

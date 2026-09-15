@@ -1,8 +1,9 @@
-import { prisma } from "@/lib/prisma";
-import { encrypt, decrypt } from "@/lib/encryption";
+import { prisma } from "./prisma.ts";
+import { encrypt, decrypt } from "./encryption.ts";
 
 export async function getValidXAccessToken(
-  connectedAccountId: string
+  connectedAccountId: string,
+  request: typeof fetch = fetch
 ): Promise<string> {
   const account = await prisma.connectedAccount.findUniqueOrThrow({
     where: { id: connectedAccountId },
@@ -26,8 +27,10 @@ export async function getValidXAccessToken(
     `${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`
   ).toString("base64");
 
-  const res = await fetch("https://api.x.com/2/oauth2/token", {
+  const res = await request("https://api.x.com/2/oauth2/token", {
     method: "POST",
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000),
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Authorization: `Basic ${basicAuth}`,
@@ -44,6 +47,7 @@ export async function getValidXAccessToken(
   }
 
   const data = await res.json();
+  if (typeof data.access_token !== "string" || !data.access_token) throw new Error("Invalid X token refresh response. Reconnect the account.");
   const newExpiresAt = data.expires_in
     ? new Date(Date.now() + data.expires_in * 1000)
     : null;

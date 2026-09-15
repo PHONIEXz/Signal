@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { loadStudioDrafts, publishingSchemaReady } from "@/lib/studio-data";
+import { readAuthBody, AuthInputError } from "@/lib/auth-http";
 import {
+  draftInclude,
+  validMediaUrl,
   draftLimitForPlan,
   MAX_DRAFT_LENGTH,
   normalizePlan,
@@ -20,19 +24,8 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const drafts = await prisma.contentDraft.findMany({
-    where: { userId: session.user.id },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      targets: {
-        include: {
-          connectedAccount: {
-            select: { id: true, platform: true, displayName: true },
-          },
-        },
-      },
-    },
-  });
+  const drafts = await loadStudioDrafts(session.user.id);
+  if (drafts === null) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
 
   return NextResponse.json(drafts);
 }
@@ -42,12 +35,13 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+  if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    body = await readAuthBody(request, 32768);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof AuthInputError ? error.message : "Invalid request" }, { status: error instanceof AuthInputError ? error.status : 400 });
   }
 
   const text = typeof body.text === "string" ? body.text.trim() : "";
@@ -69,12 +63,8 @@ export async function POST(request: Request) {
   if (scheduledFor === undefined) {
     return NextResponse.json({ error: "The scheduled date is invalid." }, { status: 400 });
   }
-  if (mediaUrl) {
-    try {
-      new URL(mediaUrl);
-    } catch {
-      return NextResponse.json({ error: "Media URL must be a valid URL." }, { status: 400 });
-    }
+  if (!validMediaUrl(mediaUrl)) {
+    return NextResponse.json({ error: "Use a public HTTP or HTTPS media link." }, { status: 400 });
   }
 
   const [user, ownedTargets, draftCount] = await Promise.all([
@@ -115,13 +105,7 @@ export async function POST(request: Request) {
       scheduledFor,
       targets: { create: targetIds.map((connectedAccountId) => ({ connectedAccountId })) },
     },
-    include: {
-      targets: {
-        include: {
-          connectedAccount: { select: { id: true, platform: true, displayName: true } },
-        },
-      },
-    },
+    include: draftInclude,
   });
 
   return NextResponse.json(draft, { status: 201 });
