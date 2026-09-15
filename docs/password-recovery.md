@@ -1,6 +1,6 @@
 # Password recovery and branding update
 
-This change stays on `feat/frontend-polish` / PR #5. It does not merge the separate Facebook OAuth fix, publish the app, activate a service, or change plan entitlements.
+The current authentication and Content Studio update is on `feat/auth-draft-publishing` / PR #12. Email delivery requires configuration before deployment.
 
 For a Turso/Vercel deployment, follow [the hosted database guide](turso-vercel-setup.md) first. The migration commands below apply to local SQLite only.
 
@@ -31,10 +31,22 @@ To enable the implemented Resend adapter, add these server-only settings to `.en
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=your_sending_api_key
 EMAIL_FROM="Signal <security@your-owned-domain.example>"
+EMAIL_REPLY_TO="paulayoade18@gmail.com"
+SUPPORT_EMAIL="paulayoade18@gmail.com"
 APP_URL=https://your-public-signal-origin.example
 ```
 
 Replace the example values. The sender domain must be verified in Resend using DNS records you control. An ngrok URL can be the app's HTTPS origin, but does not give you control of an email-sending domain. Use the same app origin when opening the form. HTTP localhost is accepted in development; production requires HTTPS. `APP_URL` must have no path, query, fragment, or embedded credentials.
+
+The Gmail address is Signal's public contact and reply address. It cannot be the Resend `EMAIL_FROM` sender because gmail.com is a shared domain you do not own. A verified sending domain does not require buying a separate email inbox. Domain registration may cost money if you do not already own one.
+
+## Email code option
+
+Forgot password offers either a reset link or a six-digit email code. A code uses one email through the existing Resend adapter, without a separate paid OTP or SMS service. Both options send to the registered account email, never to the support inbox. A successful reset sends the existing password-change notification, which also counts toward the provider's email quota.
+
+Codes expire after 10 minutes and permit at most five submissions per issued code, including concurrent submissions. They are single-use, stored as salted HMAC digests keyed by the existing `AUTH_SECRET`, and bound to the password user. Keep the same strong AUTH_SECRET; changing it invalidates outstanding codes. Requesting either method replaces the previous recovery credential. Failed code verification gives the same message for unknown accounts, wrong, expired, exhausted, and used codes. Successful verification uses the same atomic password update and session revocation as links. It never adds a password to Google-only accounts.
+
+The code option uses the existing PasswordResetToken and AuthRateLimit tables; no additional database migration or paid service is needed. Link expiry remains 30 minutes. Request limits are shared across both methods. Codes never appear in web responses, URLs or application logs.
 
 Resend currently offers a free tier, with a daily limit of 100 emails. The provider plan and domain registration may require spending as usage grows. No purchase is necessary to test locally, and Signal never upgrades the provider plan automatically. Check [current pricing](https://resend.com/pricing) and [sender verification](https://resend.com/docs/dashboard/domains/introduction) before activation.
 

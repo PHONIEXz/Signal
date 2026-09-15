@@ -15,6 +15,7 @@ process.env.DATABASE_PROVIDER = "sqlite";
 delete process.env.VERCEL;
 process.env.APP_URL = "https://signal.example";
 process.env.EMAIL_PROVIDER = "disabled";
+process.env.AUTH_SECRET = randomBytes(32).toString("hex");
 const require = createRequire(import.meta.url);
 const Database = require("better-sqlite3");
 const db = new Database(join(folder, "test.db"));
@@ -24,7 +25,7 @@ for (const migration of readdirSync(migrations).sort()) {
 }
 db.close();
 const { prisma } = await import("../lib/prisma.ts");
-const { issueResetLink } = await import("../lib/password-reset.ts");
+const { issueResetLink, issueResetCode } = await import("../lib/password-reset.ts");
 const allocator = createServer();
 allocator.listen(0, "127.0.0.1");
 await once(allocator, "listening");
@@ -35,7 +36,7 @@ await new Promise<void>((resolve) => allocator.close(() => resolve()));
 const base = "http://127.0.0.1:" + port;
 const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", String(port)], {
   cwd: new URL("../", import.meta.url),
-  env: { ...process.env, NODE_ENV: "production", AUTH_SECRET: randomBytes(32).toString("hex"), AUTH_TRUST_HOST: "true", AUTH_URL: base, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: "1" },
+  env: { ...process.env, NODE_ENV: "production", AUTH_TRUST_HOST: "true", AUTH_URL: base, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: "1" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 // Read streams without printing account/cookie/credential diagnostics.
@@ -146,7 +147,20 @@ try {
   assert.equal((await session(activeTwo))?.user, undefined);
   assert.equal((await session(await login(newPassword)))?.user, undefined);
   assert.equal((await session(await login(finalPassword))).user.email, email);
-  console.log("HTTP smoke passed: draft ownership/validation/history protection, optional Google, password change/revocation; forms/icons, signup validation, reset/reuse, both old sessions revoked, old password rejected, new password accepted.");
+  const beforeCode = await login(finalPassword);
+  const codeReset = await issueResetCode(email); assert.ok(codeReset);
+  const codePassword = "email code signal passphrase";
+  const codePayload = { email, code: codeReset.code, password: codePassword, confirmPassword: codePassword };
+  assert.equal((await json("/api/auth/forgot-password", { email, method: "sms" })).status, 400);
+  assert.equal((await json("/api/auth/forgot-password", { email, method: "code" })).status, 503);
+  assert.equal((await json("/api/auth/reset-password", codePayload, "https://untrusted.example")).status, 403);
+  assert.equal((await json("/api/auth/reset-password", { ...codePayload, token: "a".repeat(64) })).status, 400);
+  assert.equal((await json("/api/auth/reset-password", { ...codePayload, confirmPassword: "different" })).status, 400);
+  assert.equal((await json("/api/auth/reset-password", codePayload)).status, 200);
+  assert.equal((await json("/api/auth/reset-password", codePayload)).status, 400);
+  assert.equal((await session(beforeCode))?.user, undefined);
+  assert.equal((await session(await login(codePassword))).user.email, email);
+  console.log("HTTP smoke passed: email code/reset/reuse/session revocation, draft validation/history, optional Google, password changes, forms/icons and sign-in.");
 } finally {
   server.kill("SIGTERM");
   if (server.exitCode === null) await once(server, "exit");

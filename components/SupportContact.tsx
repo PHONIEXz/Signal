@@ -1,5 +1,5 @@
 export default function SupportContact() {
-  const email = process.env.SUPPORT_EMAIL?.trim();
+  const email = process.env.SUPPORT_EMAIL?.trim() || "paulayoade18@gmail.com";
 
   if (!email) {
     return <>the contact information published in Signal&apos;s developer profile</>;
