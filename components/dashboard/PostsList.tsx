@@ -11,6 +11,7 @@ type Post = {
   retweetCount: number;
   quoteCount: number;
   tags: string | null;
+  url: string | null;
 };
 
 export default function PostsList({ posts }: { posts: Post[] }) {
@@ -59,6 +60,16 @@ export default function PostsList({ posts }: { posts: Post[] }) {
               <span>{post.quoteCount.toLocaleString()} quotes</span>
             )}
           </div>
+          {post.url && (
+            <a
+              href={post.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex text-xs font-semibold text-navy hover:underline"
+            >
+              View original post ↗
+            </a>
+          )}
           <div className="mt-3 flex items-center gap-2">
             <input
               value={tagDrafts[post.id]}

@@ -78,6 +78,7 @@ export default async function AccountsPage({
         connections={connections.map((connection) => ({
           id: connection.id,
           platform: connection.platform,
+          displayName: connection.displayName,
           createdAt: connection.createdAt,
           followers: connection.metricSnapshots[0]?.followersCount ?? null,
         }))}
