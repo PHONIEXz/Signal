@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { loadStudioDrafts, publishingSchemaReady } from "@/lib/studio-data";
 import { readAuthBody, AuthInputError } from "@/lib/auth-http";
 import {
   draftInclude,
@@ -23,11 +24,8 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const drafts = await prisma.contentDraft.findMany({
-    where: { userId: session.user.id },
-    orderBy: { updatedAt: "desc" },
-    include: draftInclude,
-  });
+  const drafts = await loadStudioDrafts(session.user.id);
+  if (drafts === null) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
 
   return NextResponse.json(drafts);
 }
@@ -37,6 +35,7 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+  if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
 
   let body: Record<string, unknown>;
   try {

@@ -171,6 +171,16 @@ try {
   assert.equal((await json("/api/auth/reset-password", codePayload)).status, 400);
   assert.equal((await session(beforeCode))?.user, undefined);
   assert.equal((await session(await login(codePassword))).user.email, email);
+  const studioSession = await login(codePassword);
+  assert.equal((await fetch(base + "/dashboard/content", { headers: { Cookie: studioSession } })).status, 200);
+  await prisma.$executeRawUnsafe('DROP TABLE "ContentPublication"');
+  const studioMissing = await fetch(base + "/dashboard/content", { headers: { Cookie: studioSession } });
+  assert.equal(studioMissing.status, 200);
+  assert.match(await studioMissing.text(), /STUDIO_SCHEMA_PENDING/);
+  const missingApi = await fetch(base + "/api/drafts", { headers: { Cookie: studioSession } });
+  assert.equal(missingApi.status, 503);
+  assert.equal((await missingApi.json()).code, "STUDIO_SCHEMA_PENDING");
+  assert.equal((await draftRequest("/api/drafts", draftPayload, "POST", studioSession)).status, 503);
   console.log("HTTP smoke passed: email code/reset/reuse/session revocation, draft validation/history, optional Google, password changes, forms/icons and sign-in.");
 } finally {
   server.kill("SIGTERM");

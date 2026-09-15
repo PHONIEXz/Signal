@@ -72,3 +72,13 @@ API references: [X create post](https://docs.x.com/x-api/posts/create-post), [Fa
 Forgot password now offers a link or a six-digit email code. Codes expire in 10 minutes, allow five attempts and revoke previous sessions after a successful reset. Both methods use the same configured email provider and registered account email. No new database migration is needed for codes. See [password recovery](password-recovery.md) for sender configuration and security details.
 
 Signal's default contact/reply address is paulayoade18@gmail.com. You may override it with SUPPORT_EMAIL / EMAIL_REPLY_TO. EMAIL_FROM must remain an address on an owned domain verified with Resend; Gmail is a contact inbox rather than the Resend sender.
+
+## Content Studio setup and post retrieval
+
+If the publishing table is missing, Content Studio now shows STUDIO_SCHEMA_PENDING instead of the generic dashboard error. Draft endpoints return HTTP 503 before changing data or sending posts. Run db:turso:upgrade-publishing using credentials for the same Turso database configured in the affected Vercel environment, then refresh the view. This adds the publishing ledger; it does not transfer the database again. Other database failures still use the normal error boundary and require deployment logs to diagnose.
+
+Each platform's Posts page has Retrieve recent posts. It requests the latest 10 posts and reports token, permission, rate-limit, network and X credit errors. Failed retrieval preserves cached posts; a successful empty response says no posts were returned rather than disguising an API failure as zero posts. X API reads may require credits independently of OAuth authorization; see [X API pricing](https://docs.x.com/x-api/getting-started/pricing).
+
+For Facebook field or permission errors, retrieval retries the Page posts request with basic text, date and permalink fields. When engagement fields are missing, the interface and AI evidence treat counts as unavailable. Existing stored counts are preserved, and account-wide count displays stay unavailable while any older cached posts remain unmeasured. This conservative status avoids a new database migration and does not bypass Meta's Page permissions.
+
+Focused tests cover Facebook fallback, omitted versus measured-zero counts, no repeated requests on rate limits, X diagnostic messages and AI evidence. The production HTTP smoke also removes the publishing table from its disposable test database and verifies the setup view and safe draft API responses. No private deployment credentials or real platform posts are used.

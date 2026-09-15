@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { LOCKED_DELIVERIES } from "@/lib/content-publishing";
 import { updateDraft } from "@/lib/draft-editing";
+import { publishingSchemaReady } from "@/lib/studio-data";
 import { readAuthBody, AuthInputError } from "@/lib/auth-http";
 import { validMediaUrl, MAX_DRAFT_LENGTH, normalizePlan } from "@/lib/content-drafts";
 
@@ -22,6 +23,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
+  if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
   const existing = await prisma.contentDraft.findFirst({
     where: { id, userId: session.user.id },
     select: { id: true },
@@ -89,6 +91,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
+  if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
   if (_request.headers.get("origin") !== new URL(process.env.APP_URL!).origin) return NextResponse.json({ error: "Submit this action from Signal." }, { status: 403 });
   const result = await prisma.$transaction(async (tx) => {
     const draft = await tx.contentDraft.findFirst({ where: { id, userId: session.user!.id } });

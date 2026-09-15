@@ -87,7 +87,8 @@ export function buildAccountEvidence({
   const current = snapshots[0] ?? null;
   const previous = snapshots[1] ?? null;
   const baseline = snapshots.at(-1) ?? null;
-  const postMetrics = summarizePosts(posts, platform);
+  const contentOnly = current?.postMetricsStatus === "CONTENT_ONLY";
+  const postMetrics = summarizePosts(contentOnly ? [] : posts, platform);
   const viewsAvailable =
     platform !== "facebook" &&
     posts.length > 0 &&
@@ -102,7 +103,7 @@ export function buildAccountEvidence({
   const trackedFollowerChange = current && baseline && snapshots.length > 1
     ? calculateChange(current.followersCount, baseline.followersCount)
     : null;
-  const topPost = posts
+  const topPost = contentOnly ? null : posts
     .map((post, index) => ({
       index,
       engagements:
@@ -189,10 +190,10 @@ export function buildAccountEvidence({
       engagementRateByViews: viewsAvailable
         ? round(postMetrics.engagementRate)
         : null,
-      averageLikesPerAvailablePost: posts.length
+      averageLikesPerAvailablePost: posts.length && postMetrics.likes !== null
         ? round((postMetrics.likes ?? 0) / posts.length)
         : null,
-      averageEngagementsPerAvailablePost: posts.length
+      averageEngagementsPerAvailablePost: posts.length && postMetrics.engagements !== null
         ? round((postMetrics.engagements ?? 0) / posts.length)
         : null,
       topPostEvidenceId: topPost ? `P${topPost.index + 1}` : null,
@@ -215,11 +216,11 @@ export function buildAccountEvidence({
     recentPosts: posts.map((post, index) => ({
       evidenceId: `P${index + 1}`,
       text: post.text.slice(0, 280),
-      likes: post.likeCount,
+      likes: contentOnly ? null : post.likeCount,
       views: viewsAvailable ? post.viewCount : null,
-      replies: post.replyCount,
-      reposts: post.retweetCount,
-      quotes: post.quoteCount,
+      replies: contentOnly ? null : post.replyCount,
+      reposts: contentOnly ? null : post.retweetCount,
+      quotes: contentOnly ? null : post.quoteCount,
       tags: post.tags ?? null,
       postedAt: post.postedAt?.toISOString() ?? null,
     })),
@@ -235,6 +236,7 @@ export function buildPostEvidence({
   post: PostEvidenceInput;
   latestSnapshot: SnapshotEvidenceInput | null;
 }) {
+  const contentOnly = latestSnapshot?.postMetricsStatus === "CONTENT_ONLY";
   return {
     schemaVersion: 1,
     mode: "balanced",
@@ -252,11 +254,11 @@ export function buildPostEvidence({
     post: {
       evidenceId: "P1",
       text: post.text,
-      likes: post.likeCount,
-      views: platform === "facebook" ? null : post.viewCount,
-      replies: post.replyCount,
-      reposts: post.retweetCount,
-      quotes: post.quoteCount,
+      likes: contentOnly ? null : post.likeCount,
+      views: contentOnly || platform === "facebook" ? null : post.viewCount,
+      replies: contentOnly ? null : post.replyCount,
+      reposts: contentOnly ? null : post.retweetCount,
+      quotes: contentOnly ? null : post.quoteCount,
       postedAt: post.postedAt?.toISOString() ?? null,
       tags: post.tags ?? null,
     },

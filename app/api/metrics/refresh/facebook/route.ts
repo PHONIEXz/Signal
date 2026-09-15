@@ -3,12 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/encryption";
 import { normalizeSampleSize } from "@/lib/metrics";
-import {
-  facebookApiErrorCode,
-  facebookPostsWarning,
-  type FacebookPostPayload,
-  normalizeFacebookPost,
-} from "@/lib/platform-data";
+import { normalizeFacebookPost } from "@/lib/platform-data";
+import { retrieveFacebookPosts } from "@/lib/post-retrieval";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -48,6 +44,7 @@ export async function POST(request: Request) {
     const facebookRequest = {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store" as const,
+      signal: AbortSignal.timeout(15000),
     };
 
     const pageRes = await fetch(pageUrl, facebookRequest);
@@ -72,28 +69,28 @@ export async function POST(request: Request) {
     let postMetricsStatus = "UNAVAILABLE";
     let postsWarning: string | null = null;
 
-    const postsUrl = new URL(
-      `https://graph.facebook.com/v26.0/${pageId}/posts`
-    );
-    postsUrl.searchParams.set(
-      "fields",
-      "message,created_time,permalink_url,reactions.summary(total_count),comments.summary(total_count),shares"
-    );
-    postsUrl.searchParams.set("limit", String(postLimit));
+    const retrieval = await retrieveFacebookPosts(pageId, accessToken, postLimit);
+    const previous = await prisma.metricSnapshot.findFirst({ where: { connectedAccountId: connectedAccount.id }, orderBy: { fetchedAt: "desc" } });
+    const previouslyContentOnly = previous?.postMetricsStatus === "CONTENT_ONLY";
+    let cachedCountsUnavailable = false;
+    if (previouslyContentOnly && retrieval.posts?.length && !retrieval.contentOnly) {
+      const cached = await prisma.post.findMany({ where: { connectedAccountId: connectedAccount.id }, select: { platformPostId: true } });
+      const measuredIds = new Set(retrieval.posts.map(post => post.id));
+      cachedCountsUnavailable = cached.some(post => !measuredIds.has(post.platformPostId));
+    }
+    postsWarning = retrieval.warning;
+    if (!retrieval.posts || !retrieval.posts.length) {
+      if (previouslyContentOnly) postMetricsStatus = "CONTENT_ONLY";
+    }
+    if (retrieval.posts) {
+      const posts = retrieval.posts;
 
-    const postsRes = await fetch(postsUrl, facebookRequest);
-
-    if (postsRes.ok) {
-      const postsData = await postsRes.json();
-      const posts: FacebookPostPayload[] = postsData.data ?? [];
-
-      totalLikes = 0;
-      totalEngagements = 0;
+      totalLikes = posts.length && !retrieval.contentOnly ? 0 : null;
+      totalEngagements = posts.length && !retrieval.contentOnly ? 0 : null;
 
       for (const post of posts) {
         const normalized = normalizeFacebookPost(post);
-        totalLikes += normalized.likeCount;
-        totalEngagements += normalized.engagementCount;
+        if (!retrieval.contentOnly) { totalLikes = (totalLikes ?? 0) + normalized.likeCount; totalEngagements = (totalEngagements ?? 0) + normalized.engagementCount; }
 
         await prisma.post.upsert({
           where: {
@@ -106,9 +103,7 @@ export async function POST(request: Request) {
             text: normalized.text,
             url: normalized.url,
             permalinkUrl: normalized.url,
-            likeCount: normalized.likeCount,
-            replyCount: normalized.replyCount,
-            retweetCount: normalized.shareCount,
+            ...(retrieval.contentOnly ? {} : { likeCount: normalized.likeCount, replyCount: normalized.replyCount, retweetCount: normalized.shareCount }),
             postedAt: normalized.postedAt,
           },
           create: {
@@ -125,15 +120,13 @@ export async function POST(request: Request) {
         });
       }
       postsAnalyzed = posts.length;
-      postMetricsStatus = "PARTIAL";
-    } else {
-      const errorPayload = await postsRes.json().catch(() => null);
-      const errorCode = facebookApiErrorCode(errorPayload);
-      postsWarning = facebookPostsWarning(errorCode);
-      console.warn("Facebook Page posts unavailable", {
-        status: postsRes.status,
-        code: errorCode,
-      });
+      postMetricsStatus = !posts.length ? postMetricsStatus === "CONTENT_ONLY" ? "CONTENT_ONLY" : "EMPTY" : retrieval.contentOnly || cachedCountsUnavailable ? "CONTENT_ONLY" : "PARTIAL";
+      if (cachedCountsUnavailable) {
+        totalLikes = null;
+        totalEngagements = null;
+        postsWarning = "Recent Facebook posts were retrieved, but some older cached posts still lack engagement counts. Counts remain unavailable until those posts are refreshed too.";
+      }
+      if (!posts.length) postsWarning = "Facebook returned no posts from this Page. Confirm this is the intended Page and that its posts are published.";
     }
 
     await prisma.metricSnapshot.create({
@@ -156,13 +149,13 @@ export async function POST(request: Request) {
       sampleSize: postLimit,
       postsAnalyzed,
       warning:
-        postMetricsStatus === "UNAVAILABLE"
+        postMetricsStatus !== "PARTIAL"
           ? postsWarning
           : "Facebook views and total post count are not available from this connection.",
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
+      { error: "Facebook refresh could not complete. Check the Page connection and server availability, then try again." },
       { status: 500 }
     );
   }
