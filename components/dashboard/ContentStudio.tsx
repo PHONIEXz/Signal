@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import DraftDeliveryActions, { type DeliveryReceipt } from "./DraftDeliveryActions";
 import StudioMediaPreview from "./StudioMediaPreview";
 import { deliveryText, LOCKED_DELIVERIES } from "@/lib/content-publishing";
+import { editorFingerprint } from "@/lib/studio-editor";
 
 type Account = { id: string; platform: string; displayName: string | null; platformUserId?: string | null };
 type Draft = {
@@ -64,6 +65,30 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
   const [calendarOffset, setCalendarOffset] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [revision, setRevision] = useState<string | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const [baseline, setBaseline] = useState(() => editorFingerprint({ text: "", mediaUrl: "", scheduledFor: "", targetIds: accounts[0] ? [accounts[0].id] : [] }));
+  const dirty = editorFingerprint({ text, mediaUrl, scheduledFor, targetIds }) !== baseline;
+
+  useEffect(() => {
+    if (!dirty && !busy) return;
+    const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const navigate = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!(link instanceof HTMLAnchorElement) || link.target === "_blank" || link.hasAttribute("download")) return;
+      const destination = new URL(link.href);
+      if (destination.origin === window.location.origin && destination.pathname === window.location.pathname && destination.search === window.location.search) return;
+      if (busy || !window.confirm("Leave Content Studio and discard your unsaved changes?")) { event.preventDefault(); event.stopPropagation(); }
+    };
+    window.addEventListener("beforeunload", leave);
+    document.addEventListener("click", navigate, true);
+    return () => { window.removeEventListener("beforeunload", leave); document.removeEventListener("click", navigate, true); };
+  }, [dirty, busy]);
+
+  function canReplaceEditor() {
+    return !busy && (!dirty || window.confirm("Discard the unsaved changes in your editor?"));
+  }
 
   const selectedAccounts = accounts.filter((account) => targetIds.includes(account.id));
   const visibleDrafts = drafts.filter((draft) => {
@@ -80,9 +105,13 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
     setScheduledFor("");
     setTargetIds(accounts[0] ? [accounts[0].id] : []);
     setMessage("");
+    setRevision(null);
+    setConflict(false);
+    setBaseline(editorFingerprint({ text: "", mediaUrl: "", scheduledFor: "", targetIds: accounts[0] ? [accounts[0].id] : [] }));
   }
 
   function editDraft(draft: Draft) {
+    if (!canReplaceEditor()) return;
     const immutable = draft.publications?.some((row) => LOCKED_DELIVERIES.includes(row.status));
     setEditingId(immutable ? null : draft.id);
     setText(draft.text);
@@ -90,6 +119,9 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
     setScheduledFor(immutable ? "" : dateTimeInputValue(draft.scheduledFor));
     setTargetIds(draft.targets.map(({ connectedAccount }) => connectedAccount.id));
     setMessage("");
+    setRevision(immutable ? null : draft.updatedAt);
+    setConflict(false);
+    setBaseline(editorFingerprint({ text: draft.text, mediaUrl: draft.mediaUrl ?? "", scheduledFor: immutable ? "" : dateTimeInputValue(draft.scheduledFor), targetIds: draft.targets.map(({ connectedAccount }) => connectedAccount.id) }));
     setView("compose");
   }
 
@@ -123,15 +155,25 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
           mediaUrl,
           targetIds,
           scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+          expectedUpdatedAt: id ? revision : undefined,
         }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not save this draft.");
+      if (!response.ok) {
+        if (data.code === "DRAFT_CONFLICT" || data.code === "DRAFT_VERSION_REQUIRED") setConflict(true);
+        throw new Error(data.error ?? "Could not save this draft.");
+      }
 
       setDrafts((current) =>
         id ? current.map((draft) => (draft.id === id ? data : draft)) : [data, ...current]
       );
-      resetEditor();
+      setEditingId(data.id);
+      setText(data.text);
+      setMediaUrl(data.mediaUrl ?? "");
+      setScheduledFor(dateTimeInputValue(data.scheduledFor));
+      setRevision(data.updatedAt);
+      setConflict(false);
+      setBaseline(editorFingerprint({ text: data.text, mediaUrl: data.mediaUrl ?? "", scheduledFor: dateTimeInputValue(data.scheduledFor), targetIds }));
       setView("library");
       setMessage(asDuplicate ? "Draft duplicated." : id ? "Draft updated." : "Draft saved.");
     } catch (error) {
@@ -148,6 +190,8 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
   }
 
   async function deleteDraft(id: string) {
+    if (busy) return;
+    if (editingId === id && !canReplaceEditor()) return;
     if (!window.confirm("Delete this draft? This cannot be undone.")) return;
     try {
     const response = await fetch(`/api/drafts/${id}`, { method: "DELETE" });
@@ -235,7 +279,9 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
         </div>
       ) : view === "compose" ? (
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="space-y-5 rounded-xl border border-border bg-surface p-6">
+          <section className="rounded-xl border border-border bg-surface p-6">
+            <p role="status" className="mb-4 text-xs font-medium text-ink-muted">{busy ? "Saving your changes..." : dirty ? "Unsaved changes" : editingId ? "All changes saved" : "Ready for your next idea"}</p>
+            <fieldset disabled={busy} className="space-y-5">
             <div>
               <label htmlFor="draft-text" className="text-sm font-medium text-ink">Post content</label>
               <textarea
@@ -294,16 +340,18 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => saveDraft(false)} disabled={busy} className="rounded-md bg-navy px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">
+              <button onClick={() => saveDraft(false)} disabled={busy || conflict || (!!editingId && !dirty)} className="rounded-md bg-navy px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">
                 {busy ? "Saving..." : editingId ? "Update draft" : "Save draft"}
               </button>
               {editingId && (
                 <>
                   <button onClick={() => saveDraft(true)} disabled={busy} className="rounded-md border border-border px-4 py-2.5 text-sm font-medium text-ink">Save as copy</button>
-                  <button onClick={resetEditor} className="rounded-md px-4 py-2.5 text-sm text-ink-muted">Cancel</button>
+                  <button onClick={() => { if (canReplaceEditor()) resetEditor(); }} className="rounded-md px-4 py-2.5 text-sm text-ink-muted">New draft</button>
                 </>
               )}
             </div>
+            {conflict && <p role="alert" className="text-sm leading-6 text-ink">A newer version exists. Save your writing as a copy, or refresh the Library and open the latest version.</p>}
+            </fieldset>
           </section>
 
           <section className="space-y-4">
@@ -352,7 +400,8 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
               <option value="SCHEDULED">Planned</option>
               <option value="PARTIAL">Partly sent</option><option value="PUBLISHED">Published</option>
             </select>
-            <button onClick={() => { resetEditor(); setView("compose"); }} className="ml-auto rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">New draft</button>
+            <button onClick={() => refreshDrafts().then(() => setMessage("Draft library refreshed.")).catch(() => setMessage("Could not refresh drafts. Your editor is unchanged."))} disabled={busy} className="rounded-md border border-border px-4 py-2 text-sm text-ink">Refresh library</button>
+            <button onClick={() => { if (canReplaceEditor()) { resetEditor(); setView("compose"); } }} disabled={busy} className="ml-auto rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">New draft</button>
           </div>
           {visibleDrafts.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center text-sm text-ink-muted">No drafts match these filters.</div>

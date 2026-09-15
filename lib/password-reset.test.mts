@@ -245,3 +245,38 @@ test("password change verifies the old password, revokes sessions and invalidate
   const providerUser = await prisma.user.create({ data: { email: "provider-change@example.com" } });
   assert.equal(await changePassword(providerUser.id, "anything", nextPassword), "PROVIDER_ACCOUNT");
 });
+
+test("draft revisions reject stale saves without clearing targets or failed delivery receipts", async () => {
+  const { updateDraft } = await import("./draft-editing.ts");
+  const owner = await passwordUser();
+  const outsider = await passwordUser();
+  const account = await prisma.connectedAccount.create({ data: { userId: owner.id, platform: "x", accessToken: "fixture-only" } });
+  const draft = await prisma.contentDraft.create({ data: { userId: owner.id, text: "original", targets: { create: { connectedAccountId: account.id } } } });
+  const edit = { text: "new writing", mediaUrl: "", scheduledFor: null, targetIds: [account.id], expectedUpdatedAt: draft.updatedAt };
+  assert.equal(await updateDraft(outsider.id, draft.id, edit), "MISSING");
+  const first = await updateDraft(owner.id, draft.id, edit);
+  assert.ok(typeof first !== "string");
+  assert.ok(first.updatedAt > draft.updatedAt);
+  await prisma.contentPublication.create({ data: { contentDraftId: draft.id, connectedAccountId: account.id, status: "FAILED", errorCode: "FIXTURE" } });
+  assert.equal(await updateDraft(owner.id, draft.id, { ...edit, text: "stale overwrite" }), "CONFLICT");
+  const kept = await prisma.contentDraft.findUniqueOrThrow({ where: { id: draft.id }, include: { targets: true, publications: true } });
+  assert.equal(kept.text, first.text);
+  assert.equal(kept.targets.length, 1);
+  assert.equal(kept.publications[0].errorCode, "FIXTURE");
+  const second = await updateDraft(owner.id, draft.id, { ...edit, text: "latest edit", expectedUpdatedAt: first.updatedAt });
+  assert.ok(typeof second !== "string");
+  assert.equal(second.publications.length, 0);
+  await prisma.contentPublication.create({ data: { contentDraftId: draft.id, connectedAccountId: account.id, status: "PUBLISHING" } });
+  assert.equal(await updateDraft(owner.id, draft.id, { ...edit, expectedUpdatedAt: second.updatedAt }), "LOCKED");
+});
+
+test("concurrent saves using one revision allow exactly one winner", async () => {
+  const { updateDraft } = await import("./draft-editing.ts");
+  const owner = await passwordUser();
+  const account = await prisma.connectedAccount.create({ data: { userId: owner.id, platform: "facebook", accessToken: "fixture-only" } });
+  const draft = await prisma.contentDraft.create({ data: { userId: owner.id, text: "original" } });
+  const edit = { text: "first", mediaUrl: "", scheduledFor: null, targetIds: [account.id], expectedUpdatedAt: draft.updatedAt };
+  const outcomes = await Promise.all([updateDraft(owner.id, draft.id, edit), updateDraft(owner.id, draft.id, { ...edit, text: "second" })]);
+  assert.equal(outcomes.filter((value) => typeof value !== "string").length, 1);
+  assert.equal(outcomes.filter((value) => value === "CONFLICT").length, 1);
+});

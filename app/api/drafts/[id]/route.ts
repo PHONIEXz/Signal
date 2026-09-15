@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { LOCKED_DELIVERIES } from "@/lib/content-publishing";
+import { updateDraft } from "@/lib/draft-editing";
 import { readAuthBody, AuthInputError } from "@/lib/auth-http";
-import { draftInclude, validMediaUrl, MAX_DRAFT_LENGTH, normalizePlan } from "@/lib/content-drafts";
+import { validMediaUrl, MAX_DRAFT_LENGTH, normalizePlan } from "@/lib/content-drafts";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -40,6 +41,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     ? [...new Set(body.targetIds.filter((targetId): targetId is string => typeof targetId === "string"))]
     : [];
   const scheduledFor = parseScheduledFor(body.scheduledFor);
+  const expectedUpdatedAt = typeof body.expectedUpdatedAt === "string" ? new Date(body.expectedUpdatedAt) : null;
+  if (!expectedUpdatedAt || Number.isNaN(expectedUpdatedAt.getTime())) {
+    return NextResponse.json({ error: "Reload this draft before updating it.", code: "DRAFT_VERSION_REQUIRED" }, { status: 428 });
+  }
 
   if (!text || text.length > MAX_DRAFT_LENGTH) {
     return NextResponse.json(
@@ -69,29 +74,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Multi-platform drafts are available on Pro." }, { status: 403 });
   }
 
-  const draft = await prisma.$transaction(async (tx) => {
-    const owner = await tx.contentDraft.findFirst({ where: { id, userId: session.user!.id } });
-    if (!owner) return null;
-    const locked = await tx.contentPublication.count({ where: { contentDraftId: id, status: { in: LOCKED_DELIVERIES } } });
-    if (locked) return "LOCKED";
-    await tx.contentPublication.deleteMany({ where: { contentDraftId: id } });
-      return tx.contentDraft.update({
-        where: { id },
-        data: {
-          text,
-          mediaUrl: mediaUrl || null,
-          scheduledFor,
-          status: scheduledFor ? "SCHEDULED" : "DRAFT",
-          targets: {
-            deleteMany: {},
-            create: targetIds.map((connectedAccountId) => ({ connectedAccountId })),
-          },
-        },
-        include: draftInclude,
-      });
-  });
-  if (!draft) return NextResponse.json({ error: "Draft not found" }, { status: 404 });
+  const draft = await updateDraft(session.user.id, id, { text, mediaUrl, targetIds, scheduledFor, expectedUpdatedAt });
+  if (draft === "MISSING") return NextResponse.json({ error: "Draft not found" }, { status: 404 });
   if (draft === "LOCKED") return NextResponse.json({ error: "This draft has delivery history. Use a new copy to preserve the original post." }, { status: 409 });
+  if (draft === "CONFLICT") return NextResponse.json({ error: "This draft changed since you opened it. Your writing is still in the editor. Save as copy, or reload the latest draft.", code: "DRAFT_CONFLICT" }, { status: 409 });
 
   return NextResponse.json(draft);
 }

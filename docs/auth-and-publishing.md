@@ -34,7 +34,15 @@ npm run db:turso:check
 
 The upgrade validates the schema baseline, runs in a transaction, preserves data, and is safe to repeat. Fresh databases use db:turso:setup. Local SQLite uses Prisma migrate deploy. Do not rerun the data transfer to enable publishing. Preview Content Studio needs this upgrade too.
 
-## Publish saved drafts
+## Editing without accidental overwrites
+
+Content Studio keeps the saved draft in the editor after saving and labels it All changes saved / Unsaved changes. While a save is running, editor controls are disabled. Compose, Library and Calendar keep the same editor content. Replacing the editor with another draft or a blank one requires confirmation when changes are pending. Browser refresh/close and ordinary same-tab links request confirmation where the browser supports it. This is not automatic saving: mobile app termination or browser crashes can still lose unsaved text, so use Save draft.
+
+Draft updates send the version opened in the editor. The server checks that version inside the same transaction as the content/target changes. An outdated update returns DRAFT_CONFLICT without changing the newer saved draft or delivery receipts. The editor retains your writing; use Save as copy or Refresh library and reopen the latest draft. Refreshing the library alone does not replace the editor. Clients without a version receive HTTP 428 and must reopen the draft. No additional database migration or paid service is required.
+
+Published and uncertain deliveries remain protected from editing. Version protection does not unlock them or resend a post.
+
+## Send from the library
 
 Save a draft, open Library, and use Publish now. Each action confirms and sends one selected saved target. Unsaved editor changes do not change the saved content being published.
 
