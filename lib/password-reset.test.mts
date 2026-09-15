@@ -153,3 +153,24 @@ test("reset origin cannot be a relative URL, include credentials or supply an ar
   process.env.APP_URL = "https://signal.example";
   assert.equal(resetOrigin(), "https://signal.example");
 });
+
+test("Google is offered only with both real credentials", async () => {
+  const { googleAuthConfig } = await import("./auth-providers.ts");
+  for (const env of [{}, { GOOGLE_CLIENT_ID: "null", GOOGLE_CLIENT_SECRET: "null" }, { GOOGLE_CLIENT_ID: "test", GOOGLE_CLIENT_SECRET: "" }]) assert.equal(googleAuthConfig(env), null);
+  assert.deepEqual(googleAuthConfig({ GOOGLE_CLIENT_ID: " id ", GOOGLE_CLIENT_SECRET: " secret " }), { clientId: "id", clientSecret: "secret" });
+});
+test("password change verifies the old password, revokes sessions and invalidates reset links", async () => {
+  const { changePassword } = await import("./password-change.ts");
+  const user = await passwordUser();
+  await prisma.session.create({ data: { userId: user.id, sessionToken: "change-session", expires: new Date(Date.now() + 60000) } });
+  const issued = await issueResetLink(user.email); assert.ok(issued);
+  assert.equal(await changePassword(user.id, "wrong", nextPassword), "INCORRECT_PASSWORD");
+  assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).passwordVersion, 0);
+  const attempts = await Promise.all([changePassword(user.id, "old-password", nextPassword), changePassword(user.id, "old-password", "a different valid passphrase")]);
+  assert.equal(attempts.filter((result) => result === "CHANGED").length, 1);
+  assert.equal(await prisma.session.count({ where: { userId: user.id } }), 0);
+  assert.equal(await consumeResetToken(tokenFrom(issued.url), nextPassword), null);
+  assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).passwordVersion, 1);
+  const providerUser = await prisma.user.create({ data: { email: "provider-change@example.com" } });
+  assert.equal(await changePassword(providerUser.id, "anything", nextPassword), "PROVIDER_ACCOUNT");
+});

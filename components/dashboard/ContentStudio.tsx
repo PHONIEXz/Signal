@@ -2,8 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import DraftDeliveryActions, { type DeliveryReceipt } from "./DraftDeliveryActions";
+import StudioMediaPreview from "./StudioMediaPreview";
+import { deliveryText, LOCKED_DELIVERIES } from "@/lib/content-publishing";
 
-type Account = { id: string; platform: string; displayName: string | null };
+type Account = { id: string; platform: string; displayName: string | null; platformUserId?: string | null };
 type Draft = {
   id: string;
   text: string;
@@ -12,6 +16,7 @@ type Draft = {
   scheduledFor: string | null;
   createdAt: string;
   updatedAt: string;
+  publications: DeliveryReceipt[];
   targets: Array<{ id: string; connectedAccount: Account }>;
 };
 
@@ -55,6 +60,8 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
   const [targetIds, setTargetIds] = useState<string[]>(accounts[0] ? [accounts[0].id] : []);
   const [platformFilter, setPlatformFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [calendarOffset, setCalendarOffset] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -63,7 +70,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
     const platformMatch =
       platformFilter === "all" ||
       draft.targets.some(({ connectedAccount }) => connectedAccount.platform === platformFilter);
-    return platformMatch && (statusFilter === "all" || draft.status === statusFilter);
+    return draft.text.toLowerCase().includes(search.toLowerCase()) && platformMatch && (statusFilter === "all" || draft.status === statusFilter);
   });
 
   function resetEditor() {
@@ -76,10 +83,11 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
   }
 
   function editDraft(draft: Draft) {
-    setEditingId(draft.id);
+    const immutable = draft.publications?.some((row) => LOCKED_DELIVERIES.includes(row.status));
+    setEditingId(immutable ? null : draft.id);
     setText(draft.text);
     setMediaUrl(draft.mediaUrl ?? "");
-    setScheduledFor(dateTimeInputValue(draft.scheduledFor));
+    setScheduledFor(immutable ? "" : dateTimeInputValue(draft.scheduledFor));
     setTargetIds(draft.targets.map(({ connectedAccount }) => connectedAccount.id));
     setMessage("");
     setView("compose");
@@ -98,6 +106,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
   }
 
   async function saveDraft(asDuplicate = false) {
+    if (busy) return;
     if (!text.trim() || !targetIds.length) {
       setMessage("Add some content and choose at least one account.");
       return;
@@ -132,8 +141,15 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
     }
   }
 
+  async function refreshDrafts() {
+    const response = await fetch("/api/drafts", { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not refresh drafts.");
+    setDrafts(await response.json());
+  }
+
   async function deleteDraft(id: string) {
     if (!window.confirm("Delete this draft? This cannot be undone.")) return;
+    try {
     const response = await fetch(`/api/drafts/${id}`, { method: "DELETE" });
     if (response.ok) {
       setDrafts((current) => current.filter((draft) => draft.id !== id));
@@ -143,10 +159,12 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
       const data = await response.json();
       setMessage(data.error ?? "Could not delete this draft.");
     }
+    } catch { setMessage("Could not reach Signal. Try deleting this draft again later."); }
   }
 
   const calendar = useMemo(() => {
-    const now = new Date();
+    const current = new Date();
+    const now = new Date(current.getFullYear(), current.getMonth() + calendarOffset, 1);
     const year = now.getFullYear();
     const month = now.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -165,7 +183,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
         });
       },
     };
-  }, [drafts]);
+  }, [drafts, calendarOffset]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -173,7 +191,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">Content</p>
           <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">Content Studio</h1>
-          <p className="mt-2 text-sm text-ink-muted">Write, preview and organize content before it goes live.</p>
+          <p className="mt-2 text-sm text-ink-muted">From first idea to published post. Write, preview, plan and send from one workspace.</p>
         </div>
         <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm">
           <span className="font-medium text-ink">{plan} plan</span>
@@ -181,6 +199,10 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
             {drafts.length}{draftLimit === null ? " drafts, unlimited" : ` of ${draftLimit} drafts`}
           </span>
         </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-xs text-ink-muted">{label}</p><p className="mt-1 font-display text-2xl text-ink">{count}</p></div>)}
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
@@ -228,6 +250,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
               <p className="mt-1 text-right text-xs text-ink-muted">{text.length} / 5,000</p>
             </div>
 
+            <div><p className="text-xs font-medium text-ink-muted">Start with a structure</p><div className="mt-2 flex flex-wrap gap-2">{["Announcement", "Helpful tip", "Question"].map((label) => <button key={label} onClick={() => { if (text && !window.confirm("Replace the editor text with this template?")) return; setText(label === "Announcement" ? "Something new is coming.\n\n[What is changing and why it matters]\n\n[When it is available]\n\n[One clear next step]" : label === "Helpful tip" ? "One thing I wish I knew earlier:\n\n[Your useful tip]\n\n[An example readers can try]\n\nSave this for later." : "What is your biggest challenge with [topic]?\n\n[Share your own experience]\n\nTell me in the replies."); }} className="rounded-full border border-border px-3 py-1.5 text-xs text-ink">{label}</button>)}</div></div>
             <fieldset>
               <legend className="text-sm font-medium text-ink">Publish to</legend>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -247,7 +270,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
             </fieldset>
 
             <div>
-              <label htmlFor="media-url" className="text-sm font-medium text-ink">Media URL <span className="font-normal text-ink-muted">optional</span></label>
+              <label htmlFor="media-url" className="text-sm font-medium text-ink">Link or media URL <span className="font-normal text-ink-muted">optional</span></label>
               <input
                 id="media-url"
                 type="url"
@@ -286,25 +309,28 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
           <section className="space-y-4">
             <div>
               <h2 className="font-display text-lg font-medium text-ink">Platform preview</h2>
-              <p className="mt-1 text-sm text-ink-muted">Each platform checks its own text limit.</p>
+              <p className="mt-1 text-sm text-ink-muted">Preview your saved content before publishing. Links count toward the X text limit.</p>
             </div>
             {selectedAccounts.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">Choose an account to see its preview.</div>
             ) : (
               selectedAccounts.map((account) => {
                 const limit = PLATFORM_LIMITS[account.platform] ?? 5000;
-                const overLimit = text.length > limit;
+                const previewText = account.platform === "x" ? deliveryText(text, mediaUrl || null) : text;
+                const length = Array.from(previewText).length;
+                const overLimit = length > limit;
                 return (
                   <article key={account.id} className="rounded-xl border border-border bg-surface p-5">
                     <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-ink">{account.displayName || "Your account"}</p>
-                        <p className="text-xs text-ink-muted">{labelFor(account.platform)} preview</p>
+                      <div className="flex items-center gap-3">
+                        <Image src={`/api/accounts/${account.id}/profile-image`} alt="" width={40} height={40} unoptimized className="h-10 w-10 rounded-full bg-paper object-cover" />
+                        <div><p className="font-medium text-ink">{account.displayName || "Your account"}</p>
+                        <p className="text-xs text-ink-muted">{labelFor(account.platform)} preview</p></div>
                       </div>
-                      <span className={`text-xs font-medium ${overLimit ? "text-red-600" : "text-ink-muted"}`}>{text.length} / {limit.toLocaleString()}</span>
+                      <span className={`text-xs font-medium ${overLimit ? "text-red-600" : "text-ink-muted"}`}>{length} / {limit.toLocaleString()}</span>
                     </div>
-                    {mediaUrl && <div className="mt-4 rounded-lg bg-paper px-4 py-8 text-center text-xs text-ink-muted">Media attached by URL</div>}
-                    <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink">{text || "Your post preview will appear here."}</p>
+                    {mediaUrl && <StudioMediaPreview key={mediaUrl} url={mediaUrl} />}
+                    <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink">{previewText || "Your post preview will appear here."}</p>
                     {overLimit && <p className="mt-3 text-xs font-medium text-red-600">Shorten this content before publishing to {labelFor(account.platform)}.</p>}
                   </article>
                 );
@@ -315,6 +341,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
       ) : view === "library" ? (
         <section className="space-y-4">
           <div className="flex flex-wrap gap-3">
+            <input type="search" aria-label="Search drafts" placeholder="Search your content" value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
             <select value={platformFilter} onChange={(event) => setPlatformFilter(event.target.value)} className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
               <option value="all">All platforms</option>
               {accounts.map((account) => <option key={account.id} value={account.platform}>{labelFor(account.platform)}</option>)}
@@ -323,6 +350,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
               <option value="all">All statuses</option>
               <option value="DRAFT">Draft</option>
               <option value="SCHEDULED">Planned</option>
+              <option value="PARTIAL">Partly sent</option><option value="PUBLISHED">Published</option>
             </select>
             <button onClick={() => { resetEditor(); setView("compose"); }} className="ml-auto rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">New draft</button>
           </div>
@@ -333,7 +361,7 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
               <div className="flex flex-col justify-between gap-4 sm:flex-row">
                 <div className="min-w-0">
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-paper px-2.5 py-1 text-xs font-medium text-ink">{draft.status === "SCHEDULED" ? "Planned" : "Draft"}</span>
+                    <span className="rounded-full bg-paper px-2.5 py-1 text-xs font-medium text-ink">{draft.status === "SCHEDULED" ? "Planned" : draft.status === "PUBLISHED" ? "Published" : draft.status === "PARTIAL" ? "Partly sent" : "Draft"}</span>
                     {draft.targets.map(({ connectedAccount }) => (
                       <span key={connectedAccount.id} className="rounded-full bg-navy/10 px-2.5 py-1 text-xs text-navy">{labelFor(connectedAccount.platform)}</span>
                     ))}
@@ -344,17 +372,18 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <button onClick={() => editDraft(draft)} className="rounded-md border border-border px-3 py-2 text-xs font-medium text-ink">Edit</button>
-                  <button onClick={() => deleteDraft(draft.id)} className="rounded-md border border-border px-3 py-2 text-xs font-medium text-red-600">Delete</button>
+                  <button onClick={() => editDraft(draft)} className="rounded-md border border-border px-3 py-2 text-xs font-medium text-ink">{draft.publications?.some((row) => LOCKED_DELIVERIES.includes(row.status)) ? "Reuse as new" : "Edit"}</button>
+                  <button disabled={draft.publications?.some((row) => LOCKED_DELIVERIES.includes(row.status))} onClick={() => deleteDraft(draft.id)} className="rounded-md border border-border px-3 py-2 text-xs font-medium text-red-600 disabled:opacity-30">Delete</button>
                 </div>
               </div>
+              <DraftDeliveryActions draft={draft} refresh={refreshDrafts} notify={setMessage} />
             </article>
           ))}
         </section>
       ) : (
         <section className="rounded-xl border border-border bg-surface p-4 sm:p-6">
-          <h2 className="font-display text-lg font-medium text-ink">{calendar.title}</h2>
-          <p className="mt-1 text-sm text-ink-muted">Planned content for the current month.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-lg font-medium text-ink">{calendar.title}</h2><div className="flex gap-2"><button aria-label="Previous month" onClick={() => setCalendarOffset((n) => n - 1)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Previous</button><button onClick={() => setCalendarOffset(0)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Today</button><button aria-label="Next month" onClick={() => setCalendarOffset((n) => n + 1)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Next</button></div></div>
+          <p className="mt-1 text-sm text-ink-muted">Browse planned content by month. Dates organize your calendar; sending still needs your confirmation.</p>
           <div className="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-border text-center text-xs font-medium text-ink-muted">
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day) => <div key={day} className="bg-paper p-2">{day}</div>)}
             {calendar.days.map((day, index) => (

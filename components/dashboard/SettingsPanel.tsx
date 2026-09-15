@@ -1,8 +1,12 @@
 "use client";
+import Link from "next/link";
+import { signOut } from "next-auth/react";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
 
 import { useEffect, useState } from "react";
 
 type Settings = {
+  hasPassword: boolean;
   name: string | null;
   email: string;
   aiInsightsEnabled: boolean;
@@ -181,6 +185,15 @@ export default function SettingsPanel() {
         </div>
       )}
 
+      <section className="surface-card p-6" aria-labelledby="security-title">
+        <h2 id="security-title" className="font-display text-xl font-semibold text-ink">Password and security</h2>
+        {settings.hasPassword ? <>
+          <p className="mt-2 text-sm leading-6 text-ink-muted">Change your password here, or request a recovery link if you have forgotten it.</p>
+          <ChangePasswordForm />
+          <Link href="/forgot-password" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-navy hover:underline">Forgot your current password?</Link>
+        </> : <p className="mt-2 text-sm leading-6 text-ink-muted">This account uses a connected sign-in provider and has no separate Signal password.</p>}
+      </section>
+
       <section>
         <div className="mb-3">
           <h2 className="font-display text-lg font-medium text-ink">
@@ -285,12 +298,12 @@ export default function SettingsPanel() {
               </p>
             </div>
 
-            <a
-              href="/api/auth/signout"
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
               className="shrink-0 rounded-md border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-background"
             >
               Sign out
-            </a>
+            </button>
           </div>
         </div>
       </section>

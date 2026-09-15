@@ -58,6 +58,7 @@ model ConnectedAccount {
   metricSnapshots MetricSnapshot[]
   posts          Post[]
   draftTargets   ContentDraftTarget[]
+  publications   ContentPublication[]
 
   @@unique([userId, platform])
 }
@@ -73,6 +74,7 @@ model ContentDraft {
   updatedAt    DateTime             @updatedAt
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   targets      ContentDraftTarget[]
+  publications ContentPublication[]
 
   @@index([userId, scheduledFor])
 }
@@ -158,4 +160,24 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model ContentPublication {
+  id                 String           @id @default(cuid())
+  contentDraftId     String
+  connectedAccountId String
+  status             String           @default("PENDING")
+  platformPostId     String?
+  permalinkUrl       String?
+  errorCode          String?
+  errorMessage       String?
+  attemptedAt        DateTime?
+  publishedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  contentDraft       ContentDraft     @relation(fields: [contentDraftId], references: [id], onDelete: Cascade)
+  connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([contentDraftId, connectedAccountId])
+  @@index([connectedAccountId, status])
 }

@@ -7,6 +7,9 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import { emailValue, sessionVersionMatches } from "@/lib/auth-policy";
 import { findPasswordUser } from "@/lib/password-reset";
+import { googleAuthConfig } from "@/lib/auth-providers";
+
+const google = googleAuthConfig();
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -41,10 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
+    ...(google ? [Google(google)] : []),
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },

@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import ContentStudio from "@/components/dashboard/ContentStudio";
-import { draftLimitForPlan, normalizePlan } from "@/lib/content-drafts";
+import { draftInclude, draftLimitForPlan, normalizePlan } from "@/lib/content-drafts";
 
 export default async function ContentStudioPage() {
   const session = await auth();
@@ -17,13 +17,7 @@ export default async function ContentStudioPage() {
     prisma.contentDraft.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
-      include: {
-        targets: {
-          include: {
-            connectedAccount: { select: { id: true, platform: true, displayName: true } },
-          },
-        },
-      },
+      include: draftInclude,
     }),
   ]);
 
@@ -36,6 +30,10 @@ export default async function ContentStudioPage() {
       accounts={accounts}
       initialDrafts={drafts.map((draft) => ({
         ...draft,
+        publications: draft.publications.map((receipt) => ({
+          ...receipt, attemptedAt: receipt.attemptedAt?.toISOString() ?? null, publishedAt: receipt.publishedAt?.toISOString() ?? null,
+          createdAt: receipt.createdAt.toISOString(), updatedAt: receipt.updatedAt.toISOString(),
+        })),
         scheduledFor: draft.scheduledFor?.toISOString() ?? null,
         createdAt: draft.createdAt.toISOString(),
         updatedAt: draft.updatedAt.toISOString(),

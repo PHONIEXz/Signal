@@ -14,3 +14,13 @@ export function normalizePlan(plan: string) {
 export function draftLimitForPlan(plan: string) {
   return normalizePlan(plan) === "PRO" ? null : FREE_DRAFT_LIMIT;
 }
+
+export const draftInclude = {
+  targets: { include: { connectedAccount: { select: { id: true, platform: true, displayName: true, platformUserId: true } } } },
+  publications: true,
+} as const;
+export function validMediaUrl(value: string) {
+  if (!value) return true;
+  try { const url = new URL(value); return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password; }
+  catch { return false; }
+}

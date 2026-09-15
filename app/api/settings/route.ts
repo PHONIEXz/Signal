@@ -18,6 +18,7 @@ export async function GET() {
       id: true,
       name: true,
       email: true,
+      hashedPassword: true,
       aiInsightsEnabled: true,
       personalizedRecommendationsEnabled: true,
       analyticsCollectionEnabled: true,
@@ -31,7 +32,8 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json(user);
+  const { hashedPassword, ...settings } = user;
+  return NextResponse.json({ ...settings, hasPassword: Boolean(hashedPassword) });
 }
 
 export async function PATCH(request: Request) {
@@ -92,11 +94,13 @@ export async function PATCH(request: Request) {
       id: true,
       name: true,
       email: true,
+      hashedPassword: true,
       aiInsightsEnabled: true,
       personalizedRecommendationsEnabled: true,
       analyticsCollectionEnabled: true,
     },
   });
 
-  return NextResponse.json(user);
+  const { hashedPassword, ...settings } = user;
+  return NextResponse.json({ ...settings, hasPassword: Boolean(hashedPassword) });
 }

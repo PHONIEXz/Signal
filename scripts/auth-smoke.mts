@@ -91,6 +91,8 @@ try {
   assert.equal((await json("/api/signup", { email, password: "short" })).status, 400);
   assert.equal((await json("/api/signup", { email, password: oldPassword, name: "Test creator" })).status, 200);
   assert.equal((await json("/api/signup", { email: email.toUpperCase(), password: oldPassword })).status, 409);
+  const providers = await (await fetch(base + "/api/auth/providers")).json();
+  assert.equal(providers.google, undefined);
   const sessionOne = await login(oldPassword);
   const sessionTwo = await login(oldPassword);
   const session = async (cookie: string) => (await fetch(base + "/api/auth/session", { headers: { Cookie: cookie } })).json();
@@ -111,7 +113,40 @@ try {
   assert.equal((await session(sessionTwo))?.user, undefined);
   assert.equal((await session(await login(oldPassword)))?.user, undefined);
   assert.equal((await session(await login(newPassword))).user.email, email);
-  console.log("HTTP smoke passed: forms/icons, signup validation, reset/reuse, both old sessions revoked, old password rejected, new password accepted.");
+  const activeOne = await login(newPassword);
+  const owner = await prisma.user.findUniqueOrThrow({ where: { email } });
+  const target = await prisma.connectedAccount.create({ data: { userId: owner.id, platform: "tiktok", displayName: "Test TikTok", accessToken: "test-only" } });
+  const draftRequest = (path: string, body: object, method = "POST", cookie = activeOne) => fetch(base + path, {
+    method, headers: { "Content-Type": "application/json", Origin: process.env.APP_URL!, Cookie: cookie }, body: JSON.stringify(body),
+  });
+  const draftPayload = { text: "A test-only draft", targetIds: [target.id], mediaUrl: "", scheduledFor: null };
+  assert.equal((await draftRequest("/api/drafts", { ...draftPayload, mediaUrl: "javascript:alert(1)" })).status, 400);
+  const saved = await draftRequest("/api/drafts", draftPayload); assert.equal(saved.status, 201);
+  const draft = await saved.json(); assert.deepEqual(draft.publications, []);
+  assert.equal((await draftRequest(`/api/drafts/${draft.id}/publish`, { accountId: target.id, confirm: true }, "POST", "")).status, 401);
+  assert.equal((await draftRequest(`/api/drafts/${draft.id}/publish`, { accountId: target.id })).status, 400);
+  assert.equal((await draftRequest(`/api/drafts/${draft.id}/publish`, { accountId: target.id, confirm: true })).status, 409);
+  await prisma.contentPublication.create({ data: { contentDraftId: draft.id, connectedAccountId: target.id, status: "PUBLISHING" } });
+  assert.equal((await draftRequest(`/api/drafts/${draft.id}`, { ...draftPayload, text: "Do not overwrite" }, "PATCH")).status, 409);
+  assert.equal((await fetch(base + `/api/drafts/${draft.id}`, { method: "DELETE", headers: { Cookie: activeOne, Origin: process.env.APP_URL! } })).status, 409);
+  assert.equal((await prisma.contentDraft.findUniqueOrThrow({ where: { id: draft.id } })).text, draftPayload.text);
+  const settings = await (await fetch(base + "/api/settings", { headers: { Cookie: activeOne } })).json();
+  assert.equal(settings.hasPassword, true); assert.equal(settings.hashedPassword, undefined);
+  const activeTwo = await login(newPassword);
+  const change = (body: object, cookie = activeOne, origin = process.env.APP_URL!) => fetch(base + "/api/auth/change-password", {
+    method: "POST", headers: { "Content-Type": "application/json", Origin: origin, Cookie: cookie }, body: JSON.stringify(body),
+  });
+  const finalPassword = "a final signal passphrase";
+  const updated = { currentPassword: newPassword, password: finalPassword, confirmPassword: finalPassword };
+  assert.equal((await change(updated, "")).status, 401);
+  assert.equal((await change(updated, activeOne, "https://untrusted.example")).status, 403);
+  assert.equal((await change({ ...updated, currentPassword: "wrong" })).status, 400);
+  assert.equal((await change(updated)).status, 200);
+  assert.equal((await session(activeOne))?.user, undefined);
+  assert.equal((await session(activeTwo))?.user, undefined);
+  assert.equal((await session(await login(newPassword)))?.user, undefined);
+  assert.equal((await session(await login(finalPassword))).user.email, email);
+  console.log("HTTP smoke passed: draft ownership/validation/history protection, optional Google, password change/revocation; forms/icons, signup validation, reset/reuse, both old sessions revoked, old password rejected, new password accepted.");
 } finally {
   server.kill("SIGTERM");
   if (server.exitCode === null) await once(server, "exit");

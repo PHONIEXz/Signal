@@ -28,7 +28,7 @@ test("bootstrap creates usable Prisma libSQL tables, preserves data on repeat, a
   try {
     const sql = bootstrapSql();
     assert.equal(await initializeEmptyTurso(client, sql), "created");
-    assert.equal(await checkTursoSchema(client, sql), 11);
+    assert.equal(await checkTursoSchema(client, sql), 12);
     const user = await prisma.user.create({ data: { email: "libsql@example.com", hashedPassword: "test-only" } });
     const account = await prisma.connectedAccount.create({ data: { userId: user.id, platform: "x", accessToken: "test-only" } });
     await prisma.metricSnapshot.create({ data: { connectedAccountId: account.id, followersCount: 10 } });
@@ -60,4 +60,21 @@ test("setup refuses an existing database and rolls back failed initialization", 
     const tables = await empty.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Partial'");
     assert.equal(tables.rows.length, 0);
   } finally { empty.close(); }
+});
+
+test("publishing upgrade preserves records and is safe to repeat", async () => {
+  const { upgradePublishing } = await import("./turso-publishing-upgrade.ts");
+  const { readFileSync } = await import("node:fs");
+  const sql = bootstrapSql();
+  const old = sql.slice(0, sql.indexOf('\nCREATE TABLE "ContentPublication"')).trimEnd() + "\n";
+  const migration = readFileSync(new URL("../prisma/migrations/20260915100000_content_publishing/migration.sql", import.meta.url), "utf8");
+  const client = createClient({ url: ":memory:" });
+  try {
+    await initializeEmptyTurso(client, old);
+    await client.execute(`INSERT INTO "User" (id, email) VALUES ('preserve', 'existing@example.com')`);
+    await upgradePublishing(client, sql, migration); await upgradePublishing(client, sql, migration);
+    assert.equal(await initializeEmptyTurso(client, sql), "already-ready");
+    assert.equal(await checkTursoSchema(client, sql), 12);
+    assert.equal((await client.execute('SELECT count(*) AS total FROM "User"')).rows[0].total, 1);
+  } finally { client.close(); }
 });
