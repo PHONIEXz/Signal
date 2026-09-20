@@ -53,11 +53,22 @@ export default function MetricsPanel({
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error || "Failed to refresh.");
+      const message = String(data.error ?? "").toLowerCase();
+      setError(
+        message.includes("reconnect") || message.includes("token")
+          ? `${platformLabel} needs to be reconnected before Signal can refresh it.`
+          : message.includes("limit") || message.includes("allowed")
+            ? "This account was refreshed recently. Please try again when the next refresh is available."
+            : "We couldn't refresh this account right now. Your saved data is safe."
+      );
       return;
     }
 
-    if (data.warning) setNotice(data.warning);
+    if (data.warning) {
+      setNotice(
+        `${platformLabel} was refreshed. Signal updated every metric the platform made available.`
+      );
+    }
 
     router.refresh();
     } catch { setError("Could not reach Signal. Check your connection and try again."); }
@@ -107,38 +118,46 @@ export default function MetricsPanel({
           <>
             {platform === "facebook" ? (
               <>
-                <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
                   <Stat label="Page followers" value={snapshot.followersCount} />
-                  <Stat label="Posts in this sample" value={snapshot.postsAnalyzed} />
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
-                  <Stat label="Sample reactions" value={snapshot.totalLikes} />
-                  <Stat label="Sample engagements" value={snapshot.totalEngagements} />
-                  <Stat label="Daily Page media views" value={pageMediaViews ?? null} />
+                  <Stat label="Posts analyzed" value={snapshot.postsAnalyzed} />
+                  {snapshot.totalLikes !== null && (
+                    <Stat label="Sample reactions" value={snapshot.totalLikes} />
+                  )}
+                  {snapshot.totalEngagements !== null && (
+                    <Stat label="Sample engagements" value={snapshot.totalEngagements} />
+                  )}
+                  {pageMediaViews !== null && pageMediaViews !== undefined && (
+                    <Stat label="Daily Page media views" value={pageMediaViews} />
+                  )}
                 </div>
                 <p className="mt-3 text-xs text-ink-muted">
-                  Facebook Pages do not expose a normal following counter. Page media views are a separate daily Page measurement, not the sum of views on this post sample.
+                  Showing the latest verified Page data available from Facebook.
                 </p>
               </>
             ) : (
               <>
-                <div className="mt-6 grid grid-cols-3 gap-4">
+                <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
                   <Stat label="Followers" value={snapshot.followersCount} />
-                  <Stat label="Following" value={snapshot.followingCount} />
-                  <Stat label="Account posts" value={snapshot.postCount} />
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
-                  <Stat label="Sample likes" value={snapshot.totalLikes} />
-                  <Stat label="Sample views" value={snapshot.totalViews} />
-                  <Stat
-                    label="Engagement by views"
-                    value={
-                      engagementRate === null
-                        ? null
-                        : Math.round(engagementRate * 10) / 10
-                    }
-                    suffix="%"
-                  />
+                  {snapshot.followingCount !== null && (
+                    <Stat label="Following" value={snapshot.followingCount} />
+                  )}
+                  {snapshot.postCount !== null && (
+                    <Stat label="Account posts" value={snapshot.postCount} />
+                  )}
+                  {snapshot.totalLikes !== null && (
+                    <Stat label="Sample likes" value={snapshot.totalLikes} />
+                  )}
+                  {snapshot.totalViews !== null && (
+                    <Stat label="Sample views" value={snapshot.totalViews} />
+                  )}
+                  {engagementRate !== null && (
+                    <Stat
+                      label="Engagement by views"
+                      value={Math.round(engagementRate * 10) / 10}
+                      suffix="%"
+                    />
+                  )}
                 </div>
               </>
             )}
@@ -151,10 +170,8 @@ export default function MetricsPanel({
               . Counts are cumulative at measurement time; the selected posts may change between refreshes.
             </p>
             {snapshot.postMetricsStatus !== "AVAILABLE" && (
-              <p className="mt-2 text-xs text-amber-600">
-                {snapshot.postMetricsStatus === "UNAVAILABLE"
-                  ? "Recent post metrics were unavailable during this refresh."
-                  : "Some metrics are not available from this platform connection."}
+              <p className="mt-2 text-xs text-ink-muted">
+                More insights will appear automatically when the platform makes them available.
               </p>
             )}
           </>
@@ -175,13 +192,13 @@ function Stat({
   suffix = "",
 }: {
   label: string;
-  value: number | null;
+  value: number;
   suffix?: string;
 }) {
   return (
     <div>
       <p className="font-display text-2xl font-medium text-ink">
-        {value === null ? "Unavailable" : `${value.toLocaleString()}${suffix}`}
+        {`${value.toLocaleString()}${suffix}`}
       </p>
       <p className="text-xs text-ink-muted">{label}</p>
     </div>
