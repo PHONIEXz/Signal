@@ -24,11 +24,13 @@ export default function MetricsPanel({
   snapshot,
   plan,
   sampleSize,
+  pageMediaViews,
 }: {
   platform: string;
   snapshot: Snapshot | null;
   plan: Plan;
   sampleSize: number;
+  pageMediaViews?: number | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -103,24 +105,43 @@ export default function MetricsPanel({
 
         {snapshot ? (
           <>
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              <Stat label="Followers" value={snapshot.followersCount} />
-              <Stat label="Following" value={snapshot.followingCount} />
-              <Stat label="Account posts" value={snapshot.postCount} />
-            </div>
-            <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
-              <Stat label={platform === "facebook" ? "Sample reactions" : "Sample likes"} value={snapshot.totalLikes} />
-              <Stat label="Sample views" value={snapshot.totalViews} />
-              <Stat
-                label="Engagement by views"
-                value={
-                  engagementRate === null
-                    ? null
-                    : Math.round(engagementRate * 10) / 10
-                }
-                suffix="%"
-              />
-            </div>
+            {platform === "facebook" ? (
+              <>
+                <div className="mt-6 grid grid-cols-2 gap-4">
+                  <Stat label="Page followers" value={snapshot.followersCount} />
+                  <Stat label="Posts in this sample" value={snapshot.postsAnalyzed} />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
+                  <Stat label="Sample reactions" value={snapshot.totalLikes} />
+                  <Stat label="Sample engagements" value={snapshot.totalEngagements} />
+                  <Stat label="Daily Page media views" value={pageMediaViews ?? null} />
+                </div>
+                <p className="mt-3 text-xs text-ink-muted">
+                  Facebook Pages do not expose a normal following counter. Page media views are a separate daily Page measurement, not the sum of views on this post sample.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="mt-6 grid grid-cols-3 gap-4">
+                  <Stat label="Followers" value={snapshot.followersCount} />
+                  <Stat label="Following" value={snapshot.followingCount} />
+                  <Stat label="Account posts" value={snapshot.postCount} />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4">
+                  <Stat label="Sample likes" value={snapshot.totalLikes} />
+                  <Stat label="Sample views" value={snapshot.totalViews} />
+                  <Stat
+                    label="Engagement by views"
+                    value={
+                      engagementRate === null
+                        ? null
+                        : Math.round(engagementRate * 10) / 10
+                    }
+                    suffix="%"
+                  />
+                </div>
+              </>
+            )}
             <p className="mt-3 text-xs text-ink-muted">
               Based on {snapshot.postsAnalyzed} available post
               {snapshot.postsAnalyzed === 1 ? "" : "s"}
