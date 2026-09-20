@@ -105,26 +105,26 @@ export default async function PostsPage() {
 
                     {connection.metricSnapshots[0]?.postMetricsStatus === "CONTENT_ONLY" ? <p className="mt-3 text-xs text-ink-muted">Engagement counts unavailable.</p> : <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
                       <span>
-                        {connection.posts[0].likeCount.toLocaleString()} likes
+                        {(connection.posts[0].likeCount?.toLocaleString() ?? "Unavailable")} {connection.platform === "facebook" ? "reactions" : "likes"}
                       </span>
 
                       <span>
                         {connection.platform === "facebook"
                           ? "Views unavailable"
-                          : `${connection.posts[0].viewCount.toLocaleString()} views`}
+                          : `${(connection.posts[0].viewCount?.toLocaleString() ?? "Unavailable")} views`}
                       </span>
 
                       <span>
-                        {connection.posts[0].replyCount.toLocaleString()} replies
+                        {(connection.posts[0].replyCount?.toLocaleString() ?? "Unavailable")} replies
                       </span>
 
                       <span>
-                        {connection.posts[0].retweetCount.toLocaleString()} reposts
+                        {(connection.posts[0].retweetCount?.toLocaleString() ?? "Unavailable")} reposts
                       </span>
 
-                      {connection.posts[0].quoteCount > 0 && (
+                      {connection.posts[0].quoteCount !== null && connection.posts[0].quoteCount > 0 && (
                         <span>
-                          {connection.posts[0].quoteCount.toLocaleString()} quotes
+                          {(connection.posts[0].quoteCount?.toLocaleString() ?? "Unavailable")} quotes
                         </span>
                       )}
                     </div>}

@@ -59,6 +59,8 @@ model ConnectedAccount {
   posts          Post[]
   draftTargets   ContentDraftTarget[]
   publications   ContentPublication[]
+  metricSync     MetricSync?
+  pageInsights   PageInsight[]
 
   @@unique([userId, platform])
 }
@@ -98,14 +100,15 @@ model Post {
   url                String?
   tags               String?
   permalinkUrl       String?
-  likeCount          Int               @default(0)
-  viewCount          Int               @default(0)
-  replyCount         Int               @default(0)
-  retweetCount       Int               @default(0)
-  quoteCount         Int               @default(0)
+  likeCount          Int?
+  viewCount          Int?
+  replyCount         Int?
+  retweetCount       Int?
+  quoteCount         Int?
   postedAt           DateTime?
   fetchedAt          DateTime          @default(now())
   connectedAccount   ConnectedAccount  @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  measurements       PostMeasurement[]
 
   @@unique([connectedAccountId, platformPostId])
 }
@@ -180,4 +183,51 @@ model ContentPublication {
 
   @@unique([contentDraftId, connectedAccountId])
   @@index([connectedAccountId, status])
+}
+
+model PostMeasurement {
+  id          String   @id @default(cuid())
+  postId      String
+  source      String
+  sampleId    String
+  capturedAt  DateTime
+  likeCount   Int?
+  viewCount   Int?
+  replyCount  Int?
+  retweetCount Int?
+  quoteCount  Int?
+  rawLegacy   String?
+  post        Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sampleId])
+  @@index([postId, source, capturedAt])
+}
+
+model MetricSync {
+  connectedAccountId String @id
+  lockId             String?
+  lockUntil          DateTime?
+  nextAllowedAt      DateTime?
+  lastAttemptAt      DateTime?
+  lastSuccessAt      DateTime?
+  source             String?
+  status             String @default("NEVER")
+  requestedPosts     Int @default(0)
+  receivedPosts      Int @default(0)
+  missingFields      String?
+  warning            String?
+  account            ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+}
+
+model PageInsight {
+  id                 String @id @default(cuid())
+  connectedAccountId String
+  metric             String
+  period             String
+  periodEnd          DateTime
+  value              Int
+  fetchedAt          DateTime @default(now())
+  account            ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([connectedAccountId, metric, period, periodEnd])
 }

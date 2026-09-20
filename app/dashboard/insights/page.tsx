@@ -1,3 +1,4 @@
+import { postEngagement } from "@/lib/metric-measurements";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -211,16 +212,7 @@ export default async function InsightsPage({
       return bDate - aDate;
     });
 
-  const strongestPost = recentPosts
-    .slice()
-    .sort(
-      (a, b) =>
-        b.likeCount +
-        b.replyCount +
-        b.retweetCount +
-        b.quoteCount -
-        (a.likeCount + a.replyCount + a.retweetCount + a.quoteCount)
-    )[0];
+  const strongestPost = recentPosts.filter(p => postEngagement(p) !== null).sort((a,b) => postEngagement(b)! - postEngagement(a)!)[0];
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

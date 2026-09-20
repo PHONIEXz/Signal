@@ -1,3 +1,6 @@
+import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
+import SyncDetails from "@/components/dashboard/SyncDetails";
+import MetricsImport from "@/components/dashboard/MetricsImport";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
@@ -37,7 +40,7 @@ export default async function PlatformPostsPage({
     notFound();
   }
 
-  const posts = await prisma.post.findMany({
+  const storedPosts = await prisma.post.findMany({
     where: {
       connectedAccountId: connectedAccount.id,
     },
@@ -46,6 +49,7 @@ export default async function PlatformPostsPage({
     },
     take: 50,
   });
+  const posts = await attachMeasurementEvidence(storedPosts);
   const snapshot = await prisma.metricSnapshot.findFirst({ where: { connectedAccountId: connectedAccount.id }, orderBy: { fetchedAt: "desc" } });
   const contentOnly = snapshot?.postMetricsStatus === "CONTENT_ONLY";
 
@@ -76,10 +80,13 @@ export default async function PlatformPostsPage({
       </div>
 
       <PostsRefresh platform={platform} />
+      <SyncDetails accountId={connectedAccount.id} />
+      <MetricsImport platform={platform} />
       {contentOnly && <p className="text-sm text-ink-muted">Post content is available. Engagement counts could not be retrieved and are shown as unavailable.</p>}
-      <PostsList
+      <PostsList platform={platform}
         posts={posts.map((p) => ({
           id: p.id,
+          measurements: p.measurements.map(m => ({ likeCount:m.likeCount,viewCount:m.viewCount,replyCount:m.replyCount,retweetCount:m.retweetCount,quoteCount:m.quoteCount,source:m.source,capturedAt:m.capturedAt.toISOString() })),
           text: p.text,
           likeCount: contentOnly ? null : p.likeCount,
           viewCount: platform === "facebook" ? null : p.viewCount,

@@ -1,3 +1,4 @@
+import { completeSum, postEngagement } from "./metric-measurements.ts";
 export const FREE_POST_SAMPLE_LIMIT = 10;
 export const PRO_POST_SAMPLE_LIMIT = 100;
 export const POST_SAMPLE_OPTIONS = [5, 10, 25, 50, 100] as const;
@@ -7,11 +8,11 @@ export type Plan = "FREE" | "PRO";
 export type MetricValue = number | null;
 
 export type PostMetricInput = {
-  likeCount: number;
-  viewCount: number;
-  replyCount: number;
-  retweetCount: number;
-  quoteCount?: number;
+  likeCount: number | null;
+  viewCount: number | null;
+  replyCount: number | null;
+  retweetCount: number | null;
+  quoteCount?: number | null;
 };
 
 export type PostMetricSummary = {
@@ -82,20 +83,12 @@ export function summarizePosts(
     };
   }
 
-  const likes = posts.reduce((sum, post) => sum + post.likeCount, 0);
-  const engagements = posts.reduce(
-    (sum, post) =>
-      sum +
-      post.likeCount +
-      post.replyCount +
-      post.retweetCount +
-      (post.quoteCount ?? 0),
-    0
-  );
+  const likes = completeSum(posts.map(post => post.likeCount));
+  const engagements = completeSum(posts.map(post => postEngagement({ ...post, quoteCount: post.quoteCount === undefined ? 0 : post.quoteCount })));
   const views =
     platform === "facebook"
       ? null
-      : posts.reduce((sum, post) => sum + post.viewCount, 0);
+      : completeSum(posts.map(post => post.viewCount));
 
   return {
     likes,

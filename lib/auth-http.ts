@@ -13,12 +13,23 @@ export class AuthInputError extends Error {
   }
 }
 
-export async function readAuthBody(request: Request, maxBytes = 4096): Promise<Record<string, unknown>> {
+// Next.js can expose an internal hostname in request.url. The browser's Host
+// still identifies this deployment; never trust caller-supplied forwarded hosts.
+export function requestOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const host = request.headers.get("host");
+  if (host && /^[a-z0-9.[\]:-]+$/i.test(host)) {
+    try { return new URL(`${url.protocol}//${host}`).origin; } catch { /* Use URL origin. */ }
+  }
+  return url.origin;
+}
+
+export async function readAuthBody(request: Request, maxBytes = 4096, additionalOrigin?: string): Promise<Record<string, unknown>> {
   if (request.headers.get("content-type")?.split(";")[0].trim() !== "application/json") {
     throw new AuthInputError("Send a JSON request.", 415);
   }
   const origin = request.headers.get("origin");
-  let trusted = origin === resetOrigin();
+  let trusted = origin === resetOrigin() || Boolean(additionalOrigin && origin === additionalOrigin);
   if (!trusted && origin && process.env.NODE_ENV !== "production") {
     try {
       const local = new URL(origin);
