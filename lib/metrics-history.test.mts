@@ -69,10 +69,12 @@ test("Facebook restricted engagement falls back to content without invented coun
 });
 
 test("missing Facebook shares and missing next cursors remain unavailable", async () => {
-  const { fetcher } = responses([{ data: { data: [{ id: "1_2", reactions: { summary: { total_count: 0 } } }], paging: { next: "exists" } } }]);
+  const { calls, fetcher } = responses([{ data: { data: [{ id: "1_2", reactions: { summary: { total_count: 0 } } }], paging: { next: "exists" } } }]);
   const result = await collectPosts("facebook", "1", "test-only", 10, fetcher);
   assert.equal(result.posts[0].likeCount, 0); assert.equal(result.posts[0].retweetCount, null);
   assert.equal(result.complete, false); assert.match(result.warning!, /cursor/);
+  assert.match(calls[0].url.searchParams.get("fields")!, /reactions\.limit\(0\)\.summary\(true\)/);
+  assert.match(calls[0].url.searchParams.get("fields")!, /comments\.limit\(0\)\.summary\(true\)/);
 });
 
 test("TikTok advances cursors, bounds pages and detects stalled pagination", async () => {

@@ -11,7 +11,7 @@ export function xPostsWarning(status: number) {
 export async function retrieveFacebookPosts(pageId: string, token: string, limit: number, fetcher: typeof fetch = fetch) {
   const request = async (rich: boolean) => {
     const url = new URL(`https://graph.facebook.com/v26.0/${pageId}/posts`);
-    url.searchParams.set("fields", rich ? "id,message,created_time,permalink_url,reactions.limit(0).summary(total_count),comments.limit(0).summary(total_count),shares" : "id,message,created_time,permalink_url");
+    url.searchParams.set("fields", rich ? "id,message,created_time,permalink_url,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares" : "id,message,created_time,permalink_url");
     url.searchParams.set("limit", String(limit));
     const response = await fetcher(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(15000) });
     const payload = await response.json().catch(() => null);

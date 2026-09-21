@@ -48,6 +48,15 @@ export default async function AccountDetailPage({
   });
   const snapshotHistory = recentSnapshotHistory.reverse();
   const latestSnapshot = snapshotHistory.at(-1) ?? null;
+  const latestPageMediaView = platform === "facebook"
+    ? await prisma.pageInsight.findFirst({
+        where: {
+          connectedAccountId: connectedAccount.id,
+          metric: "page_media_view",
+        },
+        orderBy: { periodEnd: "desc" },
+      })
+    : null;
 
   const growthData = snapshotHistory.map((s) => ({
     date: s.fetchedAt.toLocaleDateString("en-US", {
@@ -76,6 +85,7 @@ export default async function AccountDetailPage({
         platform={platform}
         plan={plan}
         sampleSize={sampleSize}
+        pageMediaViews={latestPageMediaView?.value ?? null}
         snapshot={
           latestSnapshot
             ? {

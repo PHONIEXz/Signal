@@ -11,7 +11,11 @@ export async function collectPosts(platform: string, userId: string, token: stri
   let requests = 0;
   let basic = false;
   let warning: string | null = null;
-  const fields = "id,message,created_time,permalink_url,reactions.limit(0).summary(total_count),comments.limit(0).summary(total_count),shares";
+  // Meta's field expansion expects summary(true). Asking for
+  // summary(total_count) causes current Graph API versions to reject the
+  // complete field set, which previously made Signal fall back to content-only
+  // posts even when the Page token had pages_read_engagement access.
+  const fields = "id,message,created_time,permalink_url,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares";
   try {
     while (posts.length < limit && requests < 10) {
       const remaining = limit - posts.length;
