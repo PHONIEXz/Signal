@@ -44,3 +44,7 @@ Automatic scheduled publishing, uploaded media delivery, a payment checkout/subs
 4. Reload Content Studio with unsaved text and restore it as a copy.
 5. Complete the Get started flow with a new test account.
 6. Watch provider billing alongside operation reservations before inviting the first 20 creators.
+
+## Dependency audit follow-up
+
+The September 21 audit prompted a Next.js 16.3.5 patch and compatible lockfile fixes for sharp, fast-uri and js-yaml. Four high-severity audit entries remain in the Prisma CLI dependency tree (deepmerge-ts/mysql2 and their parents). Signal uses SQLite/Turso rather than MySQL and the Prisma configuration is repository-controlled; this is not a claim that the advisories are harmless. Track an upstream-compatible fix before public launch. Do not run audit fix --force: its proposed Prisma 6 downgrade conflicts with the current Prisma 7 adapters. The runtime build and publishing regressions must pass after dependency updates.
