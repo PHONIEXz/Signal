@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import { emailValue, sessionVersionMatches } from "@/lib/auth-policy";
-import { findPasswordUser } from "@/lib/password-reset";
+import { findPasswordUser, takeAuthQuota } from "@/lib/password-reset";
 import { googleAuthConfig } from "@/lib/auth-providers";
 
 const google = googleAuthConfig();
@@ -53,6 +53,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorize: async (credentials) => {
         const email = emailValue(credentials?.email);
         if (!email || typeof credentials?.password !== "string") return null;
+        if (new TextEncoder().encode(credentials.password).length > 72) return null;
+        if (!await takeAuthQuota("login-global", "all", 300, 15*60*1000)) return null;
+        if (!await takeAuthQuota("login-email", email, 10, 15*60*1000)) return null;
         const user = await findPasswordUser(email);
 
         if (!user || !user.hashedPassword) return null;

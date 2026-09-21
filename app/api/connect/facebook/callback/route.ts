@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
 import { getAccountConnectionAccess } from "@/lib/account-access";
 
 type FacebookTokenResponse = {
   access_token?: string;
-  error?: { message?: string };
-};
-
-type FacebookPage = {
-  id?: string;
-  name?: string;
-  access_token?: string;
-  tasks?: string[];
-};
-
-type FacebookPagesResponse = {
-  data?: FacebookPage[];
   error?: { message?: string };
 };
 
@@ -114,62 +101,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    stage = "managed Page discovery";
-    const pagesUrl = new URL("https://graph.facebook.com/v26.0/me/accounts");
-    pagesUrl.searchParams.set("fields", "id,name,access_token,tasks");
-    pagesUrl.searchParams.set("limit", "100");
-
-    const pagesRes = await fetch(pagesUrl, {
-      headers: { Authorization: `Bearer ${longLivedData.access_token}` },
-      cache: "no-store",
-    });
-    const pagesData = (await pagesRes.json()) as FacebookPagesResponse;
-
-    if (!pagesRes.ok) {
-      throw new Error(
-        pagesData.error?.message ?? "Facebook rejected the Page request"
-      );
-    }
-
-    const page = pagesData.data?.find(
-      (candidate) => candidate.id && candidate.access_token
-    );
-
-    if (!page?.id || !page.access_token) {
-      console.warn(
-        "Facebook connection found no manageable Pages. Check Page full control, business portfolio assignment, and pages_show_list approval."
-      );
-      return redirect(
-        "/dashboard/accounts?error=facebook_no_managed_pages",
-        true
-      );
-    }
-
-    stage = "account storage";
-    await prisma.connectedAccount.upsert({
-      where: {
-        userId_platform: { userId: session.user.id, platform: "facebook" },
-      },
-      update: {
-        accessToken: encrypt(page.access_token),
-        platformUserId: page.id,
-        displayName: page.name ?? "Facebook Page",
-        expiresAt: null,
-      },
-      create: {
-        userId: session.user.id,
-        platform: "facebook",
-        accessToken: encrypt(page.access_token),
-        platformUserId: page.id,
-        displayName: page.name ?? "Facebook Page",
-      },
-    });
-
-    return redirect("/dashboard/accounts?connected=facebook", true);
-  } catch (error) {
+    const response = redirect("/dashboard/accounts/facebook/select", true);
+    const pending = encrypt(JSON.stringify({userId:session.user.id,token:longLivedData.access_token,expiresAt:Date.now()+600000}));
+    if (pending.length > 3500) throw new Error("Selection token too large");
+    response.cookies.set("fb_page_selection", pending, {httpOnly:true,secure:appUrl.startsWith("https://"),sameSite:"lax",path:"/",maxAge:600});
+    return response;
+  } catch {
     console.error(
       `Facebook connection failed during ${stage}:`,
-      error instanceof Error ? error.message : "Unknown error"
+      "Provider request failed"
     );
     return redirect(
       "/dashboard/accounts?error=facebook_connect_failed",

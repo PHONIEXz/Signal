@@ -2,7 +2,7 @@ import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { withAiRequest } from "@/lib/ai-request";
 import { prisma } from "@/lib/prisma";
-import { gemini } from "@/lib/gemini";
+import { getGemini } from "@/lib/gemini";
 import { normalizeSampleSize } from "@/lib/metrics";
 import {
   BALANCED_INTELLIGENCE_RULES,
@@ -91,8 +91,9 @@ VERIFIED ACCOUNT EVIDENCE
 ${JSON.stringify(evidence,null,2)}
 `;
 
-    const response=await gemini.models.generateContent({
+    const response=await getGemini().models.generateContent({
       model: SIGNAL_AI_MODEL,
+      config: { maxOutputTokens: 2048 },
       contents: [
         {
           role: "user",

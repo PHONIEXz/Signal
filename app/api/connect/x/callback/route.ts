@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { saveConnection, ConnectionIdentityError } from "@/lib/save-connection";
 import { encrypt } from "@/lib/encryption";
 import { getAccountConnectionAccess } from "@/lib/account-access";
 
@@ -69,30 +69,22 @@ export async function GET(request: Request) {
     ? new Date(Date.now() + tokenData.expires_in * 1000)
     : null;
 
-  await prisma.connectedAccount.upsert({
-    where: {
-      userId_platform: {
-        userId: session.user.id,
-        platform: "x",
-      },
-    },
-    update: {
+  try {
+    const profileResponse = await fetch("https://api.x.com/2/users/me", {headers:{Authorization:`Bearer ${tokenData.access_token}`},cache:"no-store",signal:AbortSignal.timeout(10000)});
+    const profile = await profileResponse.json();
+    if (!profileResponse.ok || typeof profile.data?.id !== "string") throw new Error("Could not identify account");
+    await saveConnection(session.user.id, "x", {
+      platformUserId: profile.data.id,
+      displayName: profile.data.name,
       accessToken: encrypt(tokenData.access_token),
-      refreshToken: tokenData.refresh_token
-        ? encrypt(tokenData.refresh_token)
-        : null,
+      refreshToken: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
       expiresAt,
-    },
-    create: {
-      userId: session.user.id,
-      platform: "x",
-      accessToken: encrypt(tokenData.access_token),
-      refreshToken: tokenData.refresh_token
-        ? encrypt(tokenData.refresh_token)
-        : null,
-      expiresAt,
-    },
-  });
+    });
+  } catch (error) {
+    const response = NextResponse.redirect(new URL(`/dashboard/accounts?error=${error instanceof ConnectionIdentityError ? "account_identity_mismatch" : "x_connect_failed"}`, request.url));
+    response.cookies.delete("x_oauth_state"); response.cookies.delete("x_oauth_verifier");
+    return response;
+  }
 
   const response = NextResponse.redirect(new URL("/dashboard", request.url));
   response.cookies.delete("x_oauth_verifier");

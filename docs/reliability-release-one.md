@@ -13,6 +13,6 @@ Refresh responses distinguish cache, running, partial, empty, updated and failed
 - Existing metric, collector, post retrieval and AI evidence tests.
 - No production credentials, paid API calls, live publishing or production data changes required.
 
-## Still outstanding
+## Follow-up status
 
-This is the first audit batch. It does not yet implement login throttling, AI usage budgets, identity-safe reconnects/Page selection, sample-cache redesign, durable scheduling or administrative diagnostics UI. Existing saved partial states update after the next collection. PR #14's Facebook field-query and display changes remain separate and must be reconciled before both are merged.
+PR #14's Facebook queries and display were reconciled with this release. Login throttling, usage allowances, identity-safe reconnects, Facebook Page selection and private operations controls are covered by [launch readiness](service-activation.md). Sample-cache redesign and durable scheduling remain outstanding.

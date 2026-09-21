@@ -1,3 +1,6 @@
+import * as serviceConfig from "./service-config.ts";
+import { sameConnectionIdentity } from "./connection-identity.ts";
+import { readRecovery } from "./draft-recovery.ts";
 import * as chatIntent from "./chat-intent.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -17,7 +20,7 @@ function load(relative: string, modules: Record<string, unknown>) {
   runInNewContext(code, { exports, require: (name: string) => {
     if (!(name in modules)) throw new Error(`Unexpected import ${name}`);
     return modules[name];
-  }, Response, crypto, console: { error() {} } });
+  }, Response, URL, crypto, console: { error() {} } });
   return exports;
 }
 
@@ -26,7 +29,7 @@ for (const path of ["insights/chat", "insights/generate", "insights/post", "repo
     for (const preferences of [null, { aiInsightsEnabled:false, personalizedRecommendationsEnabled:true }, { aiInsightsEnabled:true, personalizedRecommendationsEnabled:false }]) {
       let accountReads = 0, providerCalls = 0;
       const prisma = { user: { findUnique: async () => preferences }, connectedAccount: { findUnique: async () => { accountReads++; throw new Error("Must not read"); } } };
-      const guard = load("./ai-request.ts", { "@/auth": { auth: async () => ({user:{id:"u"}}) }, "@/lib/prisma": { prisma }, "./ai-access.ts": { withAiPreferences }, "./auth-http.ts": http });
+      const guard = load("./ai-request.ts", { "@/auth": { auth: async () => ({user:{id:"u"}}) }, "@/lib/prisma": { prisma }, "./ai-access.ts": { withAiPreferences }, "./auth-http.ts": http, "./chat-intent.ts": chatIntent, "./service-usage.ts": {reserveUsage:async()=>{},recordUsageFailure:async()=>{},UsageError:class extends Error{}} });
       const route = load(`../app/api/${path}/route.ts`, {
         "@/lib/ai-request": guard, "next/server": { NextResponse: Response }, "@/lib/prisma": { prisma },
         "@/lib/gemini": { gemini: { models: { generateContent: async () => { providerCalls++; } } } },
@@ -44,7 +47,7 @@ test("AI request boundary validates origin and size, permits enabled users, reda
   const previousOrigin = process.env.APP_URL;
   process.env.APP_URL = "https://signal.test";
   t.after(() => { if (previousOrigin === undefined) delete process.env.APP_URL; else process.env.APP_URL = previousOrigin; });
-  const guard = load("./ai-request.ts", { "@/auth": { auth: async () => ({user:{id:"u"}}) }, "@/lib/prisma": { prisma:{user:{findUnique:async()=>({aiInsightsEnabled:true,personalizedRecommendationsEnabled:true})}} }, "./ai-access.ts": { withAiPreferences }, "./auth-http.ts": http });
+  const guard = load("./ai-request.ts", { "@/auth": { auth: async () => ({user:{id:"u"}}) }, "@/lib/prisma": { prisma:{user:{findUnique:async()=>({aiInsightsEnabled:true,personalizedRecommendationsEnabled:true})}} }, "./ai-access.ts": { withAiPreferences }, "./auth-http.ts": http, "./chat-intent.ts": chatIntent, "./service-usage.ts": {reserveUsage:async()=>{},recordUsageFailure:async()=>{},UsageError:class extends Error{}} });
   const request = (body:string, origin="https://signal.test") => new Request("https://signal.test/api", {method:"POST",headers:{"content-type":"application/json",origin},body});
   let calls=0;
   const run = async () => {calls++;return Response.json({ok:true});};
@@ -89,4 +92,54 @@ test("greetings stay conversational but mixed requests still reach analytics", (
   }
   assert.equal(chatIntent.conversationalReply([{role:"assistant",content:"hi"}]),null);
   assert.equal(chatIntent.conversationalReply([null]),null);
+});
+
+test("admin access uses an explicit user ID allowlist, not plan or partial matching", () => {
+  const env={SIGNAL_ADMIN_USER_IDS:"owner, second",NODE_ENV:"test"} as NodeJS.ProcessEnv;
+  assert.equal(serviceConfig.isAdmin("owner",env),true);
+  assert.equal(serviceConfig.isAdmin("own",env),false);
+  assert.equal(serviceConfig.isAdmin(undefined,env),false);
+  assert.equal(serviceConfig.isAdmin("PRO",env),false);
+  assert.equal(serviceConfig.enabled("ai",{SIGNAL_AI_ENABLED:"typo",NODE_ENV:"test"} as NodeJS.ProcessEnv),false);
+  assert.equal(serviceConfig.limit("BAD",10,{BAD:"oops",NODE_ENV:"test"} as NodeJS.ProcessEnv),0);
+});
+test("reconnecting a different identity cannot inherit old history", () => {
+  assert.equal(sameConnectionIdentity("original","other",true),false);
+  assert.equal(sameConnectionIdentity("original","original",true),true);
+  assert.equal(sameConnectionIdentity(null,"new",true),false);
+  assert.equal(sameConnectionIdentity(null,"new",false),true);
+});
+test("draft recovery rejects broken, oversized and expired data", () => {
+  const draft={text:"draft",mediaUrl:"",scheduledFor:"",targetIds:["a"],savedAt:1000};
+  assert.deepEqual(readRecovery(JSON.stringify(draft),2000),draft);
+  assert.equal(readRecovery(JSON.stringify(draft),86402000),null);
+  assert.equal(readRecovery("invalid"),null);
+  assert.equal(readRecovery(JSON.stringify({...draft,text:"a".repeat(65001)}),2000),null);
+});
+
+test("usage reservations roll back on any cap and reset by UTC day", async () => {
+  // A serial transaction model verifies all-or-nothing reservations across concurrent callers.
+  let rows=new Map<string,number>();
+  let queue=Promise.resolve();
+  const prisma={$transaction: (run:(tx:unknown)=>Promise<unknown>)=>{
+    const result=queue.then(async()=>{
+      const next=new Map(rows);
+      const value=await run({authRateLimit:{upsert:async({where}:{where:{key:string}})=>{
+        const count=(next.get(where.key)??0)+1;next.set(where.key,count);return {count};
+      }}});
+      rows=next;return value;
+    });
+    queue=result.then(()=>{},()=>{});return result;
+  }};
+  const config={...serviceConfig,userLimit:()=>2,limit:()=>100};
+  const usage=load("./service-usage.ts",{"./prisma.ts":{prisma},"./service-config.ts":config});
+  const now=new Date("2026-09-21T23:59:00Z");
+  const results=await Promise.allSettled([1,2,3].map(()=>usage.reserveUsage("ai","u","FREE",now)));
+  assert.equal(results.filter(r=>r.status==="fulfilled").length,2);
+  assert.equal(rows.get("usage:ai:global:2026-09-21"),2);
+  await usage.reserveUsage("ai","u","FREE",new Date("2026-09-22T00:01:00Z"));
+  assert.equal(rows.get("usage:ai:user:u:2026-09-22"),1);
+  const blocked=load("./service-usage.ts",{"./prisma.ts":{prisma},"./service-config.ts":{...config,enabled:()=>false}});
+  await assert.rejects(()=>blocked.reserveUsage("ai","u","FREE",now));
+  assert.equal(rows.get("usage:ai:global:2026-09-21"),2);
 });
