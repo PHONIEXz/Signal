@@ -1,6 +1,7 @@
+import { validAiReport } from "@/lib/ai-report";
 import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { withAiRequest } from "@/lib/ai-request";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
 import { normalizeSampleSize } from "@/lib/metrics";
@@ -12,33 +13,22 @@ import {
 } from "@/lib/signal-intelligence";
 
 export async function POST(request: Request) {
-  const session = await auth();
+  return withAiRequest(request,async (userId,body) => {
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
 
-  try {
-    let body: { postLimit?: unknown } = {};
-    try {
-      body = await request.json();
-    } catch {
-      body = {};
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    const user=await prisma.user.findUnique({
+      where: { id: userId },
       select: { plan: true },
     });
-    const sampleSize = normalizeSampleSize(
-      typeof body.postLimit === "number" || typeof body.postLimit === "string"
+    const sampleSize=normalizeSampleSize(
+      typeof body.postLimit==="number"||typeof body.postLimit==="string"
         ? body.postLimit
-        : undefined,
+        :undefined,
       user?.plan
     );
 
-    const connections = await prisma.connectedAccount.findMany({
-      where: { userId: session.user.id },
+    const connections=await prisma.connectedAccount.findMany({
+      where: { userId },
       include: {
         metricSnapshots: {
           orderBy: { fetchedAt: "desc" },
@@ -52,14 +42,14 @@ export async function POST(request: Request) {
       orderBy: { createdAt: "asc" },
     });
 
-    if (connections.length === 0) {
+    if(connections.length===0) {
       return NextResponse.json(
         { error: "Connect at least one account before generating a report." },
         { status: 400 }
       );
     }
 
-    const accountData = await Promise.all(connections.map(async (account) => {
+    const accountData=await Promise.all(connections.map(async (account) => {
       return {
         displayName: account.displayName,
         evidence: buildAccountEvidence({
@@ -71,7 +61,7 @@ export async function POST(request: Request) {
       };
     }));
 
-    const prompt = `${BALANCED_INTELLIGENCE_RULES}
+    const prompt=`${BALANCED_INTELLIGENCE_RULES}
 
 You are Signal AI, the analytics and growth intelligence engine inside a social media dashboard.
 
@@ -109,10 +99,10 @@ Rules:
 - Do not include any keys other than the requested keys.
 
 ACCOUNT DATA:
-${JSON.stringify(accountData, null, 2)}
+${JSON.stringify(accountData,null,2)}
 `;
 
-    const response = await gemini.models.generateContent({
+    const response=await gemini.models.generateContent({
       model: SIGNAL_AI_MODEL,
       contents: [
         {
@@ -122,34 +112,23 @@ ${JSON.stringify(accountData, null, 2)}
       ],
     });
 
-    const raw = cleanAiText(response.text ?? "");
+    const raw=cleanAiText(response.text??"");
 
     let report: unknown;
 
     try {
-      report = JSON.parse(raw);
+      report=JSON.parse(raw);
     } catch {
-      const withoutFences = raw
-        .replace(/^```json\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/\s*```$/i, "")
+      const withoutFences=raw
+        .replace(/^```json\s*/i,"")
+        .replace(/^```\s*/i,"")
+        .replace(/\s*```$/i,"")
         .trim();
 
-      report = JSON.parse(withoutFences);
+      report=JSON.parse(withoutFences);
     }
 
+    if(!validAiReport(report)) throw new Error("Invalid AI report shape");
     return NextResponse.json({ report });
-  } catch (error) {
-    console.error("Signal AI report error:", error);
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to generate report",
-      },
-      { status: 500 }
-    );
-  }
+  });
 }

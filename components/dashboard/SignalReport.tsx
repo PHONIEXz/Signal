@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
 import { waitForSignalAnalysis } from "@/lib/minimum-duration";
 
@@ -39,8 +39,12 @@ async function requestReport(sampleSize: number) {
 }
 
 export default function SignalReport({ sampleSize }: { sampleSize: number }) {
+  return <ReportContent key={sampleSize} sampleSize={sampleSize} />;
+}
+
+function ReportContent({ sampleSize }: { sampleSize: number }) {
   const [report, setReport] = useState<Report | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function generateReport() {
@@ -63,31 +67,6 @@ export default function SignalReport({ sampleSize }: { sampleSize: number }) {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    Promise.all([requestReport(sampleSize), waitForSignalAnalysis()])
-      .then(([nextReport]) => {
-        if (!cancelled) setReport(nextReport);
-      })
-      .catch((requestError: unknown) => {
-        if (!cancelled) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Could not generate the report."
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [sampleSize]);
 
   if (loading) {
     return (
@@ -118,7 +97,11 @@ export default function SignalReport({ sampleSize }: { sampleSize: number }) {
     );
   }
 
-  if (!report) return null;
+  if (!report) return <section className="rounded-xl border border-border bg-surface p-6">
+    <h2 className="font-display text-lg font-medium text-ink">Your AI report</h2>
+    <p className="mt-2 text-sm text-ink-muted">Generate a report from your selected post sample when you need it.</p>
+    <button type="button" onClick={generateReport} className="mt-4 rounded-md bg-navy px-4 py-2 text-sm text-white">Generate report</button>
+  </section>;
 
   return (
     <div className="space-y-6">

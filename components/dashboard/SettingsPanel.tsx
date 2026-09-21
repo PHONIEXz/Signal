@@ -246,7 +246,7 @@ export default function SettingsPanel() {
 
           <SettingRow
             title="Personalized Recommendations"
-            description="Allow Signal AI to tailor recommendations to your account and activity."
+            description="Allow account and post analysis, personalised recommendations and AI reports. Turning this off pauses these AI features."
             enabled={settings.personalizedRecommendationsEnabled}
             saving={saving === "personalizedRecommendationsEnabled"}
             onChange={() =>

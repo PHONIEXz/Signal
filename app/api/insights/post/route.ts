@@ -1,6 +1,7 @@
+import { conversationalReply, CONVERSATIONAL_RULES } from "@/lib/chat-intent";
 import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { withAiRequest } from "@/lib/ai-request";
 import { prisma } from "@/lib/prisma";
 import { gemini } from "@/lib/gemini";
 import {
@@ -11,80 +12,77 @@ import {
 } from "@/lib/signal-intelligence";
 
 export async function POST(request: Request) {
-  const session = await auth();
+  return withAiRequest(request,async (userId,body) => {
 
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      { error: "Not authenticated" },
-      { status: 401 }
-    );
-  }
+    const { postId,messages }=body;
 
-  const { postId, messages } = await request.json();
+    if(typeof postId!=="string"||!postId) {
+      return NextResponse.json(
+        { error: "Post ID is required." },
+        { status: 400 }
+      );
+    }
 
-  if (!postId) {
-    return NextResponse.json(
-      { error: "Post ID is required." },
-      { status: 400 }
-    );
-  }
+    if(!Array.isArray(messages)||messages.length===0) {
+      return NextResponse.json(
+        { error: "No messages provided." },
+        { status: 400 }
+      );
+    }
 
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return NextResponse.json(
-      { error: "No messages provided." },
-      { status: 400 }
-    );
-  }
+    const greeting = conversationalReply(messages);
+    if (greeting) return NextResponse.json({ reply: greeting });
 
-  const post = await prisma.post.findUnique({
-    where: {
-      id: postId,
-    },
-    include: {
-      connectedAccount: true,
-    },
-  });
-
-  if (!post) {
-    return NextResponse.json(
-      { error: "Post not found." },
-      { status: 404 }
-    );
-  }
-
-  if (post.connectedAccount.userId !== session.user.id) {
-    return NextResponse.json(
-      { error: "You do not have access to this post." },
-      { status: 403 }
-    );
-  }
-
-  const account = post.connectedAccount;
-
-  const latestSnapshot =
-    await prisma.metricSnapshot.findFirst({
+    const post=await prisma.post.findUnique({
       where: {
-        connectedAccountId: account.id,
+        id: postId,
       },
-      orderBy: {
-        fetchedAt: "desc",
+      include: {
+        connectedAccount: true,
       },
     });
 
-  const platformLabel =
-    account.platform === "x"
-      ? "X"
-      : account.platform.charAt(0).toUpperCase() +
+    if(!post) {
+      return NextResponse.json(
+        { error: "Post not found." },
+        { status: 404 }
+      );
+    }
+
+    if(post.connectedAccount.userId!==userId) {
+      return NextResponse.json(
+        { error: "You do not have access to this post." },
+        { status: 403 }
+      );
+    }
+
+    const account=post.connectedAccount;
+
+    const latestSnapshot=
+      await prisma.metricSnapshot.findFirst({
+        where: {
+          connectedAccountId: account.id,
+        },
+        orderBy: {
+          fetchedAt: "desc",
+        },
+      });
+
+    const platformLabel=
+      account.platform==="x"
+        ? "X"
+        :account.platform.charAt(0).toUpperCase()+
         account.platform.slice(1);
 
-  const evidence = buildPostEvidence({
-    platform: account.platform,
-    post: (await attachMeasurementEvidence([post]))[0],
-    latestSnapshot,
-  });
+    const evidence=buildPostEvidence({
+      platform: account.platform,
+      post: (await attachMeasurementEvidence([post]))[0],
+      latestSnapshot,
+    });
 
-  const systemPrompt = `
+    const systemPrompt=`
 ${BALANCED_INTELLIGENCE_RULES}
+${CONVERSATIONAL_RULES}
 
 You are analyzing ONE specific ${platformLabel} post belonging to the authenticated user.
 
@@ -97,23 +95,22 @@ Keep answers concise unless the user asks for a detailed analysis.
 Do not expose your hidden reasoning process.
 
 VERIFIED POST EVIDENCE
-${JSON.stringify(evidence, null, 2)}
+${JSON.stringify(evidence,null,2)}
 `;
 
-  try {
-    const response =
+    const response=
       await gemini.models.generateContent({
         model: SIGNAL_AI_MODEL,
         contents: messages
           .filter(
             (message: { role?: unknown; content?: unknown }) =>
-              (message.role === "user" || message.role === "assistant") &&
-              typeof message.content === "string"
+              message&&(message.role==="user"||message.role==="assistant")&&
+              typeof message.content==="string"
           )
           .slice(-10)
           .map((message: { role: string; content: string }) => ({
-            role: message.role === "assistant" ? "model" : "user",
-            parts: [{ text: message.content.slice(0, 2_000) }],
+            role: message.role==="assistant"? "model":"user",
+            parts: [{ text: message.content.slice(0,2_000) }],
           })),
         config: {
           systemInstruction: systemPrompt,
@@ -121,23 +118,11 @@ ${JSON.stringify(evidence, null, 2)}
       });
 
     return NextResponse.json({
-      reply: cleanAiText(response.text ?? ""),
+      reply: cleanAiText(response.text??""),
       meta: {
         mode: evidence.mode,
         dataConfidence: evidence.dataConfidence,
       },
     });
-  } catch (error) {
-    console.error("Post AI error:", error);
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to analyze post.",
-      },
-      { status: 500 }
-    );
-  }
+  });
 }

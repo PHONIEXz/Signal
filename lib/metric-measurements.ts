@@ -22,8 +22,8 @@ export function postEngagement(post: Counts): number | null {
 export function completeSum(values: (number | null)[]): number | null {
   return !values.length || values.some(v => v === null) ? null : measured(values.reduce<number>((sum, v) => sum + (v ?? 0), 0));
 }
-export function missingCountFields(posts: Counts[]) {
-  return COUNT_FIELDS.filter(field => posts.some(post => post[field] === null));
+export function missingCountFields(posts: Counts[], platform?: string) {
+  return COUNT_FIELDS.filter(field => !(platform === "facebook" && (field === "viewCount" || field === "quoteCount")) && posts.some(post => post[field] === null));
 }
 export function measurementDelta(current: Counts & { source: string; capturedAt: Date }, previous: (Counts & { source: string; capturedAt: Date }) | undefined) {
   if (!previous || current.source !== previous.source || current.capturedAt <= previous.capturedAt || current.source === "LEGACY") return null;
