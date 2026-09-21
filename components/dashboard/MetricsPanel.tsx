@@ -55,7 +55,7 @@ export default function MetricsPanel({
       return;
     }
 
-    if (data.warning) setNotice(data.warning);
+    setNotice(data.message || "Your metrics have been updated.");
 
     router.refresh();
     } catch { setError("Could not reach Signal. Check your connection and try again."); }
