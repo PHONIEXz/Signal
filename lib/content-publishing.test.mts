@@ -93,13 +93,13 @@ test("cross-user accounts and TikTok cannot trigger remote publishing", async ()
 });
 test("receipt storage failure after remote acceptance leaves the delivery locked", async () => {
   const { user, account, draft } = await fixture();
-  const transaction = prisma.$transaction.bind(prisma); let invocations = 0;
+  const transaction = prisma.$transaction.bind(prisma); let accepted = false;
   prisma.$transaction = ((...args: Parameters<typeof transaction>) => {
-    if (++invocations === 2) throw new Error("storage unavailable");
+    if (accepted) throw new Error("storage unavailable");
     return transaction(...args);
   }) as typeof prisma.$transaction;
   try {
-    await assert.rejects(publishDraft(user.id, draft.id, account.id, async () => Response.json({ data: { id: "505" } })), (error: unknown) => error instanceof PublishError && error.code === "CHECK_PLATFORM");
+    await assert.rejects(publishDraft(user.id, draft.id, account.id, async () => { accepted = true; return Response.json({ data: { id: "505" } }); }), (error: unknown) => error instanceof PublishError && error.code === "CHECK_PLATFORM");
   } finally { prisma.$transaction = transaction; }
   assert.equal((await prisma.contentPublication.findFirstOrThrow({ where: { contentDraftId: draft.id } })).status, "PUBLISHING");
   await assert.rejects(publishDraft(user.id, draft.id, account.id, async () => { assert.fail("Must not resend"); }), PublishError);
