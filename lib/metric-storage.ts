@@ -34,7 +34,7 @@ export async function storeCollection(input: {
 }) {
   const capturedAt = input.capturedAt ?? new Date();
   const sampleId = crypto.randomUUID();
-  const missing = missingCountFields(input.posts);
+  const missing = missingCountFields(input.posts, input.platform);
   const status = !input.complete ? input.posts.length ? "PARTIAL" : "UNAVAILABLE" : !input.posts.length ? "EMPTY" : missing.length ? "PARTIAL" : "AVAILABLE";
   const warning = [input.warning, missing.length && `Unavailable fields: ${missing.join(", ")}.`, !input.posts.length && input.complete && "The platform returned no posts for this account."].filter(Boolean).join(" ") || null;
   await prisma.$transaction(async tx => {

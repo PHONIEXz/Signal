@@ -64,11 +64,7 @@ export default function MetricsPanel({
       return;
     }
 
-    if (data.warning) {
-      setNotice(
-        `${platformLabel} was refreshed. Signal updated every metric the platform made available.`
-      );
-    }
+    setNotice(data.message || "Your metrics have been updated.");
 
     router.refresh();
     } catch { setError("Could not reach Signal. Check your connection and try again."); }
@@ -171,7 +167,7 @@ export default function MetricsPanel({
             </p>
             {snapshot.postMetricsStatus !== "AVAILABLE" && (
               <p className="mt-2 text-xs text-ink-muted">
-                More insights will appear automatically when the platform makes them available.
+                Some insights are currently unavailable from this account.
               </p>
             )}
           </>
