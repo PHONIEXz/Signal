@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import AccountsList from "@/components/dashboard/AccountsList";
 
 const ACCOUNT_MESSAGES: Record<string, { tone: "success" | "error"; text: string }> = {
+  account_identity_mismatch: { tone: "error", text: "This is a different social account. Reconnect the original account to keep its history and draft targets together." },
   facebook: {
     tone: "success",
     text: "Facebook Page connected successfully.",
@@ -25,7 +26,7 @@ const ACCOUNT_MESSAGES: Record<string, { tone: "success" | "error"; text: string
   },
   free_account_limit: {
     tone: "error",
-    text: "The Free plan supports one connected account. Unlink the current account or use a Pro developer account.",
+    text: "The Free plan supports one connected account. Unlink the current account or upgrade when paid plans are available.",
   },
 };
 

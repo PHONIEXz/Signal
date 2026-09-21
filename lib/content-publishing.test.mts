@@ -10,6 +10,10 @@ process.env.DATABASE_PROVIDER = "sqlite";
 process.env.DATABASE_URL = "file:" + join(folder, "test.db");
 process.env.TOKEN_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString("base64");
 delete process.env.VERCEL;
+// Keep broad publishing regressions independent of small production allowances.
+process.env.SIGNAL_PUBLISHING_FREE_DAILY = "100";
+process.env.SIGNAL_PUBLISHING_GLOBAL_DAILY = "1000";
+process.env.SIGNAL_PUBLISHING_GLOBAL_MONTHLY = "10000";
 const require = createRequire(import.meta.url);
 const Database = require("better-sqlite3");
 const db = new Database(join(folder, "test.db"));
@@ -124,4 +128,19 @@ test("expired X tokens refresh before publishing", async () => {
     return Response.json({ data: { id: "808" } });
   });
   assert.deepEqual(endpoints, ["https://api.x.com/2/oauth2/token", "https://api.x.com/2/tweets"]);
+});
+
+test("paused publishing makes no provider call and leaves a retryable delivery", async () => {
+  const { user, account, draft } = await fixture();
+  process.env.SIGNAL_PUBLISHING_ENABLED = "false";
+  let called = false;
+  try {
+    await assert.rejects(publishDraft(user.id, draft.id, account.id, async () => {
+      called = true;
+      throw new Error("Provider must not be called");
+    }), /paused/);
+    assert.equal(called, false);
+    const row = await prisma.contentPublication.findUnique({where:{contentDraftId_connectedAccountId:{contentDraftId:draft.id,connectedAccountId:account.id}}});
+    assert.equal(row?.status, "FAILED");
+  } finally { delete process.env.SIGNAL_PUBLISHING_ENABLED; }
 });

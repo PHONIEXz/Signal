@@ -21,10 +21,11 @@ export default async function ContentStudioPage() {
   ]);
 
   const plan = normalizePlan(user?.plan ?? "FREE");
-  if (drafts === null) return <div className="mx-auto max-w-3xl rounded-xl border border-border bg-surface p-8"><h1 className="font-display text-2xl text-ink">Content Studio needs a database update</h1><p className="mt-3 text-sm leading-6 text-ink-muted">The publishing database upgrade has not been applied to this deployment. Your existing drafts are preserved. The site administrator needs to run the publishing upgrade before this workspace can open.</p><p className="mt-4 text-xs text-ink-muted">Setup code: STUDIO_SCHEMA_PENDING</p></div>;
+  if (drafts === null) return <div className="mx-auto max-w-3xl rounded-xl border border-border bg-surface p-8"><h1 className="font-display text-2xl text-ink">Content Studio is temporarily unavailable</h1><p className="mt-3 text-sm text-ink-muted">Your saved drafts are safe. Please try again later.</p></div>;
 
   return (
     <ContentStudio
+      userId={userId}
       plan={plan}
       draftLimit={draftLimitForPlan(plan)}
       accounts={accounts}

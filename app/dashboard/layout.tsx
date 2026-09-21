@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { isAdmin } from "@/lib/service-config";
 import Sidebar from "@/components/dashboard/Sidebar";
 import UserMenu from "@/components/dashboard/UserMenu";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -47,7 +49,7 @@ export default async function DashboardLayout({
         <footer className="border-t border-border/70 px-4 py-7 pb-28 sm:px-7 sm:pb-7 lg:px-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">
             <p className="text-xs text-ink-muted">© {new Date().getFullYear()} Signal</p>
-            <LegalLinks />
+            <div className="flex flex-wrap gap-4"><Link href="/dashboard/get-started" className="text-xs text-ink-muted">Get started</Link><Link href="/dashboard/usage" className="text-xs text-ink-muted">Usage</Link>{isAdmin(session.user.id) && <Link href="/dashboard/operations" className="text-xs text-ink-muted">Operations</Link>}<LegalLinks /></div>
           </div>
         </footer>
       </div>

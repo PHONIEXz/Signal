@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { saveConnection, ConnectionIdentityError } from "@/lib/save-connection";
 import { encrypt } from "@/lib/encryption";
 import { getAccountConnectionAccess } from "@/lib/account-access";
 
@@ -58,34 +58,18 @@ export async function GET(request: Request) {
       ? new Date(Date.now() + tokenData.expires_in * 1000)
       : null;
 
-    await prisma.connectedAccount.upsert({
-      where: {
-        userId_platform: { userId: session.user.id, platform: "tiktok" },
-      },
-      update: {
-        accessToken: encrypt(tokenData.access_token),
-        refreshToken: tokenData.refresh_token
-          ? encrypt(tokenData.refresh_token)
-          : null,
-        platformUserId: tokenData.open_id,
-        expiresAt,
-      },
-      create: {
-        userId: session.user.id,
-        platform: "tiktok",
-        accessToken: encrypt(tokenData.access_token),
-        refreshToken: tokenData.refresh_token
-          ? encrypt(tokenData.refresh_token)
-          : null,
-        platformUserId: tokenData.open_id,
-        expiresAt,
-      },
+    await saveConnection(session.user.id, "tiktok", {
+      platformUserId: tokenData.open_id,
+      accessToken: encrypt(tokenData.access_token),
+      refreshToken: tokenData.refresh_token ? encrypt(tokenData.refresh_token) : null,
+      expiresAt,
     });
 
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
     response.cookies.delete("tiktok_oauth_state");
     return response;
-  } catch {
+  } catch (error) {
+    if (error instanceof ConnectionIdentityError) return NextResponse.redirect(new URL("/dashboard/accounts?error=account_identity_mismatch", request.url));
     return NextResponse.redirect(
       new URL("/dashboard/accounts?error=tiktok_connect_failed", request.url)
     );

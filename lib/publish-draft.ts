@@ -1,3 +1,4 @@
+import { reserveUsage } from "./service-usage.ts";
 import { prisma } from "./prisma.ts";
 import { getValidXAccessToken } from "./x-token.ts";
 import { decrypt } from "./encryption.ts";
@@ -20,6 +21,13 @@ export async function publishDraft(userId: string, contentDraftId: string, conne
     return { kind: "send" as const, rowId: row.id, input: { platform: account.platform, platformUserId: account.platformUserId, token, text: draft.text, mediaUrl: draft.mediaUrl } };
   });
   if (claimed.kind === "receipt") return claimed.receipt;
+  try {
+    const user = await prisma.user.findUnique({where:{id:userId},select:{plan:true}});
+    await reserveUsage("publishing", userId, user?.plan ?? "FREE");
+  } catch {
+    await prisma.contentPublication.update({where:{id:claimed.rowId},data:{status:"FAILED",errorCode:"USAGE_LIMIT",errorMessage:"Publishing is paused or its allowance has been reached. Try again later."}});
+    throw new PublishError("FAILED", "Publishing is paused or its allowance has been reached. Try again later.");
+  }
   if (claimed.input.platform === "x") {
     try { claimed.input.token = await getValidXAccessToken(connectedAccountId, request); }
     catch {

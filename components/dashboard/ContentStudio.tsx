@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { readRecovery, type RecoveryDraft } from "@/lib/draft-recovery";
 import Link from "next/link";
 import Image from "next/image";
 import DraftDeliveryActions, { type DeliveryReceipt } from "./DraftDeliveryActions";
@@ -22,6 +23,7 @@ type Draft = {
 };
 
 type Props = {
+  userId: string;
   plan: "FREE" | "PRO";
   draftLimit: number | null;
   accounts: Account[];
@@ -51,7 +53,7 @@ function dateTimeInputValue(value: string | null) {
   return local.toISOString().slice(0, 16);
 }
 
-export default function ContentStudio({ plan, draftLimit, accounts, initialDrafts }: Props) {
+export default function ContentStudio({ userId, plan, draftLimit, accounts, initialDrafts }: Props) {
   const [drafts, setDrafts] = useState(initialDrafts);
   const [view, setView] = useState<"compose" | "library" | "calendar">("compose");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -69,6 +71,32 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
   const [conflict, setConflict] = useState(false);
   const [baseline, setBaseline] = useState(() => editorFingerprint({ text: "", mediaUrl: "", scheduledFor: "", targetIds: accounts[0] ? [accounts[0].id] : [] }));
   const dirty = editorFingerprint({ text, mediaUrl, scheduledFor, targetIds }) !== baseline;
+  const recoveryKey = `signal-draft:${userId}`;
+  const [recovery, setRecovery] = useState<RecoveryDraft | null>(null);
+  const [recoveryReady, setRecoveryReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try { setRecovery(readRecovery(sessionStorage.getItem(recoveryKey))); } catch { /* Recovery is best effort. */ }
+      setRecoveryReady(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [recoveryKey]);
+  useEffect(() => {
+    if (!recoveryReady || recovery) return;
+    try {
+      if (dirty) sessionStorage.setItem(recoveryKey, JSON.stringify({text,mediaUrl,scheduledFor,targetIds,savedAt:Date.now()}));
+      else sessionStorage.removeItem(recoveryKey);
+    } catch { /* Saving the server draft remains available when browser storage is blocked. */ }
+  }, [recoveryReady,recovery,recoveryKey,dirty,text,mediaUrl,scheduledFor,targetIds]);
+  function restoreRecovery() {
+    if (!recovery) return;
+    setEditingId(null); setRevision(null); setConflict(false);
+    setText(recovery.text); setMediaUrl(recovery.mediaUrl); setScheduledFor(recovery.scheduledFor);
+    setTargetIds(recovery.targetIds.filter(id=>accounts.some(account=>account.id===id)));
+    setRecovery(null); setView("compose");
+    setMessage("Recovered as a new draft. Review the accounts and save when ready.");
+  }
+
 
   useEffect(() => {
     if (!dirty && !busy) return;
@@ -245,6 +273,8 @@ export default function ContentStudio({ plan, draftLimit, accounts, initialDraft
         </div>
       </div>
 
+      {recovery && <section className="rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-navy px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
+      <p className="text-xs text-ink-muted">Unsaved work is kept temporarily in this browser tab when storage is available. Save your draft to keep it across devices.</p>
       <div className="grid grid-cols-3 gap-3">
         {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-xs text-ink-muted">{label}</p><p className="mt-1 font-display text-2xl text-ink">{count}</p></div>)}
       </div>

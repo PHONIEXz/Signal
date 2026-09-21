@@ -1,3 +1,4 @@
+import { reserveUsage, recordUsageFailure, UsageError } from "./service-usage.ts";
 import { refreshFeedback } from "./refresh-feedback.ts";
 import { NextResponse } from "next/server";
 import { auth } from "../auth.ts";
@@ -32,6 +33,7 @@ export async function refreshMetrics(request: Request, platform: string) {
       return json({ success:true, cached:true, sampleSize:sync?.requestedPosts ?? 0, postsAnalyzed:sync?.receivedPosts ?? 0,
         ...refreshFeedback(sync?.status ?? "NEVER", true), nextAllowedAt:sync?.nextAllowedAt });
     }
+    await reserveUsage("metrics", session.user.id, account.user.plan);
     const token = platform === "x" ? await getValidXAccessToken(account.id) : platform === "tiktok" ? await getValidTikTokAccessToken(account.id) : decrypt(account.accessToken);
     let userId = account.platformUserId;
     const profileUrl = platform === "x" ? "https://api.x.com/2/users/me?user.fields=public_metrics,name,username" : platform === "facebook" ? `https://graph.facebook.com/v26.0/${userId}?fields=name,followers_count` : "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,follower_count,following_count,video_count";
@@ -48,6 +50,10 @@ export async function refreshMetrics(request: Request, platform: string) {
         const user = platform === "x" ? data.data : platform === "tiktok" ? data.data?.user : data;
         if (user) {
           userId = platform === "x" ? user.id ?? userId : platform === "tiktok" ? user.open_id ?? userId : userId;
+          if (account.platformUserId && userId !== account.platformUserId) {
+            await finishMetricFailure(account.id,lockId,"Connection identity did not match.");
+            return json({error:"Reconnect your original account before refreshing."},409);
+          }
           const name = platform === "tiktok" ? user.display_name : user.name;
           metrics = { followers: measured(platform === "x" ? user.public_metrics?.followers_count : platform === "facebook" ? user.followers_count : user.follower_count), following: measured(platform === "x" ? user.public_metrics?.following_count : platform === "facebook" ? null : user.following_count), totalPosts:measured(platform === "x" ? user.public_metrics?.tweet_count : platform === "facebook" ? null : user.video_count) };
           await prisma.connectedAccount.update({where:{id:account.id},data:{platformUserId:userId,displayName:typeof name === "string" ? name : account.displayName}});
@@ -60,9 +66,12 @@ export async function refreshMetrics(request: Request, platform: string) {
     const insight = platform === "facebook" && collection.complete ? await collectPageInsights(userId,token) : { values:[], warnings:[] };
     const warning = [profileWarning,collection.warning,...insight.warnings].filter(Boolean).join(" ") || null;
     const stored = await storeCollection({accountId:account.id,lockId,platform,posts:collection.posts,requested,complete:collection.complete,source:"API",warning,accountMetrics:metrics,insights:insight.values});
+    if (stored.status === "UNAVAILABLE") await recordUsageFailure("metrics");
     return json({ success: stored.status !== "UNAVAILABLE", sampleSize: stored.sampleSize, postsAnalyzed: stored.postsAnalyzed, ...refreshFeedback(stored.status) }, stored.status === "UNAVAILABLE" ? 502 : 200);
   } catch (error) {
     if (lockId) await finishMetricFailure(accountId,lockId,"Collection did not complete. Cached data was preserved.").catch(()=>{});
+    if (error instanceof UsageError) return json({ error:error.message + (error.resetAt ? ` Resets ${error.resetAt.slice(0,10)} at 00:00 UTC.` : ""), resetAt:error.resetAt },error.status);
+    await recordUsageFailure("metrics");
     return json({ error:error instanceof AuthInputError ? error.message : "We could not refresh your metrics. Your saved data is still available. Please try again later." },error instanceof AuthInputError ? error.status : 500);
   }
 }

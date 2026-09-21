@@ -3,7 +3,7 @@ import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { withAiRequest } from "@/lib/ai-request";
 import { prisma } from "@/lib/prisma";
-import { gemini } from "@/lib/gemini";
+import { getGemini } from "@/lib/gemini";
 import {
   BALANCED_INTELLIGENCE_RULES,
   buildPostEvidence,
@@ -99,7 +99,7 @@ ${JSON.stringify(evidence,null,2)}
 `;
 
     const response=
-      await gemini.models.generateContent({
+      await getGemini().models.generateContent({
         model: SIGNAL_AI_MODEL,
         contents: messages
           .filter(
@@ -114,6 +114,7 @@ ${JSON.stringify(evidence,null,2)}
           })),
         config: {
           systemInstruction: systemPrompt,
+        maxOutputTokens: 2048,
         },
       });
 

@@ -1,0 +1,21 @@
+name: Verify Signal
+on:
+  pull_request:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - name: Regression tests with isolated local databases
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/reliability.test.mts lib/metrics.test.mts lib/metrics-history.test.mts lib/post-retrieval.test.mts lib/signal-intelligence.test.mts lib/content-publishing.test.mts
+      - run: npm run build -- --webpack
