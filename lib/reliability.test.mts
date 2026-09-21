@@ -1,3 +1,4 @@
+import * as chatIntent from "./chat-intent.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -29,7 +30,7 @@ for (const path of ["insights/chat", "insights/generate", "insights/post", "repo
       const route = load(`../app/api/${path}/route.ts`, {
         "@/lib/ai-request": guard, "next/server": { NextResponse: Response }, "@/lib/prisma": { prisma },
         "@/lib/gemini": { gemini: { models: { generateContent: async () => { providerCalls++; } } } },
-        "@/lib/ai-report": { validAiReport }, "@/lib/metrics": {}, "@/lib/signal-intelligence": {}, "@/lib/measurement-evidence": {},
+        "@/lib/chat-intent": chatIntent, "@/lib/ai-report": { validAiReport }, "@/lib/metrics": {}, "@/lib/signal-intelligence": {}, "@/lib/measurement-evidence": {},
       });
       const response = await route.POST(new Request("https://signal.test/api", { method:"POST", body:"{}" }));
       assert.equal(response.status,403);
@@ -77,4 +78,15 @@ test("Facebook unsupported views do not mark supported counts incomplete", () =>
   const report={summary:"Summary",wins:["Win"],opportunities:[],actions:[],platformNotes:[]};
   assert.equal(validAiReport(report),true);
   for (const bad of [null, [], { ...report, summary: 3 }, {...report,wins:[null]}, {...report,platformNotes:[{platform:"x"}]}]) assert.equal(validAiReport(bad),false);
+});
+
+test("greetings stay conversational but mixed requests still reach analytics", () => {
+  for (const content of ["Hi", "Hello!", "hey signal", "Good morning."]) {
+    assert.match(chatIntent.conversationalReply([{role:"user",content}])!, /How can I help/);
+  }
+  for (const content of ["Hi, analyse my account", "hello why are my views down?", "Which post did best?"]) {
+    assert.equal(chatIntent.conversationalReply([{role:"user",content}]), null);
+  }
+  assert.equal(chatIntent.conversationalReply([{role:"assistant",content:"hi"}]),null);
+  assert.equal(chatIntent.conversationalReply([null]),null);
 });

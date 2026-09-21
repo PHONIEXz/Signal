@@ -1,3 +1,4 @@
+import { conversationalReply, CONVERSATIONAL_RULES } from "@/lib/chat-intent";
 import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { withAiRequest } from "@/lib/ai-request";
@@ -25,6 +26,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const greeting = conversationalReply(messages);
+    if (greeting) return NextResponse.json({ reply: greeting });
 
     const connectedAccount=await prisma.connectedAccount.findUnique({
       where: {
@@ -76,6 +80,7 @@ export async function POST(request: Request) {
           :platform;
 
     const systemPrompt=`${BALANCED_INTELLIGENCE_RULES}
+${CONVERSATIONAL_RULES}
 
 You are answering questions inside the user's ${platformLabel} analytics dashboard.
 Answer from the verified evidence below. When useful, structure the answer as Observation, Interpretation and Next move.

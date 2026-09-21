@@ -1,3 +1,4 @@
+import { conversationalReply, CONVERSATIONAL_RULES } from "@/lib/chat-intent";
 import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import { NextResponse } from "next/server";
 import { withAiRequest } from "@/lib/ai-request";
@@ -28,6 +29,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const greeting = conversationalReply(messages);
+    if (greeting) return NextResponse.json({ reply: greeting });
 
     const post=await prisma.post.findUnique({
       where: {
@@ -78,6 +82,7 @@ export async function POST(request: Request) {
 
     const systemPrompt=`
 ${BALANCED_INTELLIGENCE_RULES}
+${CONVERSATIONAL_RULES}
 
 You are analyzing ONE specific ${platformLabel} post belonging to the authenticated user.
 
