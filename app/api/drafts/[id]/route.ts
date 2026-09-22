@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { LOCKED_DELIVERIES } from "@/lib/content-publishing";
 import { updateDraft } from "@/lib/draft-editing";
 import { publishingSchemaReady } from "@/lib/studio-data";
-import { readAuthBody, AuthInputError } from "@/lib/auth-http";
+import { readAuthBody, requestOrigin, AuthInputError } from "@/lib/auth-http";
 import { validMediaUrl, MAX_DRAFT_LENGTH, normalizePlan } from "@/lib/content-drafts";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -34,7 +34,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   let body: Record<string, unknown>;
   try {
-    body = await readAuthBody(request, MAX_DRAFT_BODY_BYTES);
+    body = await readAuthBody(request, MAX_DRAFT_BODY_BYTES, requestOrigin(request));
   } catch (error) {
     return NextResponse.json({ error: error instanceof AuthInputError ? error.message : "Invalid request" }, { status: error instanceof AuthInputError ? error.status : 400 });
   }
@@ -83,7 +83,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   const draft = await updateDraft(session.user.id, id, { text, mediaUrl, targetIds, scheduledFor, expectedUpdatedAt });
   if (draft === "MISSING") return NextResponse.json({ error: "Draft not found" }, { status: 404 });
-  if (draft === "LOCKED") return NextResponse.json({ error: "This draft has delivery history. Use a new copy to preserve the original post." }, { status: 409 });
+  if (draft === "LOCKED") return NextResponse.json({ error: "Cancel any queued schedule before editing. Delivered or processing drafts must be copied." }, { status: 409 });
   if (draft === "CONFLICT") return NextResponse.json({ error: "This draft changed since you opened it. Your writing is still in the editor. Save as copy, or reload the latest draft.", code: "DRAFT_CONFLICT" }, { status: 409 });
 
   return NextResponse.json(draft);
@@ -101,12 +101,13 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   const result = await prisma.$transaction(async (tx) => {
     const draft = await tx.contentDraft.findFirst({ where: { id, userId: session.user!.id } });
     if (!draft) return "MISSING";
+    if (["QUEUED","PROCESSING"].includes(draft.status)) return "LOCKED";
     if (await tx.contentPublication.count({ where: { contentDraftId: id, status: { in: LOCKED_DELIVERIES } } })) return "LOCKED";
     await tx.contentDraft.delete({ where: { id } });
     return "DELETED";
   });
   if (result === "MISSING") return NextResponse.json({ error: "Draft not found" }, { status: 404 });
-  if (result === "LOCKED") return NextResponse.json({ error: "Keep this draft to preserve delivery history. Create a new copy instead." }, { status: 409 });
+  if (result === "LOCKED") return NextResponse.json({ error: "Cancel any queued schedule before deleting. Processing or delivered drafts must be kept." }, { status: 409 });
 
   return NextResponse.json({ success: true });
 }

@@ -38,6 +38,7 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/dashboard/queue" className="text-xs font-medium text-navy">Queue & updates</Link>
             <ThemeToggle />
             <UserMenu email={session.user.email} />
           </div>

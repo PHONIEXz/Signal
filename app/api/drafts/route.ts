@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { loadStudioDrafts, publishingSchemaReady } from "@/lib/studio-data";
-import { readAuthBody, AuthInputError } from "@/lib/auth-http";
+import { readAuthBody, requestOrigin, AuthInputError } from "@/lib/auth-http";
 import {
   draftInclude,
   validMediaUrl,
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
   let body: Record<string, unknown>;
   try {
-    body = await readAuthBody(request, MAX_DRAFT_BODY_BYTES);
+    body = await readAuthBody(request, MAX_DRAFT_BODY_BYTES, requestOrigin(request));
   } catch (error) {
     return NextResponse.json({ error: error instanceof AuthInputError ? error.message : "Invalid request" }, { status: error instanceof AuthInputError ? error.status : 400 });
   }

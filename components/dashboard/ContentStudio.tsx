@@ -378,6 +378,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
             </div>
 
             <div>
+              <Link href="/dashboard/queue" className="mb-3 block text-sm font-medium text-navy underline">Publishing queue, notifications and scheduling</Link>
               <label htmlFor="scheduled-for" className="text-sm font-medium text-ink">Plan date and time <span className="font-normal text-ink-muted">optional</span></label>
               <input
                 id="scheduled-for"
@@ -386,7 +387,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                 onChange={(event) => setScheduledFor(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-border bg-paper px-4 py-3 text-sm text-ink"
               />
-              <p className="mt-1 text-xs text-ink-muted">This organizes your calendar. It does not publish automatically yet.</p>
+              <p className="mt-1 text-xs text-ink-muted">This saves a reminder. To authorize automatic delivery, save first, then open Publishing queue.</p>
             </div>
 
             <div className="flex flex-wrap gap-3">
