@@ -34,7 +34,7 @@ Content Studio keeps a best-effort recovery copy in sessionStorage for the curre
 
 ## What funding does not activate
 
-Automatic scheduled publishing, uploaded media delivery, a payment checkout/subscription webhook system, sponsor campaigns and cash rewards are not implemented by this release. Planned dates remain reminders and direct publishing requires confirmation. Funding does not bypass app review or make unavailable platform metrics accessible. These need separate implementation and validation before advertising them as features.
+Automatic scheduled publishing, Facebook/TikTok direct image delivery, a payment checkout/subscription webhook system, sponsor campaigns and cash rewards are not implemented by this release. Planned dates remain reminders and direct publishing requires confirmation. Funding does not bypass app review or make unavailable platform metrics accessible. These need separate implementation and validation before advertising them as features.
 
 ## Launch checks
 
@@ -48,3 +48,5 @@ Automatic scheduled publishing, uploaded media delivery, a payment checkout/subs
 ## Dependency audit follow-up
 
 The September 21 audit prompted a Next.js 16.3.5 patch and compatible lockfile fixes for sharp, fast-uri and js-yaml. Four high-severity audit entries remain in the Prisma CLI dependency tree (deepmerge-ts/mysql2 and their parents). Signal uses SQLite/Turso rather than MySQL and the Prisma configuration is repository-controlled; this is not a claim that the advisories are harmless. Track an upstream-compatible fix before public launch. Do not run audit fix --force: its proposed Prisma 6 downgrade conflicts with the current Prisma 7 adapters. The runtime build and publishing regressions must pass after dependency updates.
+
+Image attachments and X publishing are described in [studio-images.md](studio-images.md).

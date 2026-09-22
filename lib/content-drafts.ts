@@ -1,3 +1,4 @@
+import { imagePayload, isDraftImage } from "./draft-image.ts";
 export const FREE_DRAFT_LIMIT = 10;
 export const MAX_DRAFT_LENGTH = 5000;
 
@@ -21,6 +22,8 @@ export const draftInclude = {
 } as const;
 export function validMediaUrl(value: string) {
   if (!value) return true;
+  if (isDraftImage(value)) return imagePayload(value) !== null;
+  if (value.length > 4096) return false;
   try { const url = new URL(value); return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password; }
   catch { return false; }
 }
