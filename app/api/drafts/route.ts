@@ -1,3 +1,5 @@
+import { MAX_DRAFT_BODY_BYTES } from "@/lib/draft-image";
+import { normalizeDraftMedia } from "@/lib/normalize-draft-image";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -39,13 +41,13 @@ export async function POST(request: Request) {
 
   let body: Record<string, unknown>;
   try {
-    body = await readAuthBody(request, 32768);
+    body = await readAuthBody(request, MAX_DRAFT_BODY_BYTES);
   } catch (error) {
     return NextResponse.json({ error: error instanceof AuthInputError ? error.message : "Invalid request" }, { status: error instanceof AuthInputError ? error.status : 400 });
   }
 
   const text = typeof body.text === "string" ? body.text.trim() : "";
-  const mediaUrl = typeof body.mediaUrl === "string" ? body.mediaUrl.trim() : "";
+  let mediaUrl = typeof body.mediaUrl === "string" ? body.mediaUrl.trim() : "";
   const targetIds = Array.isArray(body.targetIds)
     ? [...new Set(body.targetIds.filter((id): id is string => typeof id === "string"))]
     : [];
@@ -64,8 +66,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "The scheduled date is invalid." }, { status: 400 });
   }
   if (!validMediaUrl(mediaUrl)) {
-    return NextResponse.json({ error: "Use a public HTTP or HTTPS media link." }, { status: 400 });
+    return NextResponse.json({ error: "Use an HTTP/HTTPS link or a JPEG/PNG image up to 1 MB." }, { status: 400 });
   }
+
+  try { mediaUrl = await normalizeDraftMedia(mediaUrl); }
+  catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid image" }, { status: 400 }); }
 
   const [user, ownedTargets, draftCount] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } }),

@@ -144,3 +144,25 @@ test("paused publishing makes no provider call and leaves a retryable delivery",
     assert.equal(row?.status, "FAILED");
   } finally { delete process.env.SIGNAL_PUBLISHING_ENABLED; }
 });
+
+test("saved image survives reopening and publishes once with its receipt", async () => {
+  const { normalizeDraftMedia } = await import("./normalize-draft-image.ts");
+  const sharp = (await import("sharp")).default;
+  const bytes = await sharp({create:{width:10,height:10,channels:3,background:"blue"}}).png().toBuffer();
+  const image = await normalizeDraftMedia(`data:image/png;base64,${bytes.toString("base64")}`);
+  const { user, account, draft } = await fixture();
+  await prisma.contentDraft.update({where:{id:draft.id},data:{mediaUrl:image}});
+  const reopened = await prisma.contentDraft.findFirstOrThrow({where:{id:draft.id,userId:user.id}});
+  assert.equal(reopened.mediaUrl,image);
+  let calls = 0;
+  const request: typeof fetch = async (url) => {
+    calls++;
+    return Response.json({data:{id:String(url).endsWith("/media/upload") ? "701" : "702"}});
+  };
+  const receipt = await publishDraft(user.id,draft.id,account.id,request);
+  assert.equal(receipt.platformPostId,"702");
+  assert.equal((await publishDraft(user.id,draft.id,account.id,request)).id,receipt.id);
+  assert.equal(calls,2);
+  await assert.rejects(publishDraft("other-user",draft.id,account.id,request));
+  assert.equal(calls,2);
+});

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { readRecovery, type RecoveryDraft } from "@/lib/draft-recovery";
 import Link from "next/link";
+import { isDraftImage, MAX_IMAGE_BYTES } from "@/lib/draft-image";
 import Image from "next/image";
 import DraftDeliveryActions, { type DeliveryReceipt } from "./DraftDeliveryActions";
 import StudioMediaPreview from "./StudioMediaPreview";
@@ -345,16 +346,35 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
               </div>
             </fieldset>
 
-            <div>
-              <label htmlFor="media-url" className="text-sm font-medium text-ink">Link or media URL <span className="font-normal text-ink-muted">optional</span></label>
-              <input
-                id="media-url"
-                type="url"
-                value={mediaUrl}
-                onChange={(event) => setMediaUrl(event.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="mt-2 w-full rounded-lg border border-border bg-paper px-4 py-3 text-sm text-ink"
-              />
+            <div className="space-y-3">
+              <label htmlFor="image-file" className="block text-sm font-medium text-ink">Attach an image</label>
+              <input id="image-file" type="file" accept="image/jpeg,image/png" disabled={busy}
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (!file) return;
+                  if (!["image/jpeg", "image/png"].includes(file.type) || file.size > MAX_IMAGE_BYTES) {
+                    setMessage("Choose a JPEG or PNG image up to 1 MB."); return;
+                  }
+                  setBusy(true);
+                  try {
+                    const data = await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(String(reader.result));
+                      reader.onerror = () => reject(new Error("Could not read this image."));
+                      reader.readAsDataURL(file);
+                    });
+                    setMediaUrl(data); setMessage("Image selected. Save the draft to upload it.");
+                  } catch { setMessage("Could not read this image. Please try another file."); }
+                  finally { setBusy(false); }
+                }} className="block w-full text-sm text-ink" />
+              <p className="text-xs text-ink-muted">One JPEG or PNG, up to 1 MB and 12 megapixels. Images are resized when saved. Direct image publishing supports X; download and attach manually for Facebook or TikTok.</p>
+              {isDraftImage(mediaUrl) ? <button type="button" disabled={busy} onClick={() => setMediaUrl("")} className="text-sm text-navy underline">Remove image</button> : <>
+                <label htmlFor="media-url" className="block text-sm font-medium text-ink">Or attach a link</label>
+                <input id="media-url" type="url" value={mediaUrl} disabled={busy}
+                  onChange={(event) => setMediaUrl(event.target.value)} placeholder="https://example.com/article"
+                  className="w-full rounded-lg border border-border bg-paper px-4 py-3 text-sm text-ink" />
+              </>}
             </div>
 
             <div>

@@ -1,3 +1,4 @@
+import { isDraftImage } from "./draft-image.ts";
 import { reserveUsage } from "./service-usage.ts";
 import { prisma } from "./prisma.ts";
 import { getValidXAccessToken } from "./x-token.ts";
@@ -9,6 +10,7 @@ export async function publishDraft(userId: string, contentDraftId: string, conne
     const account = draft?.targets[0]?.connectedAccount;
     if (!draft || !account || account.userId !== userId) throw new PublishError("NOT_FOUND", "Draft or account not found.");
     if (!["x", "facebook"].includes(account.platform)) throw new PublishError("ASSISTED_ONLY", "Copy and open TikTok to upload your video.");
+    if (isDraftImage(draft.mediaUrl) && account.platform !== "x") throw new PublishError("ASSISTED_ONLY", "Download the image and attach it manually on this platform.");
     const row = await tx.contentPublication.upsert({ where: { contentDraftId_connectedAccountId: { contentDraftId, connectedAccountId } }, update: {}, create: { contentDraftId, connectedAccountId } });
     if (row.status === "PUBLISHED") return { kind: "receipt" as const, receipt: row };
     if (!RETRYABLE_DELIVERIES.includes(row.status)) throw new PublishError("CHECK_PLATFORM", "This delivery is already in progress or unconfirmed. Check the platform before using a new copy.");
