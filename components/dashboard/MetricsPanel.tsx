@@ -110,6 +110,13 @@ export default function MetricsPanel({
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         {notice && <p className="mt-4 text-sm text-amber-600">{notice}</p>}
 
+        {snapshot && snapshot.sampleSize !== sampleSize && (
+          <p className="mt-4 text-sm text-ink-muted" role="status">
+            Showing saved results for the last {snapshot.sampleSize} posts.
+            Refresh to collect your selected {sampleSize}-post sample.
+          </p>
+        )}
+
         {snapshot ? (
           <>
             {platform === "facebook" ? (
@@ -173,8 +180,7 @@ export default function MetricsPanel({
           </>
         ) : (
           <p className="mt-6 text-sm text-ink-muted">
-            No data for this post sample yet. Click Refresh to create the first
-            snapshot.
+            Your account is connected. Refresh to collect your first insights.
           </p>
         )}
       </div>
