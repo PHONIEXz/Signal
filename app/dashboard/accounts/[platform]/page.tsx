@@ -47,7 +47,12 @@ export default async function AccountDetailPage({
     take: 30,
   });
   const snapshotHistory = recentSnapshotHistory.reverse();
-  const latestSnapshot = snapshotHistory.at(-1) ?? null;
+  // Keep a useful saved view when this exact sample has not been collected.
+  // This fallback is display-only: never add another sample to growth history.
+  const latestSnapshot = snapshotHistory.at(-1) ?? await prisma.metricSnapshot.findFirst({
+    where: { connectedAccountId: connectedAccount.id, postMetricsStatus: { not: "LEGACY" } },
+    orderBy: { fetchedAt: "desc" },
+  });
   const latestPageMediaView = platform === "facebook"
     ? await prisma.pageInsight.findFirst({
         where: {
@@ -82,6 +87,7 @@ export default async function AccountDetailPage({
         {platform}
       </h1>
       <MetricsPanel
+        key={`${platform}-${sampleSize}`}
         platform={platform}
         plan={plan}
         sampleSize={sampleSize}
