@@ -17,9 +17,9 @@ for(const m of readdirSync(migrations).sort())if(m!=="migration_lock.toml")db.ex
 db.close();
 const {prisma}=await import("../lib/prisma.ts");
 const allocator=createServer();allocator.listen(0,"127.0.0.1");await once(allocator,"listening");const address=allocator.address();assert.ok(address&&typeof address!=="string");const port=address.port;await new Promise<void>(r=>allocator.close(()=>r()));
-const base=`http://127.0.0.1:${port}`;process.env.APP_URL=base;
+const base=`http://127.0.0.1:${port}`;process.env.APP_URL="https://signal.example";
 const server=spawn(process.execPath,["node_modules/next/dist/bin/next","start","-H","127.0.0.1","-p",String(port)],{env:{...process.env,NODE_ENV:"production",AUTH_TRUST_HOST:"true",AUTH_URL:base,NEXTAUTH_URL:base,NEXT_TELEMETRY_DISABLED:"1"},stdio:["ignore","pipe","pipe"]});
-server.stderr.resume();
+let serverErrors=""; server.stderr.on("data",b=>{serverErrors=(serverErrors+b.toString()).slice(-8000);});
 try{
  await new Promise<void>((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error("Startup timeout")),20000);server.stdout.on("data",b=>{if(b.toString().includes("Ready")){clearTimeout(timeout);resolve();}});server.on("exit",()=>{clearTimeout(timeout);reject(new Error("Server stopped"));});});
  const email="queue-test@example.com",password="test-only-signal-password";
@@ -29,8 +29,15 @@ try{
  function accept(response:Response){for(const value of response.headers.getSetCookie()){const part=value.split(";")[0],split=part.indexOf("=");jar.set(part.slice(0,split),part.slice(split+1));}}
  const cookies=()=>[...jar].map(([k,v])=>`${k}=${v}`).join("; ");
  const csrf=await fetch(base+"/api/auth/csrf");accept(csrf);const {csrfToken}=await csrf.json();
- accept(await fetch(base+"/api/auth/callback/credentials",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded",Cookie:cookies(),Origin:base,"X-Auth-Return-Redirect":"1"},body:new URLSearchParams({email,password,csrfToken,callbackUrl:base+"/dashboard"}),redirect:"manual"}));
- assert.equal((await (await fetch(base+"/api/auth/session",{headers:{Cookie:cookies()}})).json()).user.id,user.id);
+ const loginResponse=await fetch(base+"/api/auth/callback/credentials",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded",Cookie:cookies(),Origin:base,"X-Auth-Return-Redirect":"1"},body:new URLSearchParams({email,password,csrfToken,callbackUrl:base+"/dashboard"}),redirect:"manual"}); accept(loginResponse);
+ const sessionResponse=await fetch(base+"/api/auth/session",{headers:{Cookie:cookies()}});
+ const loggedIn=await sessionResponse.json();
+ if(!loggedIn?.user) {
+   // Only synthetic local test credentials exist; redact those before diagnostic output.
+   let safe=serverErrors;for(const value of [password,process.env.AUTH_SECRET!,process.env.CRON_SECRET!,cookies()])if(value)safe=safe.replaceAll(value,"[redacted]");
+   console.error("Test login failed",loginResponse.status,await loginResponse.text(),safe);
+ }
+ assert.equal(loggedIn?.user?.id,user.id);
  const request=(path:string,body:object,method="POST",origin=base,cookie=cookies())=>fetch(base+path,{method,headers:{"Content-Type":"application/json",Origin:origin,Cookie:cookie},body:JSON.stringify(body)});
  const saved=await request("/api/drafts",{text:"Scheduled fixture",targetIds:[account.id],mediaUrl:"",scheduledFor:null});assert.equal(saved.status,201);let draft=await saved.json();
  const schedule=`/api/drafts/${draft.id}/schedule`,when=new Date(Date.now()+5*60000).toISOString();
@@ -42,7 +49,7 @@ try{
  assert.equal((await request(schedule,payload)).status,409);
  draft=await prisma.contentDraft.findUniqueOrThrow({where:{id:draft.id}});
  assert.equal((await request(`/api/drafts/${draft.id}`,{text:"changed",targetIds:[account.id],expectedUpdatedAt:draft.updatedAt.toISOString()},"PATCH")).status,409);
- assert.equal((await fetch(base+`/api/drafts/${draft.id}`,{method:"DELETE",headers:{Origin:base,Cookie:cookies()}})).status,409);
+ assert.equal((await fetch(base+`/api/drafts/${draft.id}`,{method:"DELETE",headers:{Origin:process.env.APP_URL!,Cookie:cookies()}})).status,409);
  assert.equal((await fetch(base+"/api/cron/publishing")).status,401);
  const tick=await fetch(base+"/api/cron/publishing",{headers:{Authorization:`Bearer ${process.env.CRON_SECRET}`}});assert.equal(tick.status,200);assert.equal((await tick.json()).processed,0);
  const page=await fetch(base+"/dashboard/queue",{headers:{Cookie:cookies()}});assert.equal(page.status,200);const html=await page.text();assert.match(html,/Publishing queue/);assert.match(html,/Scheduled fixture/);assert.doesNotMatch(html,/NEVER_SERIALIZE_THIS_TOKEN/);
