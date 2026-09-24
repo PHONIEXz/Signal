@@ -14,7 +14,7 @@ export default function PrivacyPage() {
     <main className="min-h-screen px-5 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-3xl">
       <header className="flex items-center justify-between gap-4">
-        <Link href="/login" aria-label="Signal login"><BrandMark /></Link>
+        <Link href="/" aria-label="Signal home"><BrandMark /></Link>
         <Link href="/login" className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-ink transition-colors hover:border-navy/30">Log in</Link>
       </header>
       <article className="surface-card mt-10 p-6 sm:p-10">
@@ -36,7 +36,8 @@ export default function PrivacyPage() {
             and store an access token for that account, along with public
             metrics the platform makes available to you as the account owner
             - such as follower counts, post text, and engagement numbers
-            (likes, views, replies, shares).
+            (likes, views, replies, shares). We also store content drafts and
+            attachments you choose to save in Signal.
           </p>
         </section>
 
@@ -47,8 +48,10 @@ export default function PrivacyPage() {
           <p className="mt-2 text-ink-muted">
             We use this information solely to operate the Service: to
             authenticate you, to fetch and display your own social media
-            metrics back to you, and - if you use the optional AI assistant
-            feature - to answer questions you ask about your own account data.
+            metrics back to you, to save your drafts and deliver content when
+            you explicitly request a supported publishing action, and - if
+            you use optional AI features - to answer questions or generate
+            reports about your available account data.
             We do not use your data for advertising, and we do not sell your
             data to third parties.
           </p>
@@ -71,12 +74,14 @@ export default function PrivacyPage() {
             4. Third-party services
           </h2>
           <p className="mt-2 text-ink-muted">
-            The Service connects to third-party platforms (currently X and
-            Facebook, with more planned) strictly to read the metrics you
-            authorize. If you use the AI assistant feature, the questions you
-            ask and a summary of your account data are sent to Google&apos;s
-            Gemini API to generate a response. These providers have their own
-            privacy policies governing how they handle that data.
+            The Service connects to X, Facebook and TikTok to read data you
+            authorize. When you explicitly request a supported publishing
+            action, Signal sends that content to the selected platform. Signal
+            does not publish TikTok drafts; you complete those on TikTok. If
+            you use optional AI features, your request and relevant account
+            data are sent to Google&apos;s Gemini API to generate a response.
+            These providers have their own privacy policies governing how
+            they handle that data.
           </p>
         </section>
 
