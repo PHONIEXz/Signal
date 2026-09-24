@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { publishDraft } from "@/lib/publish-draft";
 import { PublishError } from "@/lib/content-publishing";
-import { readAuthBody, AuthInputError, PRIVATE_HEADERS } from "@/lib/auth-http";
+import { readAuthBody, requestOrigin, AuthInputError, PRIVATE_HEADERS } from "@/lib/auth-http";
 import { takeAuthQuota } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
 import { draftInclude } from "@/lib/content-drafts";
@@ -12,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!session?.user?.id) return NextResponse.json({ error: "Sign in before publishing." }, { status: 401, headers: PRIVATE_HEADERS });
   try {
     if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503, headers: PRIVATE_HEADERS });
-    const body = await readAuthBody(request);
+    const body = await readAuthBody(request, 4096, requestOrigin(request));
     if (body.confirm !== true || typeof body.accountId !== "string") throw new AuthInputError("Confirm the account before publishing.");
     if (!await takeAuthQuota("publish", session.user.id, 20, 15 * 60000)) throw new AuthInputError("Wait before publishing more posts.", 429);
     const { id } = await params;

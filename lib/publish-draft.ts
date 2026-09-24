@@ -1,14 +1,24 @@
+import { publishingBlocker, schedulingEnabled } from "./publishing-readiness.ts";
 import { isDraftImage } from "./draft-image.ts";
 import { reserveUsage } from "./service-usage.ts";
 import { prisma } from "./prisma.ts";
 import { getValidXAccessToken } from "./x-token.ts";
 import { decrypt } from "./encryption.ts";
 import { sendPost, PublishError, RETRYABLE_DELIVERIES } from "./content-publishing.ts";
-export async function publishDraft(userId: string, contentDraftId: string, connectedAccountId: string, request: typeof fetch = fetch) {
+export async function publishDraft(userId: string, contentDraftId: string, connectedAccountId: string, request: typeof fetch = fetch, options: { scheduled?: boolean } = {}) {
   const claimed = await prisma.$transaction(async (tx) => {
     const draft = await tx.contentDraft.findFirst({ where: { id: contentDraftId, userId }, include: { targets: { where: { connectedAccountId }, include: { connectedAccount: true } } } });
     const account = draft?.targets[0]?.connectedAccount;
     if (!draft || !account || account.userId !== userId) throw new PublishError("NOT_FOUND", "Draft or account not found.");
+    if (options.scheduled) {
+      if (!schedulingEnabled() || draft.status !== "PROCESSING") throw new PublishError("FAILED","Automatic delivery is paused or no longer claimed.");
+      const blocker = publishingBlocker(account,draft.text,draft.mediaUrl);
+      if (blocker) throw new PublishError("FAILED",blocker);
+      const owner = await tx.user.findUnique({where:{id:userId},select:{plan:true}});
+      if (owner?.plan !== "PRO" && await tx.contentDraftTarget.count({where:{contentDraftId}})>1) throw new PublishError("FAILED","Your current plan supports one target.");
+    } else if (["QUEUED","PROCESSING"].includes(draft.status)) {
+      throw new PublishError("CHECK_PLATFORM","Cancel the schedule before publishing manually. A delivery already in progress cannot be cancelled.");
+    }
     if (!["x", "facebook"].includes(account.platform)) throw new PublishError("ASSISTED_ONLY", "Copy and open TikTok to upload your video.");
     if (isDraftImage(draft.mediaUrl) && account.platform !== "x") throw new PublishError("ASSISTED_ONLY", "Download the image and attach it manually on this platform.");
     const row = await tx.contentPublication.upsert({ where: { contentDraftId_connectedAccountId: { contentDraftId, connectedAccountId } }, update: {}, create: { contentDraftId, connectedAccountId } });
@@ -51,7 +61,7 @@ export async function publishDraft(userId: string, contentDraftId: string, conne
       const receipt = await tx.contentPublication.update({ where: { id: claimed.rowId }, data: { ...remote, status: "PUBLISHED", publishedAt: new Date(), errorCode: null, errorMessage: null } });
       const targets = await tx.contentDraftTarget.count({ where: { contentDraftId } });
       const delivered = await tx.contentPublication.count({ where: { contentDraftId, status: "PUBLISHED" } });
-      await tx.contentDraft.update({ where: { id: contentDraftId }, data: { status: delivered === targets ? "PUBLISHED" : "PARTIAL" } });
+      if (!options.scheduled) await tx.contentDraft.update({ where: { id: contentDraftId }, data: { status: delivered === targets ? "PUBLISHED" : "PARTIAL" } });
       return receipt;
     });
   } catch { throw new PublishError("CHECK_PLATFORM", "The platform accepted your post, but its receipt could not be saved. Check the platform before posting a copy."); }

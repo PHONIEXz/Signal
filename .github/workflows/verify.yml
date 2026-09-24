@@ -17,5 +17,7 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - name: Regression tests with isolated local databases
-        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/reliability.test.mts lib/metrics.test.mts lib/metrics-history.test.mts lib/post-retrieval.test.mts lib/signal-intelligence.test.mts lib/content-publishing.test.mts lib/draft-image.test.mts
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/reliability.test.mts lib/metrics.test.mts lib/metrics-history.test.mts lib/post-retrieval.test.mts lib/signal-intelligence.test.mts lib/content-publishing.test.mts lib/draft-image.test.mts lib/draft-scheduling.test.mts
       - run: npm run build -- --webpack
+      - name: Scheduling authenticated HTTP checks (disposable database, no providers)
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/scheduling-smoke.mts

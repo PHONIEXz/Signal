@@ -15,6 +15,7 @@ export async function updateDraft(userId: string, id: string, edit: DraftEdit) {
   return prisma.$transaction(async (tx) => {
     const owner = await tx.contentDraft.findFirst({ where: { id, userId } });
     if (!owner) return "MISSING" as const;
+    if (["QUEUED","PROCESSING"].includes(owner.status)) return "LOCKED" as const;
     if (await tx.contentPublication.count({ where: { contentDraftId: id, status: { in: LOCKED_DELIVERIES } } })) return "LOCKED" as const;
     // Advance even within the same millisecond so every save has a distinct version.
     const updatedAt = new Date(Math.max(Date.now(), owner.updatedAt.getTime() + 1));
