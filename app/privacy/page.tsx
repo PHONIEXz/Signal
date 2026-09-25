@@ -13,9 +13,8 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen px-5 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-3xl">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex items-center">
         <Link href="/" aria-label="Signal home"><BrandMark /></Link>
-        <Link href="/login" className="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-ink transition-colors hover:border-navy/30">Log in</Link>
       </header>
       <article className="surface-card mt-10 p-6 sm:p-10">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">Legal</p>
