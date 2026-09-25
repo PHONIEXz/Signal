@@ -30,30 +30,73 @@ export default function HomePage() {
             </div>
             <p className="mt-5 text-xs leading-5 text-white/60">Data availability depends on each platform and the permissions you grant.</p>
           </div>
-          <div className="rounded-[1.6rem] border border-white/20 bg-[#f4f7fb] p-3 text-[#111827] shadow-[0_40px_90px_-40px_rgba(0,0,0,0.6)] sm:p-4">
-            <div className="rounded-xl bg-white p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-3 border-b border-[#e3e8ef] pb-5">
-                <span className="font-display text-lg font-semibold">Signal overview</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#667085]">Illustrative layout</span>
+          <figure className="relative rounded-[1.75rem] border border-white/20 bg-[#e8eef4] p-2 text-[#172b3d] shadow-[0_40px_90px_-40px_rgba(0,0,0,0.6)] sm:p-3">
+            <div className="overflow-hidden rounded-[1.35rem] border border-[#d6e0e9] bg-white" aria-hidden="true">
+              <div className="flex items-center justify-between border-b border-[#e5ebf1] px-4 py-3 sm:px-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#173f62] text-xs font-bold text-white">S</span>
+                  <span className="font-display text-sm font-bold tracking-[-0.03em]">Signal <span className="font-normal text-[#8a99a8]">/ Overview</span></span>
+                </div>
+                <span className="rounded-full border border-[#d8e4ed] bg-[#f5f8fb] px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#4c687d]">Sample view</span>
               </div>
-              <div className="grid gap-3 pt-5 sm:grid-cols-2">
-                {[
-                  ["Account overview", "Connected channels"],
-                  ["Post analysis", "Recent performance"],
-                  ["Insights and reports", "Questions and next steps"],
-                  ["Content Studio", "Drafts and delivery"],
-                ].map(([title, detail]) => (
-                  <div key={title} className="rounded-xl border border-[#dfe5ec] bg-[#f8fafc] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#667085]">{title}</p>
-                    <p className="mt-5 text-sm font-semibold">{detail}</p>
-                    <div className="mt-5 h-2 w-3/4 rounded-full bg-[#dce6ee]" aria-hidden="true" />
-                    <div className="mt-2 h-2 w-1/2 rounded-full bg-[#dce6ee]" aria-hidden="true" />
+              <div className="grid sm:grid-cols-[7rem_minmax(0,1fr)]">
+                <div className="hidden flex-col gap-2 border-r border-[#e5ebf1] bg-[#f7f9fc] px-3 py-5 sm:flex">
+                  <span className="rounded-lg bg-[#e6f0f7] px-2.5 py-2 text-[10px] font-bold text-[#173f62]">Overview</span>
+                  <span className="px-2.5 py-2 text-[10px] font-medium text-[#778898]">Accounts</span>
+                  <span className="px-2.5 py-2 text-[10px] font-medium text-[#778898]">Posts</span>
+                  <span className="px-2.5 py-2 text-[10px] font-medium text-[#778898]">Insights</span>
+                  <span className="mt-auto rounded-lg border border-[#e4eaf0] bg-white px-2.5 py-3 text-[10px] font-semibold text-[#496477]">One clearer view ↗</span>
+                </div>
+                <div className="min-w-0 bg-[#fbfcfe] p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#668199]">Creator workspace</p>
+                      <h2 className="mt-1 font-display text-lg font-bold tracking-[-0.035em] text-[#173650]">Your audience, in focus.</h2>
+                    </div>
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#eb8a47] shadow-[0_0_0_4px_rgba(235,138,71,0.14)]" />
                   </div>
-                ))}
+                  <div className="mt-5 rounded-xl border border-[#e1e8ef] bg-white p-4 shadow-[0_12px_28px_-22px_rgba(16,47,77,0.5)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#798b9a]">Account overview</p>
+                        <p className="mt-1 text-sm font-semibold text-[#173650]">Notice the direction</p>
+                      </div>
+                      <span className="text-[10px] font-semibold text-[#2f9e6f]">Example trend ↗</span>
+                    </div>
+                    <svg viewBox="0 0 420 150" className="mt-3 h-auto w-full" fill="none" preserveAspectRatio="xMidYMid meet">
+                      <defs>
+                        <linearGradient id="signal-preview-area" x1="0" y1="0" x2="0" y2="1">
+                          <stop stopColor="#66bba7" stopOpacity="0.26" />
+                          <stop offset="1" stopColor="#66bba7" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0 37H420M0 78H420M0 119H420" stroke="#e7edf2" strokeDasharray="4 5" />
+                      <path d="M0 116C34 105 49 112 77 100S126 108 157 89 206 96 237 70 283 82 314 55 363 67 420 26V150H0Z" fill="url(#signal-preview-area)" />
+                      <path d="M0 116C34 105 49 112 77 100S126 108 157 89 206 96 237 70 283 82 314 55 363 67 420 26" stroke="#2f9e82" strokeWidth="3" strokeLinecap="round" />
+                      <circle cx="420" cy="26" r="5" fill="#eb8a47" stroke="white" strokeWidth="3" />
+                    </svg>
+                    <div className="flex justify-between text-[9px] font-medium uppercase tracking-wider text-[#94a2af]"><span>Earlier</span><span>Later</span></div>
+                  </div>
+                  <div className="mt-3 grid gap-3 min-[410px]:grid-cols-2">
+                    <div className="rounded-xl border border-[#e1e8ef] bg-white p-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#798b9a]">Your channels</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#e7edf4] text-[10px] font-bold">X</span>
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#e7edf4] text-[10px] font-bold">f</span>
+                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#e7edf4] text-[10px] font-bold">♪</span>
+                        <span className="ml-auto text-[10px] font-semibold text-[#496477]">In context</span>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-[#f2dfcf] bg-[#fff9f4] p-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#aa6c42]">Next move</p>
+                      <p className="mt-2 text-xs font-semibold leading-5 text-[#633e2b]">Turn a useful signal into a content idea.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <p className="px-2 pb-1 pt-3 text-center text-[11px] text-[#667085]">Illustration of product sections. No live account data is shown.</p>
-          </div>
+            <figcaption className="px-2 pb-1 pt-3 text-center text-[11px] text-[#496477]">Illustrative workspace preview. No live account data is shown.</figcaption>
+          </figure>
         </div>
       </section>
 
