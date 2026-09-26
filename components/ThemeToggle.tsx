@@ -1,25 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+function subscribeToTheme(onChange: () => void) {
+  const syncFromStorage = (event: StorageEvent) => {
+    if (event.key !== "theme") return;
+    document.documentElement.classList.toggle("dark", event.newValue === "dark");
+    onChange();
+  };
+  window.addEventListener("signal-theme-change", onChange);
+  window.addEventListener("storage", syncFromStorage);
+  return () => {
+    window.removeEventListener("signal-theme-change", onChange);
+    window.removeEventListener("storage", syncFromStorage);
+  };
+}
+
+function currentTheme() {
+  return document.documentElement.classList.contains("dark");
+}
 
 export default function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
+  const isDark = useSyncExternalStore(subscribeToTheme, currentTheme, () => false);
   function toggle() {
-    const next = !isDark;
-    setIsDark(next);
+    const next = !document.documentElement.classList.contains("dark");
     document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-  }
-
-  if (!mounted) {
-    return <div className="h-9 w-[68px]" aria-hidden="true" />;
+    try {
+      localStorage.setItem("theme", next ? "dark" : "light");
+    } catch {
+      // The theme still works for this page if storage is unavailable.
+    }
+    window.dispatchEvent(new Event("signal-theme-change"));
   }
 
   return (
