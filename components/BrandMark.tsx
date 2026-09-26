@@ -46,7 +46,7 @@ export default function BrandMark({
       {!compact && (
         <span className="flex flex-col leading-none">
           <span
-            className={`font-display text-lg font-semibold tracking-[-0.02em] ${
+            className={`font-body text-lg font-bold tracking-[-0.04em] ${
               inverse ? "text-white" : "text-ink"
             }`}
           >

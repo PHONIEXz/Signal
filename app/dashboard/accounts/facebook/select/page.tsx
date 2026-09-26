@@ -6,6 +6,7 @@ import { saveConnection, ConnectionIdentityError } from "@/lib/save-connection";
 import { getAccountConnectionAccess } from "@/lib/account-access";
 import { encrypt } from "@/lib/encryption";
 import Link from "next/link";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 async function selectPage(form: FormData) {
   "use server";
@@ -30,5 +31,9 @@ export default async function FacebookSelection() {
   if(!token) redirect("/dashboard/accounts?error=facebook_state_mismatch");
   let pages;
   try { pages=await facebookPages(token); } catch { redirect("/dashboard/accounts?error=facebook_connect_failed"); }
-  return <div className="mx-auto max-w-2xl space-y-5"><h1 className="font-display text-3xl">Choose your Facebook Page</h1><p className="text-sm text-ink-muted">Select the Page whose posts and insights you want in Signal. When reconnecting, choose your original Page to preserve its history.</p>{!pages.length ? <p>No manageable Pages were returned. Check your Page access and reconnect.</p> : <form action={selectPage} className="space-y-4"><label className="block text-sm" htmlFor="pageId">Facebook Page</label><select id="pageId" name="pageId" required className="w-full rounded-lg border border-border bg-surface p-3">{pages.map(page=><option key={page.id} value={page.id}>{page.name} ({page.id})</option>)}</select><button className="rounded-lg bg-navy px-4 py-3 text-white">Connect selected Page</button></form>}<Link href="/dashboard/accounts" className="inline-block text-sm underline">Back to accounts</Link></div>;
+  return <div className="mx-auto max-w-2xl space-y-8">
+    <PageIntro eyebrow="Workspace / Connections" title="Choose your Facebook Page" description="Select the Page whose posts and insights you want in Signal. When reconnecting, choose your original Page to preserve its history." />
+    {!pages.length ? <p className="editorial-panel p-6 text-sm text-ink-muted">No manageable Pages were returned. Check your Page access and reconnect.</p> : <form action={selectPage} className="editorial-panel space-y-5 p-6"><label className="block text-sm font-semibold text-ink" htmlFor="pageId">Facebook Page</label><select id="pageId" name="pageId" required className="w-full rounded-md border border-border bg-surface p-3 text-ink">{pages.map(page=><option key={page.id} value={page.id}>{page.name} ({page.id})</option>)}</select><button className="rounded-md bg-action px-4 py-3 text-sm font-semibold text-white hover:bg-action-hover">Connect selected Page</button></form>}
+    <Link href="/dashboard/accounts" className="inline-block text-sm font-semibold text-navy underline underline-offset-4">Back to accounts</Link>
+  </div>;
 }

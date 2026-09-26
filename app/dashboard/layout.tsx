@@ -25,15 +25,15 @@ export default async function DashboardLayout({
       <Sidebar />
 
       <div className="min-h-screen sm:pl-64">
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-border/80 bg-surface/[0.82] px-4 backdrop-blur-xl sm:px-7 lg:px-10">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-border bg-surface px-4 sm:px-7 lg:px-10">
           <BrandMark compact className="sm:hidden" />
 
           <div className="hidden sm:block">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-              Signal workspace
+              Your workspace
             </p>
             <p className="mt-1 text-sm font-medium text-ink">
-              Your social command center
+              A clearer view of your channels
             </p>
           </div>
 

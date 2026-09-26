@@ -9,6 +9,7 @@ import DraftDeliveryActions, { type DeliveryReceipt } from "./DraftDeliveryActio
 import StudioMediaPreview from "./StudioMediaPreview";
 import { deliveryText, LOCKED_DELIVERIES } from "@/lib/content-publishing";
 import { editorFingerprint } from "@/lib/studio-editor";
+import PageIntro from "./PageIntro";
 
 type Account = { id: string; platform: string; displayName: string | null; platformUserId?: string | null };
 type Draft = {
@@ -260,24 +261,19 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">Content</p>
-          <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">Content Studio</h1>
-          <p className="mt-2 text-sm text-ink-muted">From first idea to published post. Write, preview, plan and send from one workspace.</p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm">
+      <PageIntro eyebrow="Workspace / Create" title="Content Studio" description="From first idea to published post. Write, preview, plan and send from one workspace." aside={
+        <div className="border-l-2 border-amber pl-4 text-sm">
           <span className="font-medium text-ink">{plan} plan</span>
           <span className="ml-2 text-ink-muted">
             {drafts.length}{draftLimit === null ? " drafts, unlimited" : ` of ${draftLimit} drafts`}
           </span>
         </div>
-      </div>
+      } />
 
       {recovery && <section className="rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-navy px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
       <p className="text-xs text-ink-muted">Unsaved work is kept temporarily in this browser tab when storage is available. Save your draft to keep it across devices.</p>
-      <div className="grid grid-cols-3 gap-3">
-        {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-xs text-ink-muted">{label}</p><p className="mt-1 font-display text-2xl text-ink">{count}</p></div>)}
+      <div className="grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-surface">
+        {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="p-4 sm:p-5"><p className="eyebrow">{label}</p><p className="mt-2 font-display text-3xl text-ink">{count}</p></div>)}
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">

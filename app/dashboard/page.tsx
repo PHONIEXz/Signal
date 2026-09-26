@@ -145,27 +145,24 @@ export default async function DashboardPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
-      <section className="dashboard-hero animate-reveal relative isolate overflow-hidden rounded-[1.75rem] bg-[#102f4d] px-5 py-6 text-white shadow-[0_28px_80px_-42px_rgba(16,47,77,0.9)] sm:px-8 sm:py-8">
-        <div className="dashboard-grid pointer-events-none absolute inset-0 opacity-40" />
-        <div className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-[#4f9ac8]/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 left-1/3 h-60 w-60 rounded-full bg-amber/20 blur-3xl" />
+      <section className="dashboard-hero relative isolate overflow-hidden rounded-lg border border-[#24445a] bg-[#102f4d] px-5 py-7 text-white sm:px-8 sm:py-9">
+        <div className="dashboard-grid pointer-events-none absolute inset-0 opacity-20" />
         <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-connected animate-pulse-dot" />
-              {connections.length} connected {connections.length === 1 ? "signal" : "signals"}
-            </div>
-            <h1 className="mt-5 max-w-2xl font-display text-3xl font-semibold tracking-[-0.045em] sm:text-4xl lg:text-[2.7rem]">
-              See the full shape of your audience.
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#e4a16e]">
+              Overview / {connections.length} connected {connections.length === 1 ? "channel" : "channels"}
+            </p>
+            <h1 className="mt-5 max-w-2xl font-display text-4xl font-medium leading-[1.07] tracking-[-0.04em] sm:text-5xl">
+              Your audience, in focus.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-white/65 sm:text-base">
               Your platforms, performance and next moves in one focused workspace.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/dashboard/content" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#102f4d] shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-white/90">
+              <Link href="/dashboard/content" className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-semibold text-[#102f4d] hover:bg-white/90">
                 Create content <span aria-hidden="true">+</span>
               </Link>
-              <Link href="/dashboard/reports" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-white/[0.12]">
+              <Link href="/dashboard/reports" className="inline-flex items-center gap-2 rounded-md border border-white/25 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10">
                 Open reports <span aria-hidden="true">↗</span>
               </Link>
             </div>
@@ -296,13 +293,12 @@ function SummaryCard({
   note?: string;
 }) {
   return (
-    <div className="surface-card group relative min-h-32 overflow-hidden p-4 sm:p-5">
-      <div className="absolute -right-9 -top-9 h-24 w-24 rounded-full bg-navy/[0.05] transition-transform duration-500 group-hover:scale-125" />
-      <p className="relative font-display text-2xl font-semibold tracking-[-0.035em] text-ink sm:text-3xl">
+    <div className="editorial-panel min-h-32 border-t-2 border-t-navy p-4 sm:p-5">
+      <p className="font-display text-3xl font-medium tracking-[-0.035em] text-ink sm:text-4xl">
         {value === null ? "Unavailable" : value.toLocaleString()}
       </p>
 
-      <p className="relative mt-3 text-xs font-medium text-ink-muted">
+      <p className="mt-3 text-xs font-medium text-ink-muted">
         {label}
       </p>
       {note && <p className="mt-1 text-[11px] text-amber-600">{note}</p>}

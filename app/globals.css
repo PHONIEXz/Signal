@@ -3,25 +3,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-paper: #f4f7fb;
+  --color-paper: #f6f5f0;
   --color-surface: #ffffff;
-  --color-surface-soft: #f8fafc;
-  --color-ink: #111827;
-  --color-ink-muted: #667085;
-  --color-navy: #214b76;
-  --color-navy-dark: #173651;
-  --color-action: #214b76;
-  --color-action-hover: #173651;
-  --color-amber: #eb8a47;
-  --color-connected: #2f9e6f;
-  --color-border: #dfe5ec;
+  --color-surface-soft: #faf9f5;
+  --color-ink: #1b2b36;
+  --color-ink-muted: #60707a;
+  --color-navy: #1c536d;
+  --color-navy-dark: #123b52;
+  --color-action: #163f58;
+  --color-action-hover: #0f3045;
+  --color-amber: #c9824b;
+  --color-connected: #237d68;
+  --color-border: #d9dfdc;
 
-  --font-display: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Iowan Old Style", "Baskerville", "Palatino Linotype", Georgia, serif;
   --font-body: "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Code", "Consolas", monospace;
 
-  --shadow-soft: 0 18px 55px -32px rgb(23 54 81 / 0.42);
-  --shadow-lift: 0 24px 60px -32px rgb(23 54 81 / 0.5);
+  --shadow-soft: 0 12px 36px -30px rgb(23 54 81 / 0.35);
+  --shadow-lift: 0 22px 44px -32px rgb(23 54 81 / 0.38);
 
   --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
   --animate-rise-in: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -31,17 +31,24 @@
 }
 
 .dark {
-  --color-paper: #0d1219;
-  --color-surface: #151c25;
-  --color-surface-soft: #111821;
-  --color-ink: #f5f7fa;
-  --color-ink-muted: #9ca8b8;
-  --color-navy: #74a7d8;
-  --color-navy-dark: #9bc2e7;
-  --color-amber: #f19a5c;
-  --color-connected: #51c38d;
-  --color-border: #273241;
+  --color-paper: #101b21;
+  --color-surface: #17262e;
+  --color-surface-soft: #1b2b33;
+  --color-ink: #f3f2e9;
+  --color-ink-muted: #b1bdc0;
+  --color-navy: #99c8d9;
+  --color-navy-dark: #b7d9e4;
+  --color-action: #24607a;
+  --color-action-hover: #2d748d;
+  --color-amber: #e3a36e;
+  --color-connected: #77c7a8;
+  --color-border: #31434a;
   color-scheme: dark;
+}
+
+/* Navy is a light link color in dark mode; buttons on it need dark ink. */
+.dark .bg-navy.text-white {
+  color: #102832;
 }
 
 @keyframes pulse-dot {
@@ -128,9 +135,6 @@
   body {
     min-height: 100vh;
     background-color: var(--color-paper);
-    background-image:
-      radial-gradient(circle at 8% 0%, rgb(84 144 194 / 0.09), transparent 28rem),
-      radial-gradient(circle at 92% 12%, rgb(235 138 71 / 0.07), transparent 24rem);
     color: var(--color-ink);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
@@ -175,17 +179,14 @@
     content: "";
     pointer-events: none;
     transform: translateX(-145%) rotate(18deg);
-    animation: brand-glow-sweep 5.2s ease-in-out infinite;
   }
 
   .brand-mark-core {
     filter: drop-shadow(0 2px 5px rgb(7 28 49 / 0.25));
-    animation: brand-core-drift 3.8s ease-in-out infinite;
   }
 
   .brand-mark-wave {
     stroke-dasharray: 44 8;
-    animation: brand-wave-flow 3.2s linear infinite;
   }
 
   .brand-mark-dot-halo,
@@ -196,7 +197,6 @@
 
   .brand-mark-dot-halo {
     opacity: 0.3;
-    animation: brand-dot-pulse 2.2s ease-out infinite;
   }
 
   .brand-mark-dot {
@@ -227,18 +227,48 @@
 
   .surface-card {
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
-    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    border-radius: 0.9rem;
+    background: var(--color-surface);
     box-shadow: var(--shadow-soft);
-    transition:
-      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 0.25s ease,
-      box-shadow 0.25s ease;
   }
 
-  .surface-card:hover {
+  .interactive-card {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .interactive-card:hover {
     border-color: color-mix(in srgb, var(--color-navy) 25%, var(--color-border));
     box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+  }
+
+  .page-intro {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1.75rem;
+  }
+
+  .eyebrow {
+    color: var(--color-navy);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  .editorial-panel {
+    border: 1px solid var(--color-border);
+    border-radius: 0.9rem;
+    background: var(--color-surface);
+  }
+
+  .section-index {
+    color: var(--color-amber);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
   }
 
   .auth-grid {

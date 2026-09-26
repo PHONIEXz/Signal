@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import SignalReport from "@/components/dashboard/SignalReport";
 import PostSampleSelector from "@/components/dashboard/PostSampleSelector";
 import { normalizePlan, normalizeSampleSize } from "@/lib/metrics";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 export default async function ReportsPage({
   searchParams,
@@ -43,18 +44,7 @@ export default async function ReportsPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
-          Analytics
-        </p>
-        <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">
-          Reports
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
-          Signal AI automatically turns your latest account metrics and
-          stored content into practical growth insights.
-        </p>
-      </div>
+      <PageIntro eyebrow="Workspace / Analytics" title="Reports" description="Review selected account metrics and stored content to find useful patterns and opportunities." />
 
       <PostSampleSelector plan={plan} selected={sampleSize} />
 

@@ -1,5 +1,6 @@
 import { postEngagement } from "@/lib/metric-measurements";
 import Link from "next/link";
+import PageIntro from "@/components/dashboard/PageIntro";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import PostSampleSelector from "@/components/dashboard/PostSampleSelector";
@@ -474,29 +475,7 @@ function PageHeader({
   latestSnapshotDate?: Date;
 }) {
   return (
-    <div>
-      <div className="flex items-center gap-2">
-        <span className="text-lg text-navy">✦</span>
-
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
-          Signal AI
-        </p>
-      </div>
-
-      <h1 className="mt-2 font-display text-2xl font-medium tracking-tight text-ink">
-        Your social intelligence
-      </h1>
-
-      <p className="mt-1 text-sm text-ink-muted">
-        Understand what is happening, why it matters, and what to do next.
-      </p>
-
-      {latestSnapshotDate && (
-        <p className="mt-2 text-xs text-ink-muted">
-          Latest data: {latestSnapshotDate.toLocaleString()}
-        </p>
-      )}
-    </div>
+    <PageIntro eyebrow="Workspace / Signal AI" title="Your social intelligence" description="Understand what is happening, why it matters, and what to do next." aside={latestSnapshotDate && <p className="text-xs text-ink-muted">Latest data: {latestSnapshotDate.toLocaleString()}</p>} />
   );
 }
 
