@@ -30,25 +30,27 @@ export default function ProductPage() {
   return (
     <PublicSiteShell>
       <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
-        <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-navy">Signal product guide</p>
-          <h1 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-[-0.045em] text-ink sm:text-5xl">What you can do in Signal</h1>
-          <p className="mt-5 text-base leading-8 text-ink-muted">Signal is a web app for creators to inspect their own connected social accounts and work on content from one dashboard. This guide explains the main flows and what each platform connection is used for.</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/signup" className="rounded-xl bg-action px-5 py-3 text-sm font-semibold text-white hover:bg-action-hover">Create an account</Link>
-            <Link href="/login" className="rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-ink hover:bg-paper">Log in to the dashboard</Link>
+        <div className="grid gap-10 border-b border-border pb-14 lg:grid-cols-[1.5fr_0.5fr] lg:items-end">
+          <div>
+            <p className="eyebrow">Signal / Product guide</p>
+            <h1 className="mt-5 font-display text-5xl font-medium leading-[1.05] tracking-[-0.045em] text-ink sm:text-6xl">From scattered numbers to a clearer next move.</h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-ink-muted">Signal brings your connected accounts, available data and content drafts into one place. Here is how the workspace fits together.</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/signup" className="rounded-md bg-action px-5 py-3 text-sm font-semibold text-white hover:bg-action-hover">Create an account ↗</Link>
+              <Link href="/login" className="rounded-md border border-border bg-surface px-5 py-3 text-sm font-semibold text-ink hover:bg-paper">Log in</Link>
+            </div>
           </div>
+          <aside className="border-l-2 border-amber pl-5 text-sm leading-6 text-ink-muted"><p className="eyebrow mb-3">A note on data</p>Available metrics depend on the platform and the access you approve. Signal shows gaps clearly when data is unavailable.</aside>
         </div>
 
         <section aria-labelledby="steps-title" className="mt-20">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-navy">In the app</p>
           <h2 id="steps-title" className="mt-3 font-display text-3xl font-semibold tracking-[-0.035em] text-ink">A complete workflow</h2>
-          <div className="mt-7 grid gap-4 md:grid-cols-2">
+          <div className="mt-8 border-t border-border">
             {steps.map((step, index) => (
-              <article key={step.title} className="surface-card p-6 sm:p-7">
-                <span className="font-mono text-xs font-semibold text-navy">STEP 0{index + 1}</span>
-                <h3 className="mt-4 font-display text-xl font-semibold text-ink">{step.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-ink-muted">{step.body}</p>
+              <article key={step.title} className="grid gap-3 border-b border-border py-7 sm:grid-cols-[7rem_1fr] sm:gap-6">
+                <span className="section-index">STEP 0{index + 1}</span>
+                <div><h3 className="font-display text-2xl font-medium text-ink">{step.title}</h3><p className="mt-3 max-w-2xl text-sm leading-7 text-ink-muted">{step.body}</p></div>
               </article>
             ))}
           </div>

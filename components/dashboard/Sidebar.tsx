@@ -24,10 +24,11 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border/80 bg-surface/[0.92] px-4 py-6 backdrop-blur-xl sm:flex">
-        <BrandMark className="px-2" />
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-surface px-5 py-7 sm:flex">
+        <BrandMark className="px-1" />
 
-        <nav className="mt-10 flex flex-col gap-1.5" aria-label="Dashboard navigation">
+        <nav className="mt-12 flex flex-col gap-1" aria-label="Dashboard navigation">
+          <p className="eyebrow mb-3 px-3">Workspace</p>
           {NAV_ITEMS.map((item) => {
             const active = isItemActive(pathname, item.href);
             return (
@@ -35,32 +36,27 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                className={`group flex items-center gap-3 rounded-md border-l-2 px-3 py-3 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-action text-white shadow-md shadow-navy/15"
-                    : "text-ink-muted hover:bg-paper hover:text-ink"
+                    ? "border-amber bg-paper text-ink"
+                    : "border-transparent text-ink-muted hover:bg-paper hover:text-ink"
                 }`}
               >
                 <NavIcon name={item.icon} />
                 <span>{item.label}</span>
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-amber" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto rounded-2xl border border-border bg-paper/70 p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink">Your workspace</span>
-          </div>
-          <p className="mt-2 text-xs leading-5 text-ink-muted">
-            Your connected signals stay together here.
-          </p>
+        <div className="mt-auto border-t border-border px-2 pt-5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-navy">Signal / Workspace</p>
+          <p className="mt-2 text-xs leading-5 text-ink-muted">Your channels, in context.</p>
         </div>
       </aside>
 
       <nav
-        className="fixed inset-x-2 bottom-2 z-50 grid grid-cols-6 rounded-2xl border border-border/80 bg-surface/[0.94] p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-2xl shadow-navy/15 backdrop-blur-xl sm:hidden"
+        className="fixed inset-x-2 bottom-2 z-50 grid grid-cols-6 rounded-xl border border-border bg-surface p-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] shadow-lg sm:hidden"
         aria-label="Mobile dashboard navigation"
       >
         {NAV_ITEMS.map((item) => {
@@ -70,8 +66,8 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[9px] font-semibold transition-colors ${
-                active ? "bg-action text-white" : "text-ink-muted"
+              className={`flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-2 text-[9px] font-semibold transition-colors ${
+                active ? "bg-paper text-ink ring-1 ring-border" : "text-ink-muted"
               }`}
             >
               <NavIcon name={item.icon} />

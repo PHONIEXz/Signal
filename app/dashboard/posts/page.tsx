@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const PLATFORM_LABELS: Record<string, string> = {
   x: "X",
@@ -27,19 +28,7 @@ export default async function PostsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
-          Content
-        </p>
-
-        <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">
-          Posts
-        </h1>
-
-        <p className="mt-2 text-sm text-ink-muted">
-          Browse recent content from your connected platforms.
-        </p>
-      </div>
+      <PageIntro eyebrow="Workspace / Content" title="Posts" description="Browse recent content from your connected platforms." />
 
       {connections.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
@@ -70,7 +59,7 @@ export default async function PostsPage() {
               <Link
                 key={connection.id}
                 href={`/dashboard/posts/${connection.platform}`}
-                className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-navy/30 hover:bg-paper"
+                className="interactive-card group rounded-lg border border-border bg-surface p-6"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>

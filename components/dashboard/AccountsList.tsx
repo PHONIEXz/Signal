@@ -1,4 +1,5 @@
 import AccountCard from "@/components/dashboard/AccountCard";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 type Connection = {
   id: string;
@@ -25,16 +26,9 @@ export default function AccountsList({ connections, plan }: { connections: Conne
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">Connections</p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-[-0.035em] text-ink">Your accounts</h1>
-        <p className="mt-2 max-w-xl text-sm leading-6 text-ink-muted">
-          Bring each channel into one workspace and keep your performance picture complete.
-        </p>
-      </div>
+      <PageIntro eyebrow="Workspace / Connections" title="Your accounts" description="Bring each channel into one workspace and keep your performance picture complete." />
 
-      <div className="surface-card relative overflow-hidden p-5 sm:p-6">
-        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-navy to-amber" />
+      <div className="editorial-panel border-l-4 border-l-amber p-5 sm:p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Current plan</p>

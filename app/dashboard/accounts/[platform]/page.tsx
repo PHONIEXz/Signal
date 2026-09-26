@@ -9,6 +9,7 @@ import GrowthChart from "@/components/dashboard/GrowthChart";
 import TopPost from "@/components/dashboard/TopPost";
 import InsightsChat from "@/components/dashboard/InsightsChat";
 import { normalizePlan, normalizeSampleSize } from "@/lib/metrics";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 function postUrl(platform: string, platformPostId: string): string {
   if (platform === "x") return `https://x.com/i/web/status/${platformPostId}`;
@@ -82,10 +83,8 @@ export default async function AccountDetailPage({
   const topPost = sampledPosts.filter(p => postEngagement(p) !== null).sort((a,b) => postEngagement(b)! - postEngagement(a)!)[0];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-display text-lg font-medium capitalize text-ink">
-        {platform}
-      </h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageIntro eyebrow="Workspace / Connected account" title={platform === "x" ? "X" : platform.charAt(0).toUpperCase() + platform.slice(1)} description={`Available account metrics, history and analysis for ${connectedAccount.displayName || platform}.`} />
       <MetricsPanel
         key={`${platform}-${sampleSize}`}
         platform={platform}

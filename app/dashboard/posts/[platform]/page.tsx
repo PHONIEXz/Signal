@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import PostsList from "@/components/dashboard/PostsList";
 import InsightsChat from "@/components/dashboard/InsightsChat";
 import PostsRefresh from "@/components/dashboard/PostsRefresh";
+import PageIntro from "@/components/dashboard/PageIntro";
 
 const PLATFORM_LABELS: Record<string, string> = {
   x: "X",
@@ -66,17 +67,7 @@ export default async function PlatformPostsPage({
           ← Back to platforms
         </Link>
 
-        <div className="mt-4 flex items-end justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl font-medium capitalize text-ink">
-              {platformLabel} Posts
-            </h1>
-
-            <p className="mt-1 text-sm text-ink-muted">
-              {posts.length} recent posts
-            </p>
-          </div>
-        </div>
+        <div className="mt-5"><PageIntro eyebrow="Workspace / Content" title={`${platformLabel} posts`} description={`${posts.length} recent posts from this connected account.`} /></div>
       </div>
 
       <PostsRefresh platform={platform} />
