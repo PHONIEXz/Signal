@@ -1,8 +1,10 @@
-import { prisma } from "@/lib/prisma";
-import { encrypt, decrypt } from "@/lib/encryption";
+import { MetricTokenError, tokenRefreshFailure, refreshedToken } from "./metric-diagnostics.ts";
+import { prisma } from "./prisma.ts";
+import { encrypt, decrypt } from "./encryption.ts";
 
 export async function getValidTikTokAccessToken(
-  connectedAccountId: string
+  connectedAccountId: string,
+  request: typeof fetch = fetch
 ): Promise<string> {
   const account = await prisma.connectedAccount.findUniqueOrThrow({
     where: { id: connectedAccountId },
@@ -17,13 +19,17 @@ export async function getValidTikTokAccessToken(
   }
 
   if (!account.refreshToken) {
-    throw new Error(
-      "TikTok access token expired and no refresh token is available. Reconnect the account."
-    );
+    throw new MetricTokenError({code:"METRIC_RECONNECT",responsibility:"connection",message:"TikTok authorization expired without a renewal token. Reconnect this account.",stopAccountRequests:true});
   }
 
-  const res = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+  if (!process.env.TIKTOK_CLIENT_KEY?.trim() || !process.env.TIKTOK_CLIENT_SECRET?.trim()) {
+    throw new MetricTokenError({ code: "METRIC_CONFIGURATION", responsibility: "signal", message: "Signal's TikTok renewal configuration is missing. The server configuration needs review; saved metrics are preserved.", stopAccountRequests: true });
+  }
+
+  const res = await request("https://open.tiktokapis.com/v2/oauth/token/", {
     method: "POST",
+    cache: "no-store",
+    signal: AbortSignal.timeout(20000),
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_key: process.env.TIKTOK_CLIENT_KEY!,
@@ -33,26 +39,24 @@ export async function getValidTikTokAccessToken(
     }),
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to refresh TikTok access token. Reconnect the account.");
-  }
-
-  const data = await res.json();
-  const newExpiresAt = data.expires_in
-    ? new Date(Date.now() + data.expires_in * 1000)
-    : null;
+  const data = await res.json().catch(() => null);
+  const failure=tokenRefreshFailure("tiktok",res.status,data);
+  if (failure) throw new MetricTokenError(failure);
+  // OAuth invalid_grant is a connection failure, even when the endpoint uses 400.
+  if (data?.error) throw new MetricTokenError({code:"METRIC_RECONNECT",responsibility:"connection",message:"Reconnect TikTok: the saved authorization could not be renewed.",stopAccountRequests:true});
+  const refreshed=refreshedToken("tiktok",data);
 
   await prisma.connectedAccount.update({
     where: { id: connectedAccountId },
     data: {
-      accessToken: encrypt(data.access_token),
-      refreshToken: data.refresh_token
-        ? encrypt(data.refresh_token)
+      accessToken: encrypt(refreshed.accessToken),
+      refreshToken: refreshed.refreshToken
+        ? encrypt(refreshed.refreshToken)
         : account.refreshToken,
-      expiresAt: newExpiresAt,
+      expiresAt: refreshed.expiresAt,
     },
   });
 
-  return data.access_token;
+  return refreshed.accessToken;
 }
 

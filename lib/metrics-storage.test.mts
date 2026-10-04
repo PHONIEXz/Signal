@@ -92,6 +92,13 @@ test("Prisma storage keeps measurements, enforces leases and preserves newer API
     await finishMetricFailure(account.id, failed, "Test timeout");
     assert.equal((await prisma.metricSync.findUniqueOrThrow({ where: { connectedAccountId: account.id } })).lastSuccessAt?.getTime(), successAt?.getTime());
     assert.equal(await prisma.postMeasurement.count(), 2);
+    await prisma.metricSync.update({ where: { connectedAccountId: account.id }, data: { nextAllowedAt: null } });
+    const unavailable = await claimMetricSync(account.id, user.id, "FREE", 10); assert.ok(unavailable);
+    await storeCollection({ ...input, lockId: unavailable, source: "API", posts: [], complete: false, warning: "Provider denied collection", accountMetrics: undefined });
+    const unavailableSync = await prisma.metricSync.findUniqueOrThrow({ where: { connectedAccountId: account.id } });
+    assert.equal(unavailableSync.status, "FAILED"); assert.equal(unavailableSync.source, "CSV");
+    assert.equal(unavailableSync.lastSuccessAt?.getTime(), successAt?.getTime());
+    assert.equal(await prisma.postMeasurement.count(), 2);
     const key = `metrics:${user.id}:${new Date().toISOString().slice(0,10)}`;
     await prisma.authRateLimit.update({ where: { key }, data: { count: 12 } });
     await prisma.metricSync.update({ where: { connectedAccountId: account.id }, data: { nextAllowedAt: null } });

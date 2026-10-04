@@ -8,7 +8,7 @@ import MetricsPanel from "@/components/dashboard/MetricsPanel";
 import GrowthChart from "@/components/dashboard/GrowthChart";
 import TopPost from "@/components/dashboard/TopPost";
 import InsightsChat from "@/components/dashboard/InsightsChat";
-import { normalizePlan, normalizeSampleSize } from "@/lib/metrics";
+import { normalizePlan, normalizeSampleSize, summarizePosts } from "@/lib/metrics";
 
 function postUrl(platform: string, platformPostId: string): string {
   if (platform === "x") return `https://x.com/i/web/status/${platformPostId}`;
@@ -92,6 +92,8 @@ export default async function AccountDetailPage({
         plan={plan}
         sampleSize={sampleSize}
         pageMediaViews={latestPageMediaView?.value ?? null}
+        postMetrics={summarizePosts(sampledPosts,platform)}
+        postMeasuredAt={sampledPosts.length ? new Date(Math.max(...sampledPosts.map(p=>p.fetchedAt.getTime()))).toISOString() : null}
         snapshot={
           latestSnapshot
             ? {

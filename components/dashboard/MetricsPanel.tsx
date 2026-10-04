@@ -1,9 +1,10 @@
 "use client";
 
+import { metricRefreshError } from "@/lib/metric-diagnostics";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import { calculateEngagementRate, type Plan } from "@/lib/metrics";
+import { calculateEngagementRate, type Plan, type PostMetricSummary } from "@/lib/metrics";
 import PostSampleSelector from "@/components/dashboard/PostSampleSelector";
 
 type Snapshot = {
@@ -25,12 +26,16 @@ export default function MetricsPanel({
   plan,
   sampleSize,
   pageMediaViews,
+  postMetrics,
+  postMeasuredAt,
 }: {
   platform: string;
   snapshot: Snapshot | null;
   plan: Plan;
   sampleSize: number;
   pageMediaViews?: number | null;
+  postMetrics?: PostMetricSummary;
+  postMeasuredAt?: string | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -53,18 +58,12 @@ export default function MetricsPanel({
     setLoading(false);
 
     if (!res.ok) {
-      const message = String(data.error ?? "").toLowerCase();
-      setError(
-        message.includes("reconnect") || message.includes("token")
-          ? `${platformLabel} needs to be reconnected before Signal can refresh it.`
-          : message.includes("limit") || message.includes("allowed")
-            ? "This account was refreshed recently. Please try again when the next refresh is available."
-            : "We couldn't refresh this account right now. Your saved data is safe."
-      );
+      setError(metricRefreshError(data));
+      router.refresh();
       return;
     }
 
-    setNotice(data.message || "Your metrics have been updated.");
+    setNotice([data.message || "Your metrics have been updated.",data.warning].filter(Boolean).join(" "));
 
     router.refresh();
     } catch { setError("Could not reach Signal. Check your connection and try again."); }
@@ -73,9 +72,11 @@ export default function MetricsPanel({
 
   const platformLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
 
-  const engagementRate = snapshot
-    ? calculateEngagementRate(snapshot.totalEngagements, snapshot.totalViews)
-    : null;
+  const postLikes=postMetrics ? postMetrics.likes : snapshot?.totalLikes ?? null;
+  const postViews=postMetrics ? postMetrics.views : snapshot?.totalViews ?? null;
+  const postEngagements=postMetrics ? postMetrics.engagements : snapshot?.totalEngagements ?? null;
+  const analyzed=postMetrics ? postMetrics.postsAnalyzed : snapshot?.postsAnalyzed ?? 0;
+  const engagementRate=calculateEngagementRate(postEngagements,postViews);
 
   return (
     <div className="space-y-4">
@@ -88,11 +89,12 @@ export default function MetricsPanel({
             </p>
             {snapshot && (
               <p className="mt-1 font-mono text-xs text-ink-muted">
-                Last updated{" "}
+                Account counters measured{" "}
                 {new Date(snapshot.fetchedAt).toLocaleString("en-US", {
                   dateStyle: "medium",
                   timeStyle: "short",
-                })}
+                  timeZone: "UTC",
+                })} UTC
               </p>
             )}
           </div>
@@ -110,49 +112,49 @@ export default function MetricsPanel({
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         {notice && <p className="mt-4 text-sm text-amber-600">{notice}</p>}
 
-        {snapshot && snapshot.sampleSize !== sampleSize && (
+        {!postMetrics && snapshot && snapshot.sampleSize !== sampleSize && (
           <p className="mt-4 text-sm text-ink-muted" role="status">
             Showing saved results for the last {snapshot.sampleSize} posts.
             Refresh to collect your selected {sampleSize}-post sample.
           </p>
         )}
 
-        {snapshot ? (
+        {snapshot || analyzed>0 ? (
           <>
             {platform === "facebook" ? (
               <>
                 <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
-                  <Stat label="Page followers" value={snapshot.followersCount} />
-                  <Stat label="Posts analyzed" value={snapshot.postsAnalyzed} />
-                  {snapshot.totalLikes !== null && (
-                    <Stat label="Sample reactions" value={snapshot.totalLikes} />
+                  <Stat label="Page followers" value={snapshot?.followersCount ?? null} />
+                  <Stat label="Posts analyzed" value={analyzed} />
+                  {postLikes !== null && (
+                    <Stat label="Sample reactions" value={postLikes} />
                   )}
-                  {snapshot.totalEngagements !== null && (
-                    <Stat label="Sample engagements" value={snapshot.totalEngagements} />
+                  {postEngagements !== null && (
+                    <Stat label="Sample engagements" value={postEngagements} />
                   )}
                   {pageMediaViews !== null && pageMediaViews !== undefined && (
                     <Stat label="Daily Page media views" value={pageMediaViews} />
                   )}
                 </div>
                 <p className="mt-3 text-xs text-ink-muted">
-                  Showing the latest verified Page data available from Facebook.
+                  Account counters and post measurements may have different collection times.
                 </p>
               </>
             ) : (
               <>
                 <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
-                  <Stat label="Followers" value={snapshot.followersCount} />
-                  {snapshot.followingCount !== null && (
-                    <Stat label="Following" value={snapshot.followingCount} />
+                  <Stat label="Followers" value={snapshot?.followersCount ?? null} />
+                  {snapshot?.followingCount != null && (
+                    <Stat label="Following" value={snapshot?.followingCount} />
                   )}
-                  {snapshot.postCount !== null && (
-                    <Stat label="Account posts" value={snapshot.postCount} />
+                  {snapshot?.postCount != null && (
+                    <Stat label="Account posts" value={snapshot?.postCount} />
                   )}
-                  {snapshot.totalLikes !== null && (
-                    <Stat label="Sample likes" value={snapshot.totalLikes} />
+                  {postLikes !== null && (
+                    <Stat label="Sample likes" value={postLikes} />
                   )}
-                  {snapshot.totalViews !== null && (
-                    <Stat label="Sample views" value={snapshot.totalViews} />
+                  {postViews !== null && (
+                    <Stat label="Sample views" value={postViews} />
                   )}
                   {engagementRate !== null && (
                     <Stat
@@ -164,15 +166,16 @@ export default function MetricsPanel({
                 </div>
               </>
             )}
+            {postMeasuredAt && <p className="mt-3 text-xs text-ink-muted">Newest selected post measurement: {new Date(postMeasuredAt).toLocaleString("en-US", {dateStyle: "medium", timeStyle: "short", timeZone: "UTC"})} UTC. Posts may contain measurements from different refreshes or CSV imports.</p>}
             <p className="mt-3 text-xs text-ink-muted">
-              Based on {snapshot.postsAnalyzed} available post
-              {snapshot.postsAnalyzed === 1 ? "" : "s"}
-              {snapshot.sampleSize
-                ? ` from the requested last ${snapshot.sampleSize}`
+              Based on {analyzed} available post
+              {analyzed === 1 ? "" : "s"}
+              {sampleSize
+                ? ` from the selected last ${sampleSize} stored posts`
                 : ""}
               . Counts are cumulative at measurement time; the selected posts may change between refreshes.
             </p>
-            {snapshot.postMetricsStatus !== "AVAILABLE" && (
+            {(postLikes===null || postEngagements===null || (platform!=="facebook" && postViews===null)) && (
               <p className="mt-2 text-xs text-ink-muted">
                 Some insights are currently unavailable from this account.
               </p>
@@ -194,13 +197,13 @@ function Stat({
   suffix = "",
 }: {
   label: string;
-  value: number;
+  value: number | null;
   suffix?: string;
 }) {
   return (
     <div>
       <p className="font-display text-2xl font-medium text-ink">
-        {`${value.toLocaleString()}${suffix}`}
+        {value === null ? "Unavailable" : `${value.toLocaleString("en-US")}${suffix}`}
       </p>
       <p className="text-xs text-ink-muted">{label}</p>
     </div>

@@ -11,7 +11,7 @@ import { readAuthBody, AuthInputError, PRIVATE_HEADERS, requestOrigin } from "./
 import { measured } from "./metric-measurements.ts";
 import { collectPosts, collectPageInsights } from "./metrics-collector.ts";
 import { metricsSchemaReady, claimMetricSync, finishMetricFailure, storeCollection } from "./metric-storage.ts";
-import { xPostsWarning } from "./post-retrieval.ts";
+import { MetricTokenError, platformMetricFailure } from "./metric-diagnostics.ts";
 
 export async function refreshMetrics(request: Request, platform: string) {
   const json = (body: unknown, status=200) => NextResponse.json(body, { status, headers: PRIVATE_HEADERS });
@@ -31,7 +31,7 @@ export async function refreshMetrics(request: Request, platform: string) {
     if (!lockId) {
       const sync = await prisma.metricSync.findUnique({ where: { connectedAccountId: account.id } });
       return json({ success:true, cached:true, sampleSize:sync?.requestedPosts ?? 0, postsAnalyzed:sync?.receivedPosts ?? 0,
-        ...refreshFeedback(sync?.status ?? "NEVER", true), nextAllowedAt:sync?.nextAllowedAt });
+        ...refreshFeedback(sync?.status ?? "NEVER", true), warning:sync?.warning, nextAllowedAt:sync?.nextAllowedAt });
     }
     await reserveUsage("metrics", session.user.id, account.user.plan);
     const token = platform === "x" ? await getValidXAccessToken(account.id) : platform === "tiktok" ? await getValidTikTokAccessToken(account.id) : decrypt(account.accessToken);
@@ -39,13 +39,23 @@ export async function refreshMetrics(request: Request, platform: string) {
     const profileUrl = platform === "x" ? "https://api.x.com/2/users/me?user.fields=public_metrics,name,username" : platform === "facebook" ? `https://graph.facebook.com/v26.0/${userId}?fields=name,followers_count` : "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,follower_count,following_count,video_count";
     let profileWarning: string | null = null;
     let metrics: { followers:number|null; following:number|null; totalPosts:number|null } | undefined;
+    let response:Response|null=null;
+    let data;
     try {
-      const response = await fetch(profileUrl,{headers:{Authorization:`Bearer ${token}`},cache:"no-store",signal:AbortSignal.timeout(10000)});
-      const data = await response.json();
-      if (!response.ok || (platform === "tiktok" && data?.error?.code && data.error.code !== "ok")) {
-        // Billing/token failures should not launch a second costly or rejected request.
-        if ([401,402,429].includes(response.status)) { const warning = platform === "x" ? xPostsWarning(response.status) : "The platform rejected account reading. Check the token or rate limit."; await finishMetricFailure(account.id,lockId,warning); return json({error:"We could not refresh this account. Check its connection in Accounts and try again."},502); }
-        profileWarning = "Account counters were unavailable; posts were requested separately.";
+      response = await fetch(profileUrl,{headers:{Authorization:`Bearer ${token}`},cache:"no-store",signal:AbortSignal.timeout(10000)});
+      data = await response.json();
+    } catch { response=null; profileWarning="Account counters could not be retrieved; cached account history was preserved."; }
+    // Persistence failures must reach the Signal error handler, rather than
+    // being mistaken for a platform/network failure and triggering more reads.
+    if(response) {
+      const failure=platformMetricFailure(platform,response.status,data);
+      if (failure) {
+        if (failure.stopAccountRequests) {
+          await finishMetricFailure(account.id,lockId,failure.message);
+          await recordUsageFailure("metrics");
+          return json({error:failure.message,code:failure.code,responsibility:failure.responsibility},502);
+        }
+        profileWarning=failure.message + " Post measurements were requested separately.";
       } else {
         const user = platform === "x" ? data.data : platform === "tiktok" ? data.data?.user : data;
         if (user) {
@@ -58,20 +68,21 @@ export async function refreshMetrics(request: Request, platform: string) {
           metrics = { followers: measured(platform === "x" ? user.public_metrics?.followers_count : platform === "facebook" ? user.followers_count : user.follower_count), following: measured(platform === "x" ? user.public_metrics?.following_count : platform === "facebook" ? null : user.following_count), totalPosts:measured(platform === "x" ? user.public_metrics?.tweet_count : platform === "facebook" ? null : user.video_count) };
           await prisma.connectedAccount.update({where:{id:account.id},data:{platformUserId:userId,displayName:typeof name === "string" ? name : account.displayName}});
           if (metrics.followers === null) profileWarning = "Follower counters were unavailable. No substitute zero was saved.";
-        }
+        } else profileWarning="The account response had no usable profile. Signal needs to review it; cached account counters were preserved.";
       }
-    } catch { profileWarning="Account counters could not be retrieved; cached account history was preserved."; }
+    }
     if (!userId) { await finishMetricFailure(account.id,lockId,"Reconnect this account to identify the platform profile."); return json({error:"Reconnect this account to identify the platform profile."},400); }
     const collection = await collectPosts(platform,userId,token,requested);
     const insight = platform === "facebook" && collection.complete ? await collectPageInsights(userId,token) : { values:[], warnings:[] };
     const warning = [profileWarning,collection.warning,...insight.warnings].filter(Boolean).join(" ") || null;
     const stored = await storeCollection({accountId:account.id,lockId,platform,posts:collection.posts,requested,complete:collection.complete,source:"API",warning,accountMetrics:metrics,insights:insight.values});
     if (stored.status === "UNAVAILABLE") await recordUsageFailure("metrics");
-    return json({ success: stored.status !== "UNAVAILABLE", sampleSize: stored.sampleSize, postsAnalyzed: stored.postsAnalyzed, ...refreshFeedback(stored.status) }, stored.status === "UNAVAILABLE" ? 502 : 200);
+    return json({ success: stored.status !== "UNAVAILABLE", sampleSize: stored.sampleSize, postsAnalyzed: stored.postsAnalyzed, ...refreshFeedback(stored.status), warning:stored.warning, ...(stored.status === "UNAVAILABLE" && stored.warning ? {error:stored.warning} : {}) }, stored.status === "UNAVAILABLE" ? 502 : 200);
   } catch (error) {
-    if (lockId) await finishMetricFailure(accountId,lockId,"Collection did not complete. Cached data was preserved.").catch(()=>{});
+    if (lockId) await finishMetricFailure(accountId,lockId,error instanceof MetricTokenError ? error.message : error instanceof UsageError ? error.message + (error.resetAt ? ` Resets ${error.resetAt.slice(0,10)} at 00:00 UTC.` : "") : "Signal could not finish collection. Cached data was preserved; the server needs review.", error instanceof UsageError ? error.resetAt : undefined).catch(()=>{});
+    if (error instanceof MetricTokenError) return json({error:error.message,code:error.diagnostic.code,responsibility:error.diagnostic.responsibility},502);
     if (error instanceof UsageError) return json({ error:error.message + (error.resetAt ? ` Resets ${error.resetAt.slice(0,10)} at 00:00 UTC.` : ""), resetAt:error.resetAt },error.status);
     await recordUsageFailure("metrics");
-    return json({ error:error instanceof AuthInputError ? error.message : "We could not refresh your metrics. Your saved data is still available. Please try again later." },error instanceof AuthInputError ? error.status : 500);
+    return json({ error:error instanceof AuthInputError ? error.message : "Signal could not finish collection. Your saved data is still available; the server needs review."  , ...(error instanceof AuthInputError ? {} : {code:"METRIC_SIGNAL_ERROR",responsibility:"signal"}) },error instanceof AuthInputError ? error.status : 500);
   }
 }
