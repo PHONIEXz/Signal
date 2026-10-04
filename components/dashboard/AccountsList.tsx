@@ -12,12 +12,12 @@ const ALL_PLATFORMS = [
   { key: "x", label: "X", mark: "X", connectHref: "/api/connect/x/start", available: true },
   { key: "facebook", label: "Facebook", mark: "f", connectHref: "/api/connect/facebook/start", available: true },
   { key: "tiktok", label: "TikTok", mark: "♪", connectHref: "/api/connect/tiktok/start", available: true },
-  { key: "instagram", label: "Instagram", mark: "◎", connectHref: null, available: false },
+  { key: "instagram", label: "Instagram", mark: "◎", connectHref: "/api/connect/instagram/start", available: true },
   { key: "linkedin", label: "LinkedIn", mark: "in", connectHref: null, available: false },
-  { key: "youtube", label: "YouTube", mark: "▶", connectHref: null, available: false },
+  { key: "youtube", label: "YouTube", mark: "▶", connectHref: "/api/connect/youtube/start", available: true },
 ];
 
-export default function AccountsList({ connections, plan }: { connections: Connection[]; plan: string }) {
+export default function AccountsList({ connections, plan, creatorReady }: { connections: Connection[]; plan: string; creatorReady:{instagram:boolean;youtube:boolean} }) {
   const connectedKeys = new Set(connections.map((connection) => connection.platform));
   const remaining = ALL_PLATFORMS.filter((platform) => !connectedKeys.has(platform.key));
   const isPro = plan.toUpperCase() === "PRO";
@@ -85,9 +85,11 @@ export default function AccountsList({ connections, plan }: { connections: Conne
         <section>
           <h2 className="font-display text-lg font-semibold text-ink">Available platforms</h2>
           <p className="mt-1 text-xs text-ink-muted">Add your next source of audience data</p>
+          <p className="mt-2 text-xs leading-5 text-ink-muted">Instagram needs a professional account linked to a Facebook Page. YouTube reads your own channel’s reports. These connections do not publish content.</p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {remaining.map((platform) => {
+              const setupRequired=(platform.key==="instagram"||platform.key==="youtube") && !creatorReady[platform.key];
               const requiresPro = platform.available && freeLimitReached;
               return (
                 <div key={platform.key} className="surface-card flex items-center justify-between gap-3 p-4">
@@ -98,7 +100,7 @@ export default function AccountsList({ connections, plan }: { connections: Conne
                     <span className="truncate text-sm font-semibold text-ink">{platform.label}</span>
                   </div>
 
-                  {!platform.available ? (
+                  {setupRequired ? (<span className="rounded-lg border border-border px-3 py-2 text-[10px] font-semibold text-ink-muted">Setup required</span>) : !platform.available ? (
                     <span className="rounded-lg border border-border px-3 py-2 text-[10px] font-semibold text-ink-muted">Soon</span>
                   ) : requiresPro ? (
                     <span className="rounded-lg bg-paper px-3 py-2 text-[10px] font-semibold text-ink-muted">Pro</span>

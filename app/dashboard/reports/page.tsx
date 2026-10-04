@@ -34,7 +34,7 @@ export default async function ReportsPage({
       select: { plan: true },
     }),
     prisma.connectedAccount.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.user.id, platform:{not:"youtube"} },
       select: { id: true, platform: true },
     }),
   ]);

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     );
 
     const connections=await prisma.connectedAccount.findMany({
-      where: { userId },
+      where: { userId, platform:{not:"youtube"} },
       include: {
         metricSnapshots: {
           orderBy: { fetchedAt: "desc" },

@@ -2,6 +2,7 @@ import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import SyncDetails from "@/components/dashboard/SyncDetails";
 import MetricsImport from "@/components/dashboard/MetricsImport";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   x: "X",
   tiktok: "TikTok",
   facebook: "Facebook",
+  instagram:"Instagram",
 };
 
 export default async function PlatformPostsPage({
@@ -39,6 +41,8 @@ export default async function PlatformPostsPage({
   if (!connectedAccount) {
     notFound();
   }
+
+  if(platform==="youtube")redirect("/dashboard/accounts/youtube");
 
   const storedPosts = await prisma.post.findMany({
     where: {
@@ -81,7 +85,7 @@ export default async function PlatformPostsPage({
 
       <PostsRefresh platform={platform} />
       <SyncDetails accountId={connectedAccount.id} />
-      <MetricsImport platform={platform} />
+      {platform!=="instagram" && <MetricsImport platform={platform} />}
       {contentOnly && <p className="text-sm text-ink-muted">Post content is available. Engagement counts could not be retrieved and are shown as unavailable.</p>}
       <PostsList platform={platform}
         posts={posts.map((p) => ({
@@ -98,7 +102,7 @@ export default async function PlatformPostsPage({
         }))}
       />
 
-      <InsightsChat platform={platform} />
+      {platform!=="instagram" && <InsightsChat platform={platform} />}
     </div>
   );
 }

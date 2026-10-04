@@ -67,7 +67,7 @@ export default async function InsightsPage({
   const sampleSize = normalizeSampleSize(query.posts, plan);
 
   const connections = await prisma.connectedAccount.findMany({
-    where: { userId },
+    where: { userId, platform:{not:"youtube"} },
     orderBy: { createdAt: "asc" },
     include: {
       metricSnapshots: {

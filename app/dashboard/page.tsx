@@ -67,23 +67,25 @@ export default async function DashboardPage({
     postMetrics: summarizePosts(connection.metricSnapshots[0]?.postMetricsStatus === "CONTENT_ONLY" ? [] : connection.posts, connection.platform),
   }));
 
+  const metricAccounts=accounts.filter(account=>account.platform!=="youtube");
+
   const totalFollowers = sumAvailable(
-    accounts.map((account) => account.followers)
+    metricAccounts.map((account) => account.followers)
   );
 
   const totalPosts = sumAvailable(
-    accounts.map((account) => account.snapshot?.postCount ?? null)
+    metricAccounts.map((account) => account.snapshot?.postCount ?? null)
   );
   const totalLikes = sumAvailable(
-    accounts.map((account) => account.postMetrics.likes)
+    metricAccounts.map((account) => account.postMetrics.likes)
   );
-  const viewEligible = accounts.filter(
+  const viewEligible = metricAccounts.filter(
     (account) =>
       account.postMetrics.views !== null &&
       account.postMetrics.engagements !== null
   );
   const totalViews = sumAvailable(
-    accounts.map((account) => account.postMetrics.views)
+    metricAccounts.map((account) => account.postMetrics.views)
   );
   const engagementsForRate = viewEligible.reduce(
     (sum, account) => sum + (account.postMetrics.engagements ?? 0),
@@ -102,7 +104,7 @@ export default async function DashboardPage({
     viewEligible.length ? viewEligible.reduce((sum, account) => sum + account.postMetrics.views!, 0) : null
   );
 
-  const pairedSnapshots = accounts.filter(
+  const pairedSnapshots = metricAccounts.filter(
     (account) => account.snapshot && account.previousSnapshot
   );
   const pairedCurrentFollowers = pairedSnapshots.reduce(
@@ -127,7 +129,7 @@ export default async function DashboardPage({
         },
       })
     : 0;
-  const activityDataAvailable = accounts.every(
+  const activityDataAvailable = metricAccounts.every(
     (account) =>
       account.snapshot && !["UNAVAILABLE", "CONTENT_ONLY", "EMPTY", "LEGACY"].includes(account.snapshot.postMetricsStatus)
   );
@@ -209,6 +211,7 @@ export default async function DashboardPage({
         </div>
       </section>
 
+      {accounts.some(account=>account.platform==="youtube") && <p className="text-sm text-ink-muted">YouTube has separate official reports. Its data is excluded from Signal Score and combined metrics. <Link className="text-navy underline" href="/dashboard/accounts/youtube">Open YouTube analytics</Link></p>}
       <section className="animate-reveal [animation-delay:220ms]">
         <SignalScore result={score} />
       </section>
