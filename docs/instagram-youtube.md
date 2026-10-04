@@ -7,7 +7,7 @@ This change adds read-only connections. Provider credentials and approval are st
 | Platform | Current functionality | Deliberate limits |
 | --- | --- | --- |
 | Instagram | Facebook Login for Business, one linked professional account, followers, following, media count, recent media, likes and comments, saved measurements | Personal accounts are unsupported. Reach, views, saves and shares are not collected yet. CSV and account-specific AI controls remain disabled. |
-| YouTube | Channel-owner OAuth with PKCE, encrypted tokens and validated renewal; official 7/28/90-day reports; views, engaged views, watch minutes, average viewing seconds and percentage, likes/comments/shares, subscribers gained/lost; daily, traffic, country, subscribed-viewer and format breakdowns; recent public-video lifetime counters | Reports load only for the current browser visit. No saved YouTube metrics, Signal Score, derived growth, AI evidence or cross-platform aggregation. Private/unlisted video details are excluded. Revenue, impression CTR, individual retention curves and publishing are not implemented. |
+| YouTube | Channel-owner OAuth with PKCE, encrypted tokens and validated renewal; official 7/28/90-day reports; views, engaged views, watch minutes, average viewing seconds and percentage, likes/comments/shares, subscribers gained/lost; daily, traffic, country, subscribed-viewer and format breakdowns; recent public-video lifetime counters | Reports load only for the current browser visit. No saved YouTube metrics, Signal Score, derived growth, AI evidence or cross-platform aggregation. Private/unlisted video details are excluded. Retention curves cover up to three recent public videos per refresh. Revenue, impression CTR and publishing are not implemented. |
 
 Zero means a measured zero. Missing data, hidden subscribers, empty report rows and withheld breakdowns never become zero. YouTube counters retain safe integers above 2.1 billion without passing through existing Prisma Int history tables. Unsupported Instagram fields are not treated as a permanently failing collection.
 
@@ -45,11 +45,15 @@ Instagram Insights should be added as a separate reviewed increment: request `in
 7. Open Accounts → YouTube → Load reports. Check the period and units against YouTube Studio, allowing for processing differences and suppressed rows. Check a real zero, hidden/rounded subscriber counts and a quota-denied response. Unlinking revokes the Google token before deleting the Signal connection.
 8. Complete the required Google OAuth verification before public availability. Review the API Console quota dashboard; larger quota requests are separate from OAuth verification.
 
+## Video retention
+
+Each refresh requests official `elapsedVideoTimeRatio`, `audienceWatchRatio` and `relativeRetentionPerformance` reports for up to three unique recent public videos already verified as belonging to the connected channel. The date range matches the channel report. IDs are selected on the server, not provided by the caller. Curves and exact values are displayed without deriving a Signal score. Replays may make watch ratios exceed 1; these values are retained. Relative performance is YouTube’s own comparison with similarly long videos and remains on its documented 0–1 scale. Empty rows, invalid points and failed video reports do not become zero curves. Quota/authorization failures stop further requests. The existing overall request deadline and shared limits apply.
+
 ## YouTube expansion order
 
 1. Live owner-consent validation and Studio reconciliation of each report currently implemented.
 2. Persistent reports with precision-safe storage, explicit timestamps and period metadata, authorization rechecks within 30 days, deleted-video checks and scheduled cleanup. Revocation and user deletion must remove associated authorized data promptly. Do not use ordinary Signal metric history for YouTube.
-3. Individual-video retention curves using the documented elapsed-video-time report, with video ownership validation and its own report definition. Add eligible official impression/CTR reports only after checking endpoint/report availability.
+3. Extend retention beyond the three-video bounded preview and add eligible official impression/CTR reports only after checking endpoint/report availability.
 4. Revenue only through a separate optional monetary-consent flow for eligible YouTube Partner Program channels. Never request money scopes pre-emptively or display absent revenue as zero.
 5. Derived scores/metrics only after obtaining any additional permission required by YouTube's policies. YouTube data stays out of Signal's existing AI and aggregate endpoints.
 

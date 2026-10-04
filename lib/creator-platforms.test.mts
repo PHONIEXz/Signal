@@ -25,7 +25,7 @@ test("Instagram preserves unavailable Insights fields and stores real zero likes
 });
 test("YouTube requires matching identity and preserves hidden subscribers",async()=>{
  await assert.rejects(creatorProfile("youtube","wanted","test",request(()=>response({items:[{id:"other"}]}))),/channel/);
- const profile=await creatorProfile("youtube","wanted","test",request(()=>response({items:[{id:"wanted",statistics:{hiddenSubscriberCount:true,subscriberCount:"0",videoCount:"0"}}]})));
+ const profile=await creatorProfile("youtube","wanted","test",request(url=>{assert.equal(url.searchParams.get("mine"),"true");assert.equal(url.searchParams.has("id"),false);return response({items:[{id:"wanted",statistics:{hiddenSubscriberCount:true,subscriberCount:"0",videoCount:"0"}}]});}));
  assert.equal(profile.followers,null);assert.equal(profile.totalPosts,0);
 });
 test("YouTube reads the upload playlist and excludes private media",async()=>{

@@ -1,3 +1,5 @@
+import { youtubeRetention } from "./youtube-retention.ts";
+import type { CollectedPost } from "./metric-measurements.ts";
 import { creatorJson, CreatorApiError } from "./creator-platforms.ts";
 export const YOUTUBE_REPORTS = {
     overview: { metrics: "views,engagedViews,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,comments,shares,subscribersGained,subscribersLost", dimensions: "" },
@@ -36,10 +38,11 @@ export function validateReport(data: unknown, columns: string[]): YouTubeReport 
         throw new CreatorApiError("YouTube returned an unusable analytics report.");
     return { columns, rows: rows as (string | number)[][] };
 }
-export async function youtubeReports(channelId: string, token: string, days: 7 | 28 | 90, request: typeof fetch = fetch) {
+export async function youtubeReports(channelId: string, token: string, days: 7 | 28 | 90, request: typeof fetch = fetch, videos:CollectedPost[] = []) {
     const period = reportPeriod(days);
     const reports: Partial<Record<keyof typeof YOUTUBE_REPORTS, YouTubeReport>> = {};
     const warnings: string[] = [];
+    let blocked=false;
     // Separate supported reports; one unavailable breakdown must not erase the others.
     for (const [key, definition] of Object.entries(YOUTUBE_REPORTS)) {
         const url = new URL("https://youtubeanalytics.googleapis.com/v2/reports");
@@ -54,9 +57,12 @@ export async function youtubeReports(channelId: string, token: string, days: 7 |
         }
         catch (error) {
             warnings.push(`${key}: ${error instanceof CreatorApiError ? error.message : "The analytics report could not be reached."}`);
-            if (error instanceof CreatorApiError && /quota|connection|denied access/.test(error.message))
+            if (error instanceof CreatorApiError && /quota|connection|denied access/.test(error.message)) {
+                blocked=true;
                 break;
+            }
         }
     }
-    return { period, reports, warnings };
+    const retention=blocked?[]:await youtubeRetention(channelId,token,period,videos,request);
+    return { period, reports, warnings, retention };
 }

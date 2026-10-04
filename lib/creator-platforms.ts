@@ -43,7 +43,7 @@ export async function creatorProfile(platform: CreatorPlatform, id: string, toke
     }
     const url = new URL("https://www.googleapis.com/youtube/v3/channels");
     url.searchParams.set("part", "snippet,statistics,contentDetails");
-    url.searchParams.set("id", id);
+    url.searchParams.set("mine", "true");
     const data = await creatorJson(url, token, request);
     const channel = (Array.isArray(data?.items) ? data.items : []).find((item: {
         id: string;

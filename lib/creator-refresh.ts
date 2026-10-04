@@ -48,7 +48,7 @@ export async function refreshCreatorMetrics(request: Request, platform: CreatorP
         const profile = await creatorProfile(platform, account.platformUserId, token,boundedFetch);
         const collection = await creatorPosts(platform, account.platformUserId, token, requested, profile.uploads,boundedFetch);
         if (platform === "youtube") {
-            const analytics = collection.complete ? await youtubeReports(profile.id, token, (body.days ?? 28) as 7 | 28 | 90,boundedFetch) : null;
+            const analytics = collection.complete ? await youtubeReports(profile.id, token, (body.days ?? 28) as 7 | 28 | 90,boundedFetch,collection.posts) : null;
             const warning = [collection.warning, ...analytics?.warnings ?? []].filter(Boolean).join(" ") || null;
             // YouTube has its own official reports. Do not persist into tables used for
             // Signal Score, cross-platform sums, AI evidence or derived growth metrics.
