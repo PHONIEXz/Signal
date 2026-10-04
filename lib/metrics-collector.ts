@@ -1,6 +1,6 @@
 import { measured, metricDate, type CollectedPost } from "./metric-measurements.ts";
 import { facebookApiErrorCode } from "./platform-data.ts";
-import { xPostsWarning } from "./post-retrieval.ts";
+import { platformMetricFailure } from "./metric-diagnostics.ts";
 
 export type Collection = { posts: CollectedPost[]; complete: boolean; warning: string | null; requests: number };
 export async function collectPosts(platform: string, userId: string, token: string, limit: number, fetcher: typeof fetch = fetch): Promise<Collection> {
@@ -38,11 +38,13 @@ export async function collectPosts(platform: string, userId: string, token: stri
       requests++;
       const response = await fetcher(url, init);
       const data = await response.json().catch(() => null);
-      if (!response.ok || (platform === "tiktok" && data?.error?.code && data.error.code !== "ok")) {
+      const failure = platformMetricFailure(platform,response.status,data);
+      if (failure) {
         const code = facebookApiErrorCode(data);
-        if (platform === "facebook" && !basic && [10, 100, 200].includes(code ?? -1)) { basic = true; warning = "Facebook engagement fields are restricted. Basic post content is being collected."; continue; }
-        warning = platform === "x" ? xPostsWarning(response.status) : platform === "facebook" ? code === 190 ? "Reconnect Facebook: the Page token is invalid." : code === 4 || code === 17 || code === 32 ? "Meta rate limited collection. Try again later." : "Meta rejected post reading. Check the Page and pages_read_engagement permission." : "TikTok rejected video reading. Check video.list permission and reconnect.";
-        return { posts, complete: false, warning, requests };
+        if (platform === "facebook" && !basic && [10, 100, 200].includes(code ?? -1)) {
+          basic = true; warning = failure.message + " Basic post content is being collected."; continue;
+        }
+        return { posts, complete: false, warning: failure.message, requests };
       }
       const page = platform === "tiktok" ? data?.data?.videos : data?.data ?? (platform === "x" && data?.meta?.result_count === 0 ? [] : undefined);
       if (!Array.isArray(page) || page.some(p => !p || typeof p.id !== "string")) return { posts, complete: false, warning: "The platform returned an unexpected post response.", requests };
@@ -82,7 +84,8 @@ export async function collectPageInsights(pageId: string, token: string, fetcher
       url.searchParams.set("until", String(Math.floor(Date.now()/1000)));
       const response = await fetcher(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(10000) });
       const data = await response.json();
-      if (!response.ok || !Array.isArray(data?.data)) { warnings.push(`${metric} unavailable: check read_insights and Page access.`); continue; }
+      const failure=platformMetricFailure("facebook",response.status,data);
+      if (failure || !Array.isArray(data?.data)) { warnings.push(failure?.message ?? `${metric} returned an unexpected response. Signal needs to review the API response.`); continue; }
       for (const item of data.data) {
         if (item.name !== metric || item.period !== "day" || !Array.isArray(item.values)) continue;
         for (const point of item.values) { const value = measured(point.value); const periodEnd = metricDate(point.end_time); if (value !== null && periodEnd) values.push({ metric, period: "day", periodEnd, value }); }

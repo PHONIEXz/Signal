@@ -1,4 +1,5 @@
 "use client";
+import { metricRefreshError } from "@/lib/metric-diagnostics";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -11,8 +12,8 @@ export default function PostsRefresh({ platform }: { platform: string }) {
     try {
       const response = await fetch(`/api/metrics/refresh/${platform}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postLimit: 10 }) });
       const data = await response.json();
-      setNotice(response.ok ? data.message || `Retrieved ${data.postsAnalyzed ?? 0} recent posts.` : data.error || "Post retrieval failed. Try again later.");
-      if (response.ok) router.refresh();
+      setNotice(response.ok ? [data.message || `Retrieved ${data.postsAnalyzed ?? 0} recent posts.`,data.warning].filter(Boolean).join(" ") : metricRefreshError(data));
+      router.refresh();
     } catch { setNotice("Could not reach Signal. Try again when your connection is available."); }
     finally { setBusy(false); }
   }

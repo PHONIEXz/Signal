@@ -22,8 +22,8 @@ export async function claimMetricSync(accountId: string, userId: string, plan: s
     return lockId;
   });
 }
-export async function finishMetricFailure(accountId: string, lockId: string, warning: string) {
-  await prisma.metricSync.updateMany({ where: { connectedAccountId: accountId, lockId }, data: { lockId: null, lockUntil: null, status: "FAILED", warning, nextAllowedAt: new Date(Date.now()+900000) } });
+export async function finishMetricFailure(accountId: string, lockId: string, warning: string, resetAt?: string) {
+  await prisma.metricSync.updateMany({ where: { connectedAccountId: accountId, lockId }, data: { lockId: null, lockUntil: null, status: resetAt ? "LIMITED" : "FAILED", warning, nextAllowedAt: resetAt ? new Date(resetAt) : new Date(Date.now()+900000) } });
 }
 export async function storeCollection(input: {
   accountId: string; lockId: string; platform: string; posts: CollectedPost[]; requested: number;
@@ -54,7 +54,7 @@ export async function storeCollection(input: {
         sampleSize: input.requested, postsAnalyzed: input.posts.length, postMetricsStatus: status, fetchedAt: capturedAt } });
     }
     for (const insight of input.insights ?? []) await tx.pageInsight.upsert({ where: { connectedAccountId_metric_period_periodEnd: { connectedAccountId: input.accountId, metric: insight.metric, period: insight.period, periodEnd: insight.periodEnd } }, create: { connectedAccountId: input.accountId, ...insight }, update: { value: insight.value, fetchedAt: capturedAt } });
-    await tx.metricSync.update({ where: { connectedAccountId: input.accountId }, data: { lockId: null, lockUntil: null, status: status === "UNAVAILABLE" ? "FAILED" : status, source: input.source, receivedPosts: input.posts.length, requestedPosts: input.requested, missingFields: JSON.stringify(missing), warning,
+    await tx.metricSync.update({ where: { connectedAccountId: input.accountId }, data: { lockId: null, lockUntil: null, status: status === "UNAVAILABLE" ? "FAILED" : status, source: status === "UNAVAILABLE" ? lease.source : input.source, receivedPosts: input.posts.length, requestedPosts: input.requested, missingFields: JSON.stringify(missing), warning,
       lastSuccessAt: input.complete || input.posts.length ? new Date() : lease.lastSuccessAt } });
   });
   return { success: true, source: input.source, sampleId, sampleSize: input.requested, postsAnalyzed: input.posts.length, warning, status };

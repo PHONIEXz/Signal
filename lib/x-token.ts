@@ -1,3 +1,4 @@
+import { MetricTokenError, tokenRefreshFailure, refreshedToken } from "./metric-diagnostics.ts";
 import { prisma } from "./prisma.ts";
 import { encrypt, decrypt } from "./encryption.ts";
 
@@ -18,9 +19,11 @@ export async function getValidXAccessToken(
   }
 
   if (!account.refreshToken) {
-    throw new Error(
-      "X access token expired and no refresh token is available. Reconnect the account."
-    );
+    throw new MetricTokenError({code:"METRIC_RECONNECT",responsibility:"connection",message:"X authorization expired without a renewal token. Reconnect this account.",stopAccountRequests:true});
+  }
+
+  if (!process.env.X_CLIENT_ID?.trim() || !process.env.X_CLIENT_SECRET?.trim()) {
+    throw new MetricTokenError({ code: "METRIC_CONFIGURATION", responsibility: "signal", message: "Signal's X renewal configuration is missing. The server configuration needs review; saved metrics are preserved.", stopAccountRequests: true });
   }
 
   const basicAuth = Buffer.from(
@@ -42,27 +45,24 @@ export async function getValidXAccessToken(
     }),
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to refresh X access token. Reconnect the account.");
-  }
-
-  const data = await res.json();
-  if (typeof data.access_token !== "string" || !data.access_token) throw new Error("Invalid X token refresh response. Reconnect the account.");
-  const newExpiresAt = data.expires_in
-    ? new Date(Date.now() + data.expires_in * 1000)
-    : null;
+  const data = await res.json().catch(() => null);
+  const failure=tokenRefreshFailure("x",res.status,data);
+  if (failure) throw new MetricTokenError(failure);
+  // OAuth invalid_grant is a connection failure, even when the endpoint uses 400.
+  if (data?.error) throw new MetricTokenError({code:"METRIC_RECONNECT",responsibility:"connection",message:"Reconnect X: the saved authorization could not be renewed.",stopAccountRequests:true});
+  const refreshed=refreshedToken("x",data);
 
   await prisma.connectedAccount.update({
     where: { id: connectedAccountId },
     data: {
-      accessToken: encrypt(data.access_token),
-      refreshToken: data.refresh_token
-        ? encrypt(data.refresh_token)
+      accessToken: encrypt(refreshed.accessToken),
+      refreshToken: refreshed.refreshToken
+        ? encrypt(refreshed.refreshToken)
         : account.refreshToken,
-      expiresAt: newExpiresAt,
+      expiresAt: refreshed.expiresAt,
     },
   });
 
-  return data.access_token;
+  return refreshed.accessToken;
 }
 

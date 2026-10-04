@@ -16,6 +16,8 @@ delete process.env.VERCEL;
 process.env.APP_URL = "https://signal.example";
 process.env.EMAIL_PROVIDER = "disabled";
 process.env.AUTH_SECRET = randomBytes(32).toString("hex");
+process.env.TOKEN_ENCRYPTION_KEY = randomBytes(32).toString("base64");
+process.env.SIGNAL_METRICS_FREE_DAILY = "8";
 const require = createRequire(import.meta.url);
 const Database = require("better-sqlite3");
 const db = new Database(join(folder, "test.db"));
@@ -25,6 +27,7 @@ for (const migration of readdirSync(migrations).sort()) {
 }
 db.close();
 const { prisma } = await import("../lib/prisma.ts");
+const { encrypt } = await import("../lib/encryption.ts");
 const { issueResetLink, issueResetCode } = await import("../lib/password-reset.ts");
 const allocator = createServer();
 allocator.listen(0, "127.0.0.1");
@@ -34,9 +37,9 @@ assert.ok(address && typeof address !== "string");
 const port = address.port;
 await new Promise<void>((resolve) => allocator.close(() => resolve()));
 const base = "http://127.0.0.1:" + port;
-const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", String(port)], {
+const server = spawn(process.execPath, ["--import", new URL("./fixtures/metric-providers.mjs", import.meta.url).pathname, "node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", String(port)], {
   cwd: new URL("../", import.meta.url),
-  env: { ...process.env, NODE_ENV: "production", AUTH_TRUST_HOST: "true", AUTH_URL: base, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: "1" },
+  env: { ...process.env, NODE_ENV: "production", SIGNAL_METRIC_HTTP_FIXTURES: "1", AUTH_TRUST_HOST: "true", AUTH_URL: base, NEXTAUTH_URL: base, NEXT_TELEMETRY_DISABLED: "1" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 // Read streams without printing account/cookie/credential diagnostics.
@@ -170,8 +173,8 @@ try {
   assert.equal((await json("/api/auth/reset-password", codePayload)).status, 200);
   assert.equal((await json("/api/auth/reset-password", codePayload)).status, 400);
   assert.equal((await session(beforeCode))?.user, undefined);
-  assert.equal((await session(await login(codePassword))).user.email, email);
   const studioSession = await login(codePassword);
+  assert.equal((await session(studioSession)).user.email, email);
   assert.equal((await fetch(base + "/dashboard/content", { headers: { Cookie: studioSession } })).status, 200);
   const xAccount = await prisma.connectedAccount.create({ data: { userId: owner.id, platform: "x", platformUserId: "123", displayName: "Fixture X", accessToken: "test-only" } });
   const metricRequest = (path: string, body: object, cookie = studioSession, origin = base) => fetch(base + path, {
@@ -193,9 +196,53 @@ try {
   const postsPage = await fetch(base + "/dashboard/posts/x", { headers: { Cookie: studioSession } });
   assert.equal(postsPage.status, 200);
   assert.match(await postsPage.text(), /Measurement history/);
+  // Full refresh flow with isolated provider responses and encrypted dummy tokens.
+  const allowRefresh = () => prisma.metricSync.update({ where: { connectedAccountId: xAccount.id }, data: { nextAllowedAt: null } });
+  await prisma.connectedAccount.update({ where: { id: xAccount.id }, data: { accessToken: encrypt("signal-metric-fixture-credits") } });
+  await allowRefresh();
+  const creditFailure = await metricRequest("/api/metrics/refresh/x", {});
+  assert.equal(creditFailure.status, 502);
+  assert.equal((await creditFailure.json()).code, "METRIC_CREDITS");
+  assert.equal(await prisma.post.count({ where: { connectedAccountId: xAccount.id } }), 1);
+  const failedSync = await prisma.metricSync.findUniqueOrThrow({ where: { connectedAccountId: xAccount.id } });
+  assert.equal(failedSync.source, "CSV");
+  assert.match(failedSync.warning!, /credit/i);
+  assert.ok(failedSync.lastSuccessAt);
+  const cachedFailure = await (await metricRequest("/api/metrics/refresh/x", {})).json();
+  assert.equal(cachedFailure.cached, true); assert.match(cachedFailure.warning, /credit/i);
+  await prisma.connectedAccount.update({ where: { id: xAccount.id }, data: { accessToken: encrypt("signal-metric-fixture-posts") } });
+  await allowRefresh();
+  const postOnly = await metricRequest("/api/metrics/refresh/x", {});
+  assert.equal(postOnly.status, 200);
+  assert.match((await postOnly.json()).warning, /Follower counters/);
+  assert.equal(await prisma.metricSnapshot.count(), 0);
+  assert.equal((await prisma.post.findFirstOrThrow({ where: { platformPostId: "999" } })).likeCount, 9);
+  const metricPage = await fetch(base + "/dashboard/accounts/x", { headers: { Cookie: studioSession } });
+  assert.equal(metricPage.status, 200);
+  const metricHtml = await metricPage.text();
+  assert.match(metricHtml, /Sample likes/); assert.match(metricHtml, /Newest selected post measurement/);
+  assert.match(metricHtml, /Unavailable/); assert.match(metricHtml, /Fresh API fixture/);
+  assert.match(metricHtml, />9<\/p>/);
+  await prisma.connectedAccount.update({ where: { id: target.id }, data: { platformUserId: "tt-fixture", accessToken: encrypt("signal-metric-fixture-scope") } });
+  const scoped = await metricRequest("/api/metrics/refresh/tiktok", {});
+  assert.equal(scoped.status, 200); assert.match((await scoped.json()).warning, /user.info.stats/);
+  assert.equal((await prisma.post.findFirstOrThrow({ where: { connectedAccountId: target.id } })).viewCount, 60);
+  const facebookFixture = await prisma.connectedAccount.create({ data: { userId: owner.id, platform: "facebook", platformUserId: "456", accessToken: encrypt("signal-metric-fixture-invalid") } });
+  const expired = await metricRequest("/api/metrics/refresh/facebook", {});
+  assert.equal(expired.status, 502); assert.equal((await expired.json()).code, "METRIC_RECONNECT");
+  assert.equal(await prisma.post.count({ where: { connectedAccountId: facebookFixture.id } }), 0);
+  await prisma.connectedAccount.delete({ where: { id: facebookFixture.id } });
   const other = await prisma.user.create({ data: { email: "other-owner@example.com" } });
   await prisma.connectedAccount.create({ data: { userId: other.id, platform: "facebook", accessToken: "test-only" } });
   assert.equal((await metricRequest("/api/metrics/import/facebook", csvBody)).status, 404);
+  await prisma.authRateLimit.update({ where: { key: `usage:metrics:user:${owner.id}:${new Date().toISOString().slice(0,10)}` }, data: { count: 8 } });
+  await allowRefresh();
+  const allowance = await metricRequest("/api/metrics/refresh/x", {});
+  assert.equal(allowance.status, 429);
+  const allowanceBody = await allowance.json(); assert.match(allowanceBody.error, /allowance/);
+  const allowanceSync = await prisma.metricSync.findUniqueOrThrow({ where: { connectedAccountId: xAccount.id } });
+  assert.equal(allowanceSync.status, "LIMITED"); assert.match(allowanceSync.warning!, /allowance/);
+  assert.equal(allowanceSync.nextAllowedAt?.toISOString(), allowanceBody.resetAt);
   await prisma.user.update({ where: { id: owner.id }, data: { analyticsCollectionEnabled: false } });
   assert.equal((await metricRequest("/api/metrics/refresh/x", {})).status, 403);
   await prisma.user.update({ where: { id: owner.id }, data: { analyticsCollectionEnabled: true } });
@@ -205,12 +252,12 @@ try {
   await prisma.$executeRawUnsafe('DROP TABLE "ContentPublication"');
   const studioMissing = await fetch(base + "/dashboard/content", { headers: { Cookie: studioSession } });
   assert.equal(studioMissing.status, 200);
-  assert.match(await studioMissing.text(), /STUDIO_SCHEMA_PENDING/);
+  assert.match(await studioMissing.text(), /Content Studio is temporarily unavailable/);
   const missingApi = await fetch(base + "/api/drafts", { headers: { Cookie: studioSession } });
   assert.equal(missingApi.status, 503);
   assert.equal((await missingApi.json()).code, "STUDIO_SCHEMA_PENDING");
   assert.equal((await draftRequest("/api/drafts", draftPayload, "POST", studioSession)).status, 503);
-  console.log("HTTP smoke passed: metrics import/ownership/cooldown/history/schema protection, email code/reset/reuse/session revocation, draft validation/history, optional Google, password changes, forms/icons and sign-in.");
+  console.log("HTTP smoke passed: provider credits/permissions/token errors, post-only metrics rendering, metrics import/ownership/cooldown/history/schema protection, email code/reset/reuse/session revocation, draft validation/history, optional Google, password changes, forms/icons and sign-in.");
 } finally {
   server.kill("SIGTERM");
   if (server.exitCode === null) await once(server, "exit");
