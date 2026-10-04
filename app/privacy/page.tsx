@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
         Privacy Policy
       </h1>
-      <p className="mt-2 text-sm text-ink-muted">Last updated: September 2026</p>
+      <p className="mt-2 text-sm text-ink-muted">Last updated: October 2026</p>
 
       <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-ink">
         <section>
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
             4. Third-party services
           </h2>
           <p className="mt-2 text-ink-muted">
-            The Service connects to X, Facebook and TikTok to read data you
+            The Service connects to X, Facebook, TikTok, Instagram and YouTube to read data you
             authorize. When you explicitly request a supported publishing
             action, Signal sends that content to the selected platform. Signal
             does not publish TikTok drafts; you complete those on TikTok. If
@@ -83,6 +83,12 @@ export default function PrivacyPage() {
             These providers have their own privacy policies governing how
             they handle that data.
           </p>
+        </section>
+
+        <section>
+          <h2 className="font-display text-base font-medium text-ink">YouTube data and controls</h2>
+          <p className="mt-2 text-ink-muted">Signal uses YouTube API Services to display your own channel’s official counters and analytics reports. YouTube reports load for the current visit and are not saved to Signal history, shared with AI, or used in Signal Score. Signal stores encrypted authorization tokens and your channel identifier so you can reconnect to these read-only reports. Unlinking YouTube revokes Signal’s access through Google and removes the connection and its stored Signal data. It does not delete your YouTube content.</p>
+          <p className="mt-2 text-ink-muted">You can also revoke access through <a className="text-navy underline" href="https://security.google.com/settings/security/permissions" target="_blank" rel="noopener noreferrer">Google’s security settings</a>. See <a className="text-navy underline" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google’s Privacy Policy</a> and the <a className="text-navy underline" href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Terms of Service</a>. Reports already loaded in your browser disappear when you leave or reload the page.</p>
         </section>
 
         <section>

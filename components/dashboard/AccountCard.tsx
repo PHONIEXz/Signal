@@ -11,6 +11,8 @@ type AccountCardProps = {
 };
 
 const PLATFORM_DETAILS: Record<string, { label: string; mark: string; style: string }> = {
+  instagram:{label:"Instagram",mark:"◎",style:"bg-[#C13584] text-white"},
+  youtube:{label:"YouTube",mark:"▶",style:"bg-[#FF0000] text-white"},
   x: { label: "X", mark: "X", style: "bg-ink text-surface" },
   facebook: { label: "Facebook", mark: "f", style: "bg-[#1877F2] text-white" },
   tiktok: { label: "TikTok", mark: "♪", style: "bg-[#111111] text-white" },
@@ -28,7 +30,7 @@ export default function AccountCard({ id, platform, displayName, followers }: Ac
 
   async function unlinkAccount() {
     const confirmed = window.confirm(
-      `Are you sure you want to unlink your ${details.label} account?`
+      `Unlink your ${details.label} account and remove its data from Signal? ${platform==="youtube"?"This also revokes Signal’s YouTube access. ":""}Your content on the platform will stay unchanged.`
     );
 
     if (!confirmed) return;
@@ -73,7 +75,7 @@ export default function AccountCard({ id, platform, displayName, followers }: Ac
           </span>
           <span className="mt-1 block text-xs text-ink-muted">
             {displayName && <>{details.label} · </>}
-            {followers !== null ? `${followers.toLocaleString()} followers` : "Connected, waiting for metrics"}
+            {followers !== null ? `${followers.toLocaleString()} ${platform==="youtube"?"subscribers":"followers"}` : "Connected, waiting for metrics"}
           </span>
         </span>
 

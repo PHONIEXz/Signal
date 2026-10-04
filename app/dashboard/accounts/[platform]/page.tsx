@@ -1,3 +1,4 @@
+import YouTubeMetrics from "@/components/dashboard/YouTubeMetrics";
 import { postEngagement } from "@/lib/metric-measurements";
 import SyncDetails from "@/components/dashboard/SyncDetails";
 import AccountAIAnalysis from "@/components/dashboard/AccountAIAnalysis";
@@ -37,6 +38,8 @@ export default async function AccountDetailPage({
   if (!connectedAccount) {
     notFound();
   }
+
+  if(platform==="youtube") return <div className="mx-auto max-w-3xl"><YouTubeMetrics /></div>;
 
   const plan = normalizePlan(connectedAccount.user.plan);
   const sampleSize = normalizeSampleSize(query.posts, plan);
@@ -114,13 +117,13 @@ export default async function AccountDetailPage({
       <SyncDetails accountId={connectedAccount.id} />
       <GrowthChart data={growthData} platform={platform} />
 
-      <AccountAIAnalysis
+      {platform!=="instagram" && <AccountAIAnalysis
         key={`${platform}-${sampleSize}`}
         platform={platform}
         sampleSize={sampleSize}
-      />
+      />}
 
-      <TopPost platform={platform}
+      {platform==="instagram" ? <section className="surface-card p-6"><h2 className="font-display text-lg font-semibold text-ink">Recent media</h2><p className="mt-1 text-xs text-ink-muted">Cumulative likes and comments. Insights such as reach and saves are not collected yet.</p><div className="mt-4 space-y-4">{sampledPosts.map(post=><div key={post.id} className="border-t border-border pt-3"><p className="text-sm text-ink">{post.text}</p><p className="mt-1 text-xs text-ink-muted">Likes: {post.likeCount?.toLocaleString()??"Unavailable"} · Comments: {post.replyCount?.toLocaleString()??"Unavailable"}</p>{post.url && <a className="text-xs text-navy underline" href={post.url} target="_blank" rel="noopener noreferrer">View on Instagram</a>}</div>)}</div></section> : <TopPost platform={platform}
         post={
           topPost
             ? {
@@ -134,8 +137,8 @@ export default async function AccountDetailPage({
               }
             : null
         }
-      />
-      <InsightsChat platform={platform} sampleSize={sampleSize} />
+      />}
+      {platform!=="instagram" && <InsightsChat platform={platform} sampleSize={sampleSize} />}
     </div>
   );
 }

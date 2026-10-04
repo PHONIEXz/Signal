@@ -175,7 +175,7 @@ export default function MetricsPanel({
                 : ""}
               . Counts are cumulative at measurement time; the selected posts may change between refreshes.
             </p>
-            {(postLikes===null || postEngagements===null || (platform!=="facebook" && postViews===null)) && (
+            {(postLikes===null || (platform!=="instagram" && postEngagements===null) || (!["facebook","instagram"].includes(platform) && postViews===null)) && (
               <p className="mt-2 text-xs text-ink-muted">
                 Some insights are currently unavailable from this account.
               </p>

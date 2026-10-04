@@ -21,7 +21,7 @@ export function refreshedToken(platform: string, payload: unknown, now=Date.now(
       typeof data.expires_in !== "number" || !Number.isSafeInteger(data.expires_in) || data.expires_in<=0 ||
       !Number.isFinite(new Date(now+data.expires_in*1000).getTime()) ||
       (data.refresh_token !== undefined && (typeof data.refresh_token !== "string" || !data.refresh_token.trim())))
-    throw new MetricTokenError({code:"METRIC_TOKEN_RESPONSE",responsibility:"unknown",message:`${platform === "x" ? "X" : "TikTok"} returned an unusable token refresh response. Signal kept the previous connection; this response needs review.`,stopAccountRequests:true});
+    throw new MetricTokenError({code:"METRIC_TOKEN_RESPONSE",responsibility:"unknown",message:`${({x:"X",tiktok:"TikTok",instagram:"Instagram",youtube:"YouTube"} as Record<string,string>)[platform] ?? "The platform"} returned an unusable token refresh response. Signal kept the previous connection; this response needs review.`,stopAccountRequests:true});
   return {accessToken:data.access_token,refreshToken:data.refresh_token as string|undefined,expiresAt:new Date(now+data.expires_in*1000)};
 }
 

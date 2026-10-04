@@ -6,6 +6,8 @@ const PLATFORM_LABELS: Record<string, string> = {
   x: "X",
   facebook: "Facebook",
   tiktok: "TikTok",
+  instagram:"Instagram",
+  youtube:"YouTube",
 };
 
 export default async function PostsPage() {
@@ -69,7 +71,7 @@ export default async function PostsPage() {
             return (
               <Link
                 key={connection.id}
-                href={`/dashboard/posts/${connection.platform}`}
+                href={connection.platform==="youtube"?"/dashboard/accounts/youtube":`/dashboard/posts/${connection.platform}`}
                 className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-navy/30 hover:bg-paper"
               >
                 <div className="flex items-start justify-between gap-4">

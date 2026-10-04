@@ -1,8 +1,18 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { creatorConfigured } from "@/lib/creator-platforms";
 import AccountsList from "@/components/dashboard/AccountsList";
 
 const ACCOUNT_MESSAGES: Record<string, { tone: "success" | "error"; text: string }> = {
+  instagram: {tone:"success",text:"Instagram professional account connected."},
+  youtube: {tone:"success",text:"YouTube channel connected. Open the channel to load official reports."},
+  instagram_setup_required: {tone:"error",text:"Instagram needs the administrator’s Meta app configuration."},
+  youtube_setup_required: {tone:"error",text:"YouTube needs the administrator’s Google OAuth configuration."},
+  instagram_authorization_failed: {tone:"error",text:"Instagram could not be connected. Check professional-account eligibility, approved permissions and try again."},
+  youtube_permissions_required: {tone:"error",text:"Approve both YouTube channel access and YouTube Analytics reports to use this connection."},
+  youtube_authorization_failed: {tone:"error",text:"YouTube authorization failed or expired. Check app configuration and try again."},
+  instagram_select_one_professional_account: {tone:"error",text:"Select one Facebook Page linked to your Instagram professional account during authorization. Additional Pages were returned; reconnect with only that Page."},
+  youtube_select_one_channel: {tone:"error",text:"Choose a Google account or Brand Account with exactly one YouTube channel you own."},
   account_identity_mismatch: { tone: "error", text: "This is a different social account. Reconnect the original account to keep its history and draft targets together." },
   facebook: {
     tone: "success",
@@ -75,6 +85,7 @@ export default async function AccountsPage({
         </div>
       )}
       <AccountsList
+        creatorReady={{instagram:creatorConfigured("instagram"),youtube:creatorConfigured("youtube")}}
         plan={user?.plan ?? "FREE"}
         connections={connections.map((connection) => ({
           id: connection.id,
