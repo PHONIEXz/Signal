@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  CartesianGrid,
   LineChart,
   Line,
   XAxis,
@@ -9,6 +10,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
+import { growthRange } from "@/lib/growth-chart";
 
 type Point = {
   date: string;
@@ -43,8 +46,14 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
   const [activeMetric, setActiveMetric] =
     useState<MetricKey>("followers");
 
-  const current = data[data.length - 1];
-  const previous = data[data.length - 2];
+  const [zeroBaseline, setZeroBaseline] = useState(false);
+  const chartData = useMemo(() => data.map(point => ({ ...point, timestamp: Date.parse(point.date) }))
+    .filter(point => Number.isFinite(point.timestamp)).sort((a, b) => a.timestamp - b.timestamp), [data]);
+  const observed = chartData.map(point => point[activeMetric]).filter((value): value is number => value !== null && Number.isFinite(value));
+  const domain = growthRange(observed, zeroBaseline);
+  const flat = observed.length >= 2 && observed.every(value => value === observed[0]);
+  const current = chartData[chartData.length - 1];
+  const previous = chartData[chartData.length - 2];
 
   const values = useMemo(() => {
     if (!current || !previous || activeMetric === "likes" || activeMetric === "views") {
@@ -72,24 +81,9 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
     };
   }, [activeMetric, current, previous]);
 
-  if (data.length < 2) {
-    return (
-      <div className="rounded-lg border border-border bg-surface p-6">
-        <p className="font-display text-lg font-medium text-ink">
-          Growth Intelligence
-        </p>
-
-        <p className="mt-4 text-sm text-ink-muted">
-          Signal will build your growth timeline after more metric
-          refreshes are collected.
-        </p>
-      </div>
-    );
-  }
-
   const positive = values.change !== null && values.change > 0;
   const negative = values.change !== null && values.change < 0;
-  const currentValue = current[metrics[activeMetric].key];
+  const currentValue = current?.[metrics[activeMetric].key] ?? null;
 
   return (
     <div className="rounded-lg border border-border bg-surface p-6">
@@ -178,24 +172,46 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
       </div>
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
-      <div className="mt-6 h-56">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-ink-muted">{chartData.length} saved refreshes · Times in UTC</p>
+        <button type="button" aria-pressed={zeroBaseline} onClick={() => setZeroBaseline(value => !value)}
+          className="min-h-11 rounded-full border border-border px-4 text-sm font-medium text-ink">
+          {zeroBaseline ? "Scale: from zero" : "Scale: focused range"}
+        </button>
+      </div>
+      <p className="mt-2 text-sm text-ink-muted" role="status">
+        {observed.length === 0 ? "No recorded values for this metric yet. Refresh the account to collect a snapshot."
+          : observed.length === 1 ? "One recorded value so far. Another successful refresh is needed to show change."
+          : flat ? "The recorded values are unchanged, so this line is flat. Refresh after your account metrics change to see movement."
+          : "Each dot is a saved measurement. Gaps mean a value was unavailable."}
+        {observed.length > 0 && !zeroBaseline && " The vertical axis is zoomed to the recorded values; it may not start at zero."}
+      </p>
+      {observed.length > 0 && <div className="mt-4 h-64" aria-label={`${metrics[activeMetric].label} history chart. Exact values are available below.`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
+          <LineChart data={chartData} margin={{ top: 12, right: 18, bottom: 8, left: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="4 4" />
             <XAxis
-              dataKey="date"
+              dataKey="timestamp"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })}
+              minTickGap={48}
               tick={{ fontSize: 11 }}
               axisLine={false}
               tickLine={false}
             />
 
             <YAxis
+              domain={domain}
+              allowDecimals={false}
               tick={{ fontSize: 11 }}
               axisLine={false}
               tickLine={false}
-              width={40}
+              width={64}
             />
 
             <Tooltip
+              labelFormatter={value => new Date(Number(value)).toLocaleString("en-US", { timeZone: "UTC" }) + " UTC"}
               contentStyle={{
                 fontSize: 12,
                 borderRadius: 8,
@@ -207,15 +223,31 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
 
             <Line
               isAnimationActive={false}
-              type="monotone"
+              type="linear"
+              connectNulls={false}
+              name={metrics[activeMetric].label}
               dataKey={metrics[activeMetric].key}
-              stroke="var(--color-navy)"
+              stroke="var(--color-action)"
               strokeWidth={3}
-              dot={{ r: 3 }}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </div>}
+      {chartData.length > 0 && <details className="mt-4 border-t border-border pt-4">
+        <summary className="cursor-pointer py-2 text-sm font-medium text-ink">View recorded values</summary>
+        <div className="mt-3 max-h-64 overflow-auto">
+          <table className="w-full text-left text-sm">
+            <caption className="sr-only">Saved {metrics[activeMetric].label.toLowerCase()} measurements, UTC</caption>
+            <thead><tr className="text-ink-muted"><th scope="col" className="py-2">Refresh (UTC)</th><th scope="col" className="py-2 text-right">{metrics[activeMetric].label}</th></tr></thead>
+            <tbody>{chartData.map((point, index) => <tr key={`${point.timestamp}-${index}`} className="border-t border-border">
+              <td className="py-2 text-ink-muted">{new Date(point.timestamp).toLocaleString("en-US", { timeZone: "UTC" })}</td>
+              <td className="py-2 text-right font-medium text-ink">{point[activeMetric]?.toLocaleString() ?? "Unavailable"}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </details>}
     </div>
   );
 }

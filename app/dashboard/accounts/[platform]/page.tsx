@@ -64,10 +64,7 @@ export default async function AccountDetailPage({
     : null;
 
   const growthData = snapshotHistory.map((s) => ({
-    date: s.fetchedAt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
+    date: s.fetchedAt.toISOString(),
     followers: s.followersCount,
     likes: s.postMetricsStatus === "LEGACY" ? null : s.totalLikes,
     views: s.postMetricsStatus === "LEGACY" ? null : s.totalViews,
