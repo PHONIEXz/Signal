@@ -47,7 +47,7 @@ export default async function ReportsPage({
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
           Analytics
         </p>
-        <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">
+        <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em] text-ink sm:text-4xl">
           Reports
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
@@ -71,7 +71,7 @@ export default async function ReportsPage({
           </p>
           <Link
             href="/dashboard/accounts"
-            className="mt-5 inline-flex rounded-md bg-navy px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="mt-5 inline-flex rounded-md bg-action px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Connect an account
           </Link>

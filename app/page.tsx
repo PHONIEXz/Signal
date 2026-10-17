@@ -1,110 +1,204 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PublicSiteShell from "@/components/public/PublicSiteShell";
+import WorkspacePreview from "@/components/public/WorkspacePreview";
 
 export const metadata: Metadata = {
-  title: "Signal | Social analytics and content workspace",
-  description: "Learn how Signal connects social accounts, shows available metrics, and helps creators plan content.",
+  title: "Signal | Find your next move",
+  description:
+    "A focused workspace for your social accounts, performance, insights and content drafts.",
 };
 
 const steps = [
-  ["Connect", "Choose X, Facebook or TikTok in Accounts and approve access on the platform's own authorization screen."],
-  ["Understand", "Review available account and post metrics, history, optional insights and reports in one dashboard."],
-  ["Create", "Save drafts in Content Studio and prepare content for your connected channels."],
+  {
+    title: "Bring it together.",
+    label: "Connect",
+    detail:
+      "Connect X, Facebook or TikTok through the platform’s own authorization screen. Your channels finally share a workspace.",
+    color: "bg-[#e3eacb]",
+    symbol: "↗",
+  },
+  {
+    title: "Find your signal.",
+    label: "Understand",
+    detail:
+      "Explore available metrics, compare saved snapshots and ask better questions about your content. Know what the numbers actually mean.",
+    color: "bg-[#dce5ff]",
+    symbol: "≈",
+  },
+  {
+    title: "Make your next move.",
+    label: "Create",
+    detail:
+      "Turn an idea into a draft in Content Studio. Prepare your content, choose a channel and review the available delivery options.",
+    color: "bg-[#f6d9c6]",
+    symbol: "+",
+  },
 ];
 
 export default function HomePage() {
   return (
     <PublicSiteShell>
-      <section className="relative overflow-hidden border-b border-border bg-[#102f4d] text-white">
-        <div className="dashboard-grid pointer-events-none absolute inset-0 opacity-70" />
-        <div className="pointer-events-none absolute -right-20 -top-32 h-96 w-96 rounded-full bg-[#4f9ac8]/20 blur-3xl" />
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-16 lg:py-28">
+      <section className="mx-auto max-w-7xl px-5 pb-12 pt-12 sm:px-8 sm:pt-20">
+        <div className="grid items-end gap-8 lg:grid-cols-[1.4fr_0.6fr]">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.07] px-3 py-1.5 text-xs font-semibold text-white/80"><span className="h-2 w-2 rounded-full bg-amber" />Social account intelligence for creators</p>
-            <h1 className="mt-7 max-w-2xl font-display text-5xl font-semibold leading-[1.07] tracking-[-0.05em] sm:text-6xl">See the story behind your audience.</h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-white/75 sm:text-lg">Signal brings your connected accounts, available performance data, reports and content drafts into one workspace. See what is working before you decide what to make next.</p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/product" className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#102f4d] hover:bg-white/90">Explore how Signal works</Link>
-              <Link href="/login" className="rounded-xl border border-white/30 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">Log in to Signal</Link>
-            </div>
-            <p className="mt-5 text-xs leading-5 text-white/60">Data availability depends on each platform and the permissions you grant.</p>
+            <p className="section-kicker flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-connected" />
+              Less noise. More direction.
+            </p>
+            <h1 className="mt-6 max-w-4xl font-display text-[clamp(3.2rem,7.8vw,7rem)] font-bold leading-[0.98] tracking-[-0.065em] text-ink">
+              Your audience.
+              <br />
+              Your next <span className="text-navy">move.</span>
+            </h1>
           </div>
-          <div className="rounded-[1.6rem] border border-white/20 bg-[#f4f7fb] p-3 text-[#111827] shadow-[0_40px_90px_-40px_rgba(0,0,0,0.6)] sm:p-4">
-            <div className="rounded-xl bg-white p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-3 border-b border-[#e3e8ef] pb-5">
-                <span className="font-display text-lg font-semibold">Signal overview</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#667085]">Illustrative layout</span>
-              </div>
-              <div className="grid gap-3 pt-5 sm:grid-cols-2">
-                {[
-                  ["Account overview", "Connected channels"],
-                  ["Post analysis", "Recent performance"],
-                  ["Insights and reports", "Questions and next steps"],
-                  ["Content Studio", "Drafts and delivery"],
-                ].map(([title, detail]) => (
-                  <div key={title} className="rounded-xl border border-[#dfe5ec] bg-[#f8fafc] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#667085]">{title}</p>
-                    <p className="mt-5 text-sm font-semibold">{detail}</p>
-                    <div className="mt-5 h-2 w-3/4 rounded-full bg-[#dce6ee]" aria-hidden="true" />
-                    <div className="mt-2 h-2 w-1/2 rounded-full bg-[#dce6ee]" aria-hidden="true" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <p className="px-2 pb-1 pt-3 text-center text-[11px] text-[#667085]">Illustration of product sections. No live account data is shown.</p>
+          <div className="pb-2">
+            <p className="max-w-md text-base leading-7 text-ink-muted">
+              Bring your channels, content and performance into focus. A little
+              less switching tabs. A lot more clarity.
+            </p>
+            <Link
+              href="/signup"
+              className="pill-link mt-6 bg-action text-white hover:bg-action-hover"
+            >
+              Find your signal <span aria-hidden="true">↗</span>
+            </Link>
+            <p className="mt-3 text-xs text-ink-muted">
+              Start free with one connected account.
+            </p>
+          </div>
+        </div>
+        <WorkspacePreview />
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+          <p className="text-sm text-ink-muted">
+            One workspace. Different perspectives.
+          </p>
+          <div className="flex flex-wrap items-center gap-6 text-sm font-bold text-ink sm:gap-10">
+            <span>X</span>
+            <span>Facebook</span>
+            <span>TikTok</span>
           </div>
         </div>
       </section>
 
-      <section id="workflow" className="mx-auto max-w-7xl px-5 py-20 sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-navy">The workflow</p>
-        <h2 className="mt-3 max-w-2xl font-display text-3xl font-semibold tracking-[-0.04em] text-ink sm:text-4xl">From account data to a clearer decision</h2>
-        <div className="mt-9 grid gap-4 md:grid-cols-3">
-          {steps.map(([title, detail], index) => (
-            <article key={title} className="surface-card p-6 sm:p-7">
-              <span className="font-mono text-xs font-semibold text-navy">0{index + 1} / SIGNAL</span>
-              <h3 className="mt-7 font-display text-xl font-semibold text-ink">{title}</h3>
-              <p className="mt-3 text-sm leading-7 text-ink-muted">{detail}</p>
+      <section
+        id="workflow"
+        className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-20"
+      >
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div>
+            <p className="section-kicker">A clearer way to create</p>
+            <h2 className="mt-4 max-w-xl font-display text-4xl font-bold leading-tight tracking-[-0.045em] text-ink sm:text-5xl">
+              Good decisions start
+              <br />
+              with a better view.
+            </h2>
+          </div>
+          <Link
+            href="/product"
+            className="pill-link border border-border text-ink hover:bg-surface"
+          >
+            Explore the workflow <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {steps.map((step, index) => (
+            <article key={step.label} className="surface-card p-6 sm:p-8">
+              <div className="flex items-center justify-between">
+                <span
+                  className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl text-[#172524] ${step.color}`}
+                  aria-hidden="true"
+                >
+                  {step.symbol}
+                </span>
+                <span className="font-mono text-xs text-ink-muted">
+                  0{index + 1} / {step.label}
+                </span>
+              </div>
+              <h3 className="mt-8 text-2xl font-bold tracking-tight text-ink">
+                {step.title}
+              </h3>
+              <p className="mt-4 text-sm leading-7 text-ink-muted">
+                {step.detail}
+              </p>
             </article>
           ))}
         </div>
-        <Link href="/product" className="mt-8 inline-flex text-sm font-semibold text-navy underline underline-offset-4">Read the detailed product guide</Link>
       </section>
 
-      <section className="border-y border-border bg-surface">
-        <div className="mx-auto grid max-w-7xl gap-9 px-5 py-16 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-navy">Supported connections</p>
-            <h2 className="mt-3 font-display text-3xl font-semibold tracking-[-0.04em] text-ink">Your channels, in context.</h2>
-            <p className="mt-4 text-sm leading-7 text-ink-muted">Signal offers connections for X, Facebook and TikTok. Specific metrics depend on platform access, permissions and successful collection.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[["X", "Account and post metrics"], ["Facebook", "Page and post metrics"], ["TikTok", "Profile and video metrics"]].map(([name, detail]) => (
-              <div key={name} className="rounded-2xl border border-border bg-paper p-5">
-                <p className="font-display text-lg font-semibold text-ink">{name}</p>
-                <p className="mt-2 text-xs leading-5 text-ink-muted">{detail}</p>
-              </div>
-            ))}
+      <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
+        <div className="relative overflow-hidden rounded-[2rem] bg-[#173e36] px-6 py-12 text-white sm:p-12 lg:p-16">
+          <div
+            className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full border-[60px] border-[#d9ed92]/10"
+            aria-hidden="true"
+          />
+          <div className="relative grid gap-10 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#d9ed92]">
+                Your workspace. Your control.
+              </p>
+              <h2 className="mt-5 text-4xl font-bold leading-tight tracking-[-0.045em] sm:text-5xl">
+                Clarity includes
+                <br />
+                knowing the limits.
+              </h2>
+              <Link
+                href="/product#tiktok"
+                className="pill-link mt-8 bg-[#d9ed92] text-[#173e36] hover:bg-[#e7f4be]"
+              >
+                Explore platform access <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+            <div className="space-y-6 lg:pt-2">
+              {[
+                [
+                  "Real data, clearly labelled",
+                  "Metrics depend on platform access and permissions. Missing data stays unavailable, and sample totals are labelled.",
+                ],
+                [
+                  "Connections you control",
+                  "Approve access with each platform and disconnect when you choose. TikTok publishing is completed on TikTok.",
+                ],
+                [
+                  "AI on your terms",
+                  "Optional insights help you explore your next step. You can turn them off in Settings.",
+                ],
+              ].map(([title, detail], i) => (
+                <div
+                  key={title}
+                  className="flex gap-4 border-b border-white/15 pb-6"
+                >
+                  <span className="pt-1 font-mono text-xs text-[#d9ed92]">
+                    0{i + 1}
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-semibold">{title}</h3>
+                    <p className="mt-2 text-sm leading-7 text-white/75">
+                      {detail}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-20 sm:px-8 lg:grid-cols-2 lg:items-center">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-navy">Access and control</p>
-          <h2 className="mt-3 font-display text-3xl font-semibold tracking-[-0.04em] text-ink">Know what Signal can access.</h2>
-          <p className="mt-4 text-sm leading-7 text-ink-muted">A platform asks you to approve access before Signal connects. You can disconnect an account and turn optional AI insights off in Settings. For TikTok, Signal reads authorized profile and video information. TikTok publishing is completed on TikTok.</p>
-          <Link href="/product#tiktok" className="mt-6 inline-flex text-sm font-semibold text-navy underline underline-offset-4">See the TikTok integration details</Link>
-        </div>
-        <div className="rounded-[1.5rem] border border-border bg-surface p-7 shadow-soft sm:p-9">
-          <h3 className="font-display text-xl font-semibold text-ink">Start with one account</h3>
-          <p className="mt-3 text-sm leading-7 text-ink-muted">Create a Signal account, connect a supported platform, and open the dashboard. The Free plan supports one connected social account. Multiple accounts require Pro.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/signup" className="rounded-xl bg-action px-5 py-3 text-sm font-semibold text-white hover:bg-action-hover">Create an account</Link>
-            <Link href="/login" className="rounded-xl border border-border px-5 py-3 text-sm font-semibold text-ink hover:bg-paper">Already have an account?</Link>
-          </div>
-        </div>
+      <section className="mx-auto max-w-7xl px-5 py-20 text-center sm:px-8 sm:py-28">
+        <p className="section-kicker">Start with one channel</p>
+        <h2 className="mt-4 text-4xl font-bold tracking-[-0.045em] text-ink sm:text-6xl">
+          Make room for your next idea.
+        </h2>
+        <p className="mx-auto mt-5 max-w-lg text-base leading-7 text-ink-muted">
+          Connect an account. See what is available. Build from there. Multiple
+          connected accounts require Pro.
+        </p>
+        <Link
+          href="/signup"
+          className="pill-link mt-8 bg-action text-white hover:bg-action-hover"
+        >
+          Create your workspace <span aria-hidden="true">↗</span>
+        </Link>
       </section>
     </PublicSiteShell>
   );

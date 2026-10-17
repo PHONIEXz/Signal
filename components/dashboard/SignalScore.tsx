@@ -1,5 +1,3 @@
-"use client";
-
 import type { SignalScoreResult } from "@/lib/metrics";
 
 export default function SignalScore({ result }: { result: SignalScoreResult }) {
@@ -17,7 +15,7 @@ export default function SignalScore({ result }: { result: SignalScoreResult }) {
   return (
     <div className="surface-card relative overflow-hidden p-5 sm:p-6">
       <div className="pointer-events-none absolute -left-20 -top-20 h-48 w-48 rounded-full bg-navy/[0.06] blur-3xl" />
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-display text-lg font-medium text-ink">Signal Score</p>
           <p className="mt-1 text-sm text-ink-muted">

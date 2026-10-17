@@ -94,13 +94,13 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
   return (
     <div className="rounded-lg border border-border bg-surface p-6">
       <div className="flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="font-display text-lg font-medium text-ink">
               Growth Intelligence
             </p>
 
-            <div className="mt-2 flex items-baseline gap-2">
+            <div className="mt-2 flex flex-wrap items-baseline gap-2">
               <span className="text-3xl font-medium text-ink">
                 {currentValue === null ? "Unavailable" : currentValue.toLocaleString()}
               </span>
@@ -142,9 +142,10 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
               key={key}
               type="button"
               onClick={() => setActiveMetric(key)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              aria-pressed={activeMetric === key}
+              className={`min-h-11 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
                 activeMetric === key
-                  ? "bg-navy text-white"
+                  ? "bg-action text-white"
                   : "border border-border text-ink-muted hover:text-ink"
               }`}
             >
@@ -205,6 +206,7 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
             />
 
             <Line
+              isAnimationActive={false}
               type="monotone"
               dataKey={metrics[activeMetric].key}
               stroke="var(--color-navy)"

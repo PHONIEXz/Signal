@@ -8,7 +8,7 @@ export default function UserMenu({ email }: { email?: string | null }) {
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <div className="hidden items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 shadow-sm md:flex">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy text-xs font-semibold text-white">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-action text-xs font-semibold text-white">
           {initial}
         </span>
         {email && <span className="max-w-44 truncate text-xs text-ink-muted">{email}</span>}

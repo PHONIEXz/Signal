@@ -46,7 +46,7 @@ export default function AccountsList({ connections, plan }: { connections: Conne
         </div>
         {freeLimitReached && (
           <p className="mt-4 border-t border-border pt-4 text-sm leading-6 text-ink-muted">
-            The Free plan includes one linked social account. Upgrade to Pro to connect more platforms.
+            The Free plan includes one linked social account. Multiple accounts require Pro. Paid upgrades are not available yet.
           </p>
         )}
       </div>
@@ -55,10 +55,10 @@ export default function AccountsList({ connections, plan }: { connections: Conne
         <div className="flex items-end justify-between">
           <div>
             <h2 className="font-display text-lg font-semibold text-ink">Connected</h2>
-            <p className="mt-1 text-xs text-ink-muted">Live channels feeding your dashboard</p>
+            <p className="mt-1 text-xs text-ink-muted">Accounts linked to your workspace</p>
           </div>
           <span className="rounded-full bg-connected/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-connected">
-            {connections.length} live
+            {connections.length} linked
           </span>
         </div>
 
@@ -103,7 +103,7 @@ export default function AccountsList({ connections, plan }: { connections: Conne
                   ) : requiresPro ? (
                     <span className="rounded-lg bg-paper px-3 py-2 text-[10px] font-semibold text-ink-muted">Pro</span>
                   ) : (
-                    <a href={platform.connectHref!} className="rounded-xl bg-navy px-4 py-2 text-xs font-semibold text-white shadow-md shadow-navy/15 transition-all hover:-translate-y-0.5 hover:bg-navy-dark">
+                    <a href={platform.connectHref!} className="rounded-xl bg-action px-4 py-2 text-xs font-semibold text-white shadow-md shadow-navy/15 transition-all hover:-translate-y-0.5 hover:bg-action-hover">
                       Connect
                     </a>
                   )}

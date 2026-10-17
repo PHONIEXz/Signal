@@ -217,7 +217,7 @@ export default function PostAnalysis({
                 key={index}
                 className={
                   message.role === "user"
-                    ? "ml-auto max-w-[85%] rounded-lg bg-navy px-4 py-3 text-sm text-white"
+                    ? "ml-auto max-w-[85%] rounded-lg bg-action px-4 py-3 text-sm text-white"
                     : "mr-auto max-w-[90%] whitespace-pre-wrap rounded-lg bg-paper px-4 py-3 text-sm leading-6 text-ink"
                 }
               >
@@ -264,7 +264,7 @@ export default function PostAnalysis({
             type="button"
             onClick={() => askAI(input)}
             disabled={loading || !input.trim()}
-            className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-white hover:bg-navy-dark disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-action px-4 py-2 text-sm font-medium text-white hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             Send
           </button>

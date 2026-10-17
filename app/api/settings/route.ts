@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { readAuthBody, AuthInputError } from "@/lib/auth-http";
 
 export async function GET() {
   const session = await auth();
@@ -49,12 +50,9 @@ export async function PATCH(request: Request) {
   let body: Record<string, unknown>;
 
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+    body = await readAuthBody(request);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof AuthInputError ? error.message : "Invalid request" }, { status: error instanceof AuthInputError ? error.status : 400 });
   }
 
   const allowedFields = [

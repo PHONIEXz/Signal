@@ -89,7 +89,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
         <button
           type="button"
           onClick={generateReport}
-          className="mt-4 rounded-md bg-navy px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="mt-4 rounded-md bg-action px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Try again
         </button>
@@ -100,7 +100,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
   if (!report) return <section className="rounded-xl border border-border bg-surface p-6">
     <h2 className="font-display text-lg font-medium text-ink">Your AI report</h2>
     <p className="mt-2 text-sm text-ink-muted">Generate a report from your selected post sample when you need it.</p>
-    <button type="button" onClick={generateReport} className="mt-4 rounded-md bg-navy px-4 py-2 text-sm text-white">Generate report</button>
+    <button type="button" onClick={generateReport} className="mt-4 rounded-md bg-action px-4 py-2 text-sm text-white">Generate report</button>
   </section>;
 
   return (

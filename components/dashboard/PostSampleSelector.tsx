@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { POST_SAMPLE_OPTIONS, type Plan } from "@/lib/metrics";
 
@@ -11,20 +12,21 @@ export default function PostSampleSelector({
   selected: number;
 }) {
   const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   function changeSample(value: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("posts", String(value));
-    router.replace(`${pathname}?${params.toString()}`);
+    startTransition(() => router.replace(`${pathname}?${params.toString()}`, { scroll: false }));
   }
 
   return (
     <div className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <p className="text-sm font-medium text-ink">Recent-post sample</p>
+          <p className="text-sm font-medium text-ink">Recent-post sample {pending && <span role="status" className="ml-2 text-xs text-ink-muted">Updating…</span>}</p>
           <p className="mt-1 text-xs text-ink-muted">
             Calculate likes, views and engagement from the latest selected posts on each platform.
           </p>
@@ -32,6 +34,8 @@ export default function PostSampleSelector({
 
         <select
           value={selected}
+          disabled={pending}
+          aria-busy={pending}
           onChange={(event) => changeSample(Number(event.target.value))}
           className="rounded-xl border border-border bg-paper px-3 py-2.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:border-navy/30"
           aria-label="Number of recent posts to analyze"

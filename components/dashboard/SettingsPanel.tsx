@@ -111,7 +111,7 @@ export default function SettingsPanel() {
       | "analyticsCollectionEnabled"
     >
   ) {
-    if (!settings) return;
+    if (!settings || saving) return;
 
     const nextValue = !settings[field];
 
@@ -240,6 +240,7 @@ export default function SettingsPanel() {
             title="AI Insights"
             description="Allow Signal AI to generate insights about your social performance."
             enabled={settings.aiInsightsEnabled}
+            disabled={saving !== null}
             saving={saving === "aiInsightsEnabled"}
             onChange={() => updateSetting("aiInsightsEnabled")}
           />
@@ -248,6 +249,7 @@ export default function SettingsPanel() {
             title="Personalized Recommendations"
             description="Allow account and post analysis, personalised recommendations and AI reports. Turning this off pauses these AI features."
             enabled={settings.personalizedRecommendationsEnabled}
+            disabled={saving !== null}
             saving={saving === "personalizedRecommendationsEnabled"}
             onChange={() =>
               updateSetting("personalizedRecommendationsEnabled")
@@ -271,6 +273,7 @@ export default function SettingsPanel() {
             title="Analytics Collection"
             description="Allow Signal to store analytics snapshots used for trends and reports."
             enabled={settings.analyticsCollectionEnabled}
+            disabled={saving !== null}
             saving={saving === "analyticsCollectionEnabled"}
             onChange={() =>
               updateSetting("analyticsCollectionEnabled")

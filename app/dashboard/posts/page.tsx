@@ -32,7 +32,7 @@ export default async function PostsPage() {
           Content
         </p>
 
-        <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">
+        <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em] text-ink sm:text-4xl">
           Posts
         </h1>
 
@@ -53,7 +53,7 @@ export default async function PostsPage() {
 
           <Link
             href="/dashboard/accounts"
-            className="mt-5 inline-flex rounded-md bg-navy px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            className="mt-5 inline-flex rounded-md bg-action px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             Connect an account
           </Link>
