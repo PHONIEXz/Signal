@@ -42,7 +42,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-5 pb-12 pt-12 sm:px-8 sm:pt-20">
         <div className="grid items-end gap-8 lg:grid-cols-[1.4fr_0.6fr]">
           <div>
-            <p className="section-kicker flex items-center gap-2">
+            <p data-reveal="text" className="section-kicker flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-connected" />
               Less noise. More direction.
             </p>
@@ -52,7 +52,7 @@ export default function HomePage() {
               Your next <span className="text-navy">move.</span>
             </h1>
           </div>
-          <div className="pb-2">
+          <div data-reveal className="pb-2">
             <p className="max-w-md text-base leading-7 text-ink-muted">
               Bring your channels, content and performance into focus. A little
               less switching tabs. A lot more clarity.
@@ -87,7 +87,7 @@ export default function HomePage() {
       >
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
-            <p className="section-kicker">A clearer way to create</p>
+            <p data-reveal="text" className="section-kicker">A clearer way to create</p>
             <h2 className="mt-4 max-w-xl font-display text-4xl font-bold leading-tight tracking-[-0.045em] text-ink sm:text-5xl">
               Good decisions start
               <br />
@@ -127,7 +127,7 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        <div className="relative overflow-hidden rounded-[2rem] bg-[#173e36] px-6 py-12 text-white sm:p-12 lg:p-16">
+        <div data-reveal className="relative overflow-hidden rounded-[2rem] bg-[#173e36] px-6 py-12 text-white sm:p-12 lg:p-16">
           <div
             className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full border-[60px] border-[#d9ed92]/10"
             aria-hidden="true"
@@ -166,7 +166,7 @@ export default function HomePage() {
               ].map(([title, detail], i) => (
                 <div
                   key={title}
-                  className="flex gap-4 border-b border-white/15 pb-6"
+                  data-reveal className="flex gap-4 border-b border-white/15 pb-6"
                 >
                   <span className="pt-1 font-mono text-xs text-[#d9ed92]">
                     0{i + 1}
@@ -185,7 +185,7 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-20 text-center sm:px-8 sm:py-28">
-        <p className="section-kicker">Start with one channel</p>
+        <p data-reveal="text" className="section-kicker">Start with one channel</p>
         <h2 className="mt-4 text-4xl font-bold tracking-[-0.045em] text-ink sm:text-6xl">
           Make room for your next idea.
         </h2>

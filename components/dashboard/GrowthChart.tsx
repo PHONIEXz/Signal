@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   LineChart,
@@ -11,15 +11,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { growthRange } from "@/lib/growth-chart";
-
-type Point = {
-  date: string;
-  followers: number;
-  likes: number | null;
-  views: number | null;
-  posts: number | null;
-};
+import { growthRange, groupGrowth, growthPeriods, periodDescriptions, type GrowthPoint, type GrowthPeriod } from "@/lib/growth-chart";
+import { useReducedMotion } from "@/components/motion/useMotion";
 
 const metrics = {
   followers: {
@@ -42,13 +35,25 @@ const metrics = {
 
 type MetricKey = keyof typeof metrics;
 
-export default function GrowthChart({ data, platform }: { data: Point[]; platform?: string }) {
+export default function GrowthChart({ data, platform, historyLimited }: { data: GrowthPoint[]; platform?: string; historyLimited?: boolean }) {
   const [activeMetric, setActiveMetric] =
     useState<MetricKey>("followers");
 
   const [zeroBaseline, setZeroBaseline] = useState(false);
-  const chartData = useMemo(() => data.map(point => ({ ...point, timestamp: Date.parse(point.date) }))
-    .filter(point => Number.isFinite(point.timestamp)).sort((a, b) => a.timestamp - b.timestamp), [data]);
+  const [period, setPeriod] = useState<GrowthPeriod>("daily");
+  const reducedMotion = useReducedMotion();
+  const chartRoot = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!chartRoot.current) return;
+    if (!("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) { setInView(true); observer.disconnect(); }
+    }, { threshold: 0.2 });
+    observer.observe(chartRoot.current);
+    return () => observer.disconnect();
+  }, []);
+  const chartData = useMemo(() => groupGrowth(data, period), [data, period]);
   const observed = chartData.map(point => point[activeMetric]).filter((value): value is number => value !== null && Number.isFinite(value));
   const domain = growthRange(observed, zeroBaseline);
   const flat = observed.length >= 2 && observed.every(value => value === observed[0]);
@@ -86,7 +91,7 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
   const currentValue = current?.[metrics[activeMetric].key] ?? null;
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
+    <div ref={chartRoot} data-reveal className="rounded-3xl border border-border bg-surface p-5 sm:p-7">
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -150,7 +155,7 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
 
         <div>
           <p className="text-sm text-ink-muted">
-            Change since last refresh:
+            Change since previous displayed period:
           </p>
 
           <p className="mt-1 text-lg font-medium text-ink">
@@ -172,8 +177,14 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
       </div>
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
+      <div className="mt-6 flex flex-wrap gap-1 rounded-2xl border border-border bg-paper p-1.5" role="group" aria-label="Growth chart interval">
+        {growthPeriods.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}
+          className={`min-h-11 flex-1 rounded-xl px-3 text-sm font-semibold capitalize transition-all ${period === value ? "bg-action text-white shadow-md" : "text-ink-muted hover:bg-surface hover:text-ink"}`}>{value}</button>)}
+      </div>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the latest saved refresh. Each point is the last snapshot in its UTC period, not a sum. Missing periods stay empty. Refreshing collects data; changing this view does not.</p>
+      {historyLimited && <p className="mt-2 text-xs text-ink-muted">Showing the latest 5,000 saved refreshes. Older history is outside this view.</p>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-ink-muted">{chartData.length} saved refreshes · Times in UTC</p>
+        <p className="text-xs text-ink-muted">{chartData.filter(point => point.captured).length} recorded periods · Times in UTC</p>
         <button type="button" aria-pressed={zeroBaseline} onClick={() => setZeroBaseline(value => !value)}
           className="min-h-11 rounded-full border border-border px-4 text-sm font-medium text-ink">
           {zeroBaseline ? "Scale: from zero" : "Scale: focused range"}
@@ -188,13 +199,13 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
       </p>
       {observed.length > 0 && <div className="mt-4 h-64" aria-label={`${metrics[activeMetric].label} history chart. Exact values are available below.`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 12, right: 18, bottom: 8, left: 0 }}>
+          <LineChart key={`${activeMetric}-${period}-${inView}`} data={chartData} margin={{ top: 12, right: 18, bottom: 8, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="4 4" />
             <XAxis
               dataKey="timestamp"
               type="number"
               domain={["dataMin", "dataMax"]}
-              tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })}
+              tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", ...(period === "hourly" ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), ...(period === "yearly" ? { year: "numeric" as const } : {}), timeZone: "UTC" })}
               minTickGap={48}
               tick={{ fontSize: 11 }}
               axisLine={false}
@@ -222,7 +233,9 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
             />
 
             <Line
-              isAnimationActive={false}
+              isAnimationActive={!reducedMotion && inView}
+              animationDuration={1100}
+              animationEasing="ease-in-out"
               type="linear"
               connectNulls={false}
               name={metrics[activeMetric].label}
@@ -236,7 +249,7 @@ export default function GrowthChart({ data, platform }: { data: Point[]; platfor
         </ResponsiveContainer>
       </div>}
       {chartData.length > 0 && <details className="mt-4 border-t border-border pt-4">
-        <summary className="cursor-pointer py-2 text-sm font-medium text-ink">View recorded values</summary>
+        <summary className="cursor-pointer py-2 text-sm font-medium text-ink">View period measurements</summary>
         <div className="mt-3 max-h-64 overflow-auto">
           <table className="w-full text-left text-sm">
             <caption className="sr-only">Saved {metrics[activeMetric].label.toLowerCase()} measurements, UTC</caption>

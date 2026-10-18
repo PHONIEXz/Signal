@@ -1,3 +1,4 @@
+import MotionScene from "@/components/motion/MotionScene";
 import Link from "next/link";
 import { isAdmin } from "@/lib/service-config";
 import Sidebar from "@/components/dashboard/Sidebar";
@@ -43,8 +44,8 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        <main id="dashboard-content" tabIndex={-1} className="animate-rise-in px-4 py-7 pb-28 sm:px-7 sm:py-9 lg:pb-10 lg:px-10 lg:py-11">
-          {children}
+        <main id="dashboard-content" tabIndex={-1} className="px-4 py-7 pb-28 sm:px-7 sm:py-9 lg:pb-10 lg:px-10 lg:py-11">
+          <MotionScene>{children}</MotionScene>
         </main>
         <footer className="border-t border-border/70 px-4 py-7 pb-28 sm:px-7 lg:pb-7 lg:px-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 sm:flex-row">

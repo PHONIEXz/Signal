@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+
+import { useReducedMotion } from "@/components/motion/useMotion";
 
 const views = ["Overview", "Content Studio", "Reports"] as const;
 type View = (typeof views)[number];
@@ -9,15 +11,22 @@ type View = (typeof views)[number];
 /** A labelled product illustration; these example values are never live account metrics. */
 export default function WorkspacePreview() {
   const [view, setView] = useState<View>("Overview");
+  const reduced = useReducedMotion();
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    if (!playing || reduced) return;
+    const timer = window.setInterval(() => setView(current => views[(views.indexOf(current) + 1) % views.length]), 4500);
+    return () => window.clearInterval(timer);
+  }, [playing, reduced]);
   return (
-    <div className="relative mt-12 overflow-hidden rounded-[1.75rem] bg-[#2457e7] p-4 pt-6 sm:mt-16 sm:p-8 lg:p-10">
+    <div data-reveal className="relative mt-12 overflow-hidden rounded-[1.75rem] bg-[#2457e7] p-4 pt-6 sm:mt-16 sm:p-8 lg:p-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.16em]">
           A little perspective changes everything.
         </p>
-        <span className="rounded-full border border-white/30 px-3 py-1 text-xs">
-          Interactive product preview
-        </span>
+        <button type="button" disabled={reduced} aria-pressed={playing && !reduced} onClick={() => setPlaying(value => !value)} className="min-h-11 rounded-full border border-white/40 px-4 text-xs font-semibold hover:bg-white/10 disabled:opacity-60">
+          {reduced ? "Reduced motion enabled" : playing ? "Pause walkthrough Ⅱ" : "Play the walkthrough ▷"}
+        </button>
       </div>
       <div className="overflow-hidden rounded-2xl bg-[#f5f6f8] text-[#172524] shadow-2xl shadow-[#071b69]/25">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e2e6e9] bg-white px-4 py-4 sm:px-6">
@@ -34,7 +43,7 @@ export default function WorkspacePreview() {
                 key={name}
                 type="button"
                 aria-pressed={view === name}
-                onClick={() => setView(name)}
+                onClick={() => { setPlaying(false); setView(name); }}
                 className={`min-h-10 rounded-full px-3 text-xs font-semibold transition-colors sm:px-4 ${view === name ? "bg-[#2457e7] text-white shadow-sm" : "text-[#526071] hover:bg-white"}`}
               >
                 {name}
@@ -45,8 +54,8 @@ export default function WorkspacePreview() {
             Example workspace
           </span>
         </div>
-        <div className="min-h-[380px] p-4 sm:p-6 lg:p-8" aria-live="polite">
-          <div key={view} className="animate-rise-in">
+        <div className="min-h-[380px] p-4 sm:p-6 lg:p-8" aria-live={playing ? "off" : "polite"}>
+          <div key={view} className="preview-sequence">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-xs text-[#626f70]">
@@ -90,6 +99,8 @@ export default function WorkspacePreview() {
                     <path d="M0 35H540M0 85H540M0 135H540" stroke="#edf0f3" />
                     <path
                       d="M0 130C40 130 30 100 75 105S120 145 160 100S200 110 245 65S300 100 350 48S410 70 455 28S510 40 540 8"
+                      className="preview-trend"
+                      pathLength="1"
                       fill="none"
                       stroke="#2457e7"
                       strokeWidth="4"

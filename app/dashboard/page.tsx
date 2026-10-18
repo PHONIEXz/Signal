@@ -150,11 +150,11 @@ export default async function DashboardPage({
         <Link href="/dashboard/content" className="pill-link self-start bg-action text-white hover:bg-action-hover sm:self-auto">Create content <span aria-hidden="true">+</span></Link>
       </section>
 
-      <div className="animate-reveal [animation-delay:80ms]">
+      <div data-reveal>
         <PostSampleSelector plan={plan} selected={sampleSize} />
       </div>
 
-      <section className="grid animate-reveal grid-cols-1 gap-3 min-[380px]:grid-cols-2 [animation-delay:280ms] lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
           label="Total followers"
           value={totalFollowers.value}

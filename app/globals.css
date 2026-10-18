@@ -242,3 +242,22 @@
   .pill-link { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 1.5rem; border-radius: 999px; padding: .8rem 1.4rem; font-size: .875rem; font-weight: 700; transition: background-color .2s, transform .2s; }
   .pill-link:hover { transform: translateY(-2px); }
 }
+
+/* Deliberate, one-shot choreography; no perpetual decorative motion. */
+@keyframes signal-panel-enter {
+  from { opacity: 0; transform: translateY(24px) scale(.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes signal-line-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .preview-sequence > div:first-child { animation: signal-panel-enter .65s cubic-bezier(.16,1,.3,1) both; }
+  .preview-sequence > .grid > :first-child { animation: signal-panel-enter .85s .12s cubic-bezier(.16,1,.3,1) both; }
+  .preview-sequence > .grid > :last-child { animation: signal-panel-enter .85s .28s cubic-bezier(.16,1,.3,1) both; }
+  .preview-trend { stroke-dasharray: 1; animation: signal-line-draw 1.6s .45s cubic-bezier(.22,1,.36,1) both; }
+  .surface-card:hover { transform: translateY(-4px); }
+  .pill-link span { transition: transform .25s ease; }
+  .pill-link:hover span { transform: translate(3px,-3px); }
+}

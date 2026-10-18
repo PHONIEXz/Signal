@@ -1,3 +1,4 @@
+import MotionScene from "@/components/motion/MotionScene";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import LegalLinks from "@/components/LegalLinks";
@@ -20,7 +21,7 @@ export default function PublicSiteShell({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
-      <main id="main-content">{children}</main>
+      <main id="main-content"><MotionScene>{children}</MotionScene></main>
       <footer className="border-t border-border bg-surface">
         <div className="mx-auto grid max-w-7xl gap-7 px-5 py-10 sm:px-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
