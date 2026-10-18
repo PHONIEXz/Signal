@@ -50,3 +50,37 @@ test("stale history exposes missing days through the current day instead of endi
   assert.deepEqual(result.map(p=>p.followers),[100,null,null]);
   assert.equal(new Date(result.at(-1)!.timestamp).toISOString(),"2026-10-18T00:00:00.000Z");
 });
+
+import { growthTicks, recordedComparison } from "./growth-chart.ts";
+test("axis ticks are real hourly and weekly bucket boundaries",()=>{
+ for(const period of ["hourly","weekly"] as const) {
+  const points=groupGrowth([point("2026-10-01T00:15:00Z",47),point("2026-10-18T20:10:00Z",47)],period);
+  const ticks=growthTicks(points);
+  assert.ok(ticks.length<=5);
+  assert.ok(ticks.every(tick=>points.some(point=>point.timestamp===tick)));
+  assert.ok(ticks.every(tick=>new Date(tick).getUTCMinutes()===0));
+  if(period==="weekly") assert.ok(ticks.every(tick=>new Date(tick).getUTCDay()===1));
+ }
+ assert.deepEqual(growthTicks([]),[]);
+});
+test("flat observations across missing days compare as zero with their real dates",()=>{
+ const points=groupGrowth([point("2026-10-04T06:00:00Z",97),point("2026-10-18T06:05:00Z",97)],"daily");
+ const result=recordedComparison(points,"followers");
+ assert.equal(result.change,0);
+ assert.equal(result.previous?.date,"2026-10-04T06:00:00Z");
+ assert.equal(result.current?.date,"2026-10-18T06:05:00Z");
+ assert.equal(points.filter(point=>point.followers!==null).length,2);
+});
+test("latest missing metric remains unavailable rather than showing a stale earlier value",()=>{
+ const points=groupGrowth([point("2026-10-17T00:00:00Z",97),point("2026-10-18T00:00:00Z",null)],"daily");
+ assert.equal(recordedComparison(points,"followers").change,null);
+ assert.equal(recordedComparison(points,"followers").current?.followers,null);
+ assert.equal(points.filter(point=>point.views!==null).length,0);
+});
+test("same-month refreshes remain one period, and zero baselines do not invent percentages",()=>{
+ const points=groupGrowth([point("2026-10-04T00:00:00Z",0),point("2026-10-18T00:00:00Z",2)],"monthly");
+ assert.equal(points.length,1);
+ assert.equal(recordedComparison(points,"followers").change,null);
+ const daily=recordedComparison(groupGrowth([point("2026-10-17T00:00:00Z",0),point("2026-10-18T00:00:00Z",2)],"daily"),"followers");
+ assert.equal(daily.change,2);assert.equal(daily.percentage,null);
+});

@@ -11,7 +11,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { growthRange, groupGrowth, growthPeriods, periodDescriptions, type GrowthPoint, type GrowthPeriod } from "@/lib/growth-chart";
+import { metricTime } from "@/lib/metric-time";
+import { growthTicks, recordedComparison, growthRange, groupGrowth, growthPeriods, periodDescriptions, type GrowthPoint, type GrowthPeriod } from "@/lib/growth-chart";
 import { useReducedMotion } from "@/components/motion/useMotion";
 
 const metrics = {
@@ -58,34 +59,10 @@ export default function GrowthChart({ data, sampleData = data, platform, history
   const observed = chartData.map(point => point[activeMetric]).filter((value): value is number => value !== null && Number.isFinite(value));
   const domain = growthRange(observed, zeroBaseline);
   const flat = observed.length >= 2 && observed.every(value => value === observed[0]);
-  const current = chartData.findLast(point => point.captured);
-  const previous = current ? chartData[chartData.indexOf(current) - 1] : undefined;
-
-  const values = useMemo(() => {
-    if (!current || !previous || activeMetric === "likes" || activeMetric === "views") {
-      return {
-        change: null,
-        percentage: null,
-      };
-    }
-
-    const currentValue = current[metrics[activeMetric].key];
-    const previousValue = previous[metrics[activeMetric].key];
-
-    if (currentValue === null || previousValue === null) {
-      return { change: null, percentage: null };
-    }
-
-    const change = currentValue - previousValue;
-
-    const percentage =
-      previousValue > 0 ? (change / previousValue) * 100 : null;
-
-    return {
-      change,
-      percentage,
-    };
-  }, [activeMetric, current, previous]);
+  const comparison = recordedComparison(chartData, activeMetric);
+  const { current, previous } = comparison;
+  const sampleMetric = activeMetric === "likes" || activeMetric === "views";
+  const values = sampleMetric ? {change:null,percentage:null} : comparison;
 
   const positive = values.change !== null && values.change > 0;
   const negative = values.change !== null && values.change < 0;
@@ -156,12 +133,12 @@ export default function GrowthChart({ data, sampleData = data, platform, history
 
         <div>
           <p className="text-sm text-ink-muted">
-            Change since previous displayed period:
+            {sampleMetric ? "Selected post sample" : "Change between recorded measurements:"}
           </p>
 
           <p className="mt-1 text-lg font-medium text-ink">
             {values.change === null ? (
-              "Unavailable for this sample"
+              sampleMetric ? "Changing samples are not a growth comparison" : current && currentValue === null ? "The latest collection did not provide this metric" : "Two recorded values are needed for comparison"
             ) : (
               <>
                 {values.change >= 0 ? "+" : ""}
@@ -174,11 +151,12 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               </>
             )}
           </p>
+          {!sampleMetric && values.change !== null && current && previous && <p className="mt-2 text-xs leading-5 text-ink-muted">Comparing {metricTime(previous.date)} to {metricTime(current.date)}. This is the change between those observations, not a daily rate.</p>}
         </div>
       </div>
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
-      {current && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {new Date(current.date).toLocaleString("en-US", {timeZone:"UTC"})} UTC</p>}
+      {current && currentValue !== null && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {metricTime(current.date)}</p>}
       <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Only recorded measurements receive dots.</p>
       <div className="mt-6 flex flex-wrap gap-1 rounded-2xl border border-border bg-paper p-1.5" role="group" aria-label="Growth chart interval">
         {growthPeriods.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}
@@ -187,15 +165,15 @@ export default function GrowthChart({ data, sampleData = data, platform, history
       <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Unmeasured periods have no dots. Refreshing collects data; changing this view does not.</p>
       {historyLimited && <p className="mt-2 text-xs text-ink-muted">Showing the latest 5,000 saved refreshes. Older history is outside this view.</p>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-ink-muted">{chartData.filter(point => point.captured).length} recorded periods · Times in UTC</p>
+        <p className="text-xs text-ink-muted">{observed.length} recorded {observed.length === 1 ? "period" : "periods"} for this metric · Times in UTC</p>
         <button type="button" aria-pressed={zeroBaseline} onClick={() => setZeroBaseline(value => !value)}
           className="min-h-11 rounded-full border border-border px-4 text-sm font-medium text-ink">
           {zeroBaseline ? "Scale: from zero" : "Scale: focused range"}
         </button>
       </div>
       <p className="mt-2 text-sm text-ink-muted" role="status">
-        {observed.length === 0 ? "No recorded values for this metric yet. Refresh the account to collect a snapshot."
-          : observed.length === 1 ? "One recorded value so far. Another successful refresh is needed to show change."
+        {observed.length === 0 ? "No recorded values for this metric yet. Check collection status and platform access below your account metrics."
+          : observed.length === 1 ? "One recorded period so far. A measurement in another period is needed to draw a change. Refreshes within the same period update its existing point."
           : flat ? "The recorded values are unchanged, so this line is flat. New measurements will show movement only when the counts change."
           : "Dots show recorded values. Solid lines connect consecutive measurements; dashed links span periods without measurements."}
         {observed.length > 0 && !zeroBaseline && " The vertical axis is zoomed to the recorded values; it may not start at zero."}
@@ -208,6 +186,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
             <XAxis
               dataKey="timestamp"
               type="number"
+              ticks={growthTicks(chartData)}
               domain={["dataMin", "dataMax"]}
               tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", ...(period === "hourly" ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), ...(period === "yearly" ? { year: "numeric" as const } : {}), timeZone: "UTC" })}
               minTickGap={48}
@@ -226,7 +205,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
             />
 
             <Tooltip
-              labelFormatter={value => new Date(Number(value)).toLocaleString("en-US", { timeZone: "UTC" }) + " UTC"}
+              labelFormatter={value => "Period starting " + metricTime(Number(value))}
               contentStyle={{
                 fontSize: 12,
                 borderRadius: 8,
@@ -262,7 +241,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
             <caption className="sr-only">Saved {metrics[activeMetric].label.toLowerCase()} measurements, UTC</caption>
             <thead><tr className="text-ink-muted"><th scope="col" className="py-2">Period (UTC)</th><th scope="col" className="py-2 text-right">{metrics[activeMetric].label}</th></tr></thead>
             <tbody>{chartData.map((point, index) => <tr key={`${point.timestamp}-${index}`} className="border-t border-border">
-              <td className="py-2 text-ink-muted">{new Date(point.timestamp).toLocaleString("en-US", { timeZone: "UTC" })}</td>
+              <td className="py-2 text-ink-muted">{metricTime(point.timestamp)}</td>
               <td className="py-2 text-right font-medium text-ink">{point[activeMetric]?.toLocaleString() ?? "Unavailable"}</td>
             </tr>)}</tbody>
           </table>

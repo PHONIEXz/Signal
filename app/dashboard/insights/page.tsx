@@ -1,3 +1,4 @@
+import { metricTime } from "@/lib/metric-time";
 import { postEngagement } from "@/lib/metric-measurements";
 import Link from "next/link";
 import { auth } from "@/auth";
@@ -493,7 +494,7 @@ function PageHeader({
 
       {latestSnapshotDate && (
         <p className="mt-2 text-xs text-ink-muted">
-          Latest data: {latestSnapshotDate.toLocaleString()}
+          Latest data: {metricTime(latestSnapshotDate)}
         </p>
       )}
     </div>

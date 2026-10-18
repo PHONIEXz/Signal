@@ -1,5 +1,8 @@
 "use client";
 
+import { useRefreshGate } from "./useRefreshGate";
+import type { RefreshGate } from "@/lib/refresh-gate";
+import { metricTime } from "@/lib/metric-time";
 import { metricRefreshError } from "@/lib/metric-diagnostics";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -22,6 +25,7 @@ type Snapshot = {
 
 export default function MetricsPanel({
   platform,
+  refreshGate,
   snapshot,
   plan,
   sampleSize,
@@ -30,6 +34,7 @@ export default function MetricsPanel({
   postMeasuredAt,
 }: {
   platform: string;
+  refreshGate?: RefreshGate;
   snapshot: Snapshot | null;
   plan: Plan;
   sampleSize: number;
@@ -38,6 +43,7 @@ export default function MetricsPanel({
   postMeasuredAt?: string | null;
 }) {
   const router = useRouter();
+  const refreshBlocked = useRefreshGate(refreshGate);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -103,12 +109,13 @@ export default function MetricsPanel({
             variant="secondary"
             className="w-auto px-4"
             onClick={handleRefresh}
-            disabled={loading}
+            disabled={loading || refreshBlocked}
           >
             {loading ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
 
+        {refreshGate?.reason && <p role="status" className="mt-4 text-sm text-ink-muted">{refreshGate.reason} {refreshGate.availableAt && <>Next refresh: <time dateTime={refreshGate.availableAt}>{metricTime(refreshGate.availableAt)}</time>.</>}</p>}
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         {notice && <p className="mt-4 text-sm text-amber-600">{notice}</p>}
 
