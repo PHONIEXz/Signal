@@ -43,6 +43,7 @@ export default function SignalReport({ sampleSize }: { sampleSize: number }) {
 }
 
 function ReportContent({ sampleSize }: { sampleSize: number }) {
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +58,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
         waitForSignalAnalysis(),
       ]);
       setReport(nextReport);
+      setGeneratedAt(new Date().toISOString());
     } catch (err) {
       setError(
         err instanceof Error
@@ -117,7 +119,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
                   Signal AI
                 </p>
                 <p className="mt-0.5 text-xs text-ink-muted">
-                  Auto-generated from your available account data
+                  {generatedAt ? <time dateTime={generatedAt}>Received {new Date(generatedAt).toLocaleString("en-GB", {timeZone:"UTC",dateStyle:"medium",timeStyle:"short"})} UTC</time> : "Generated from your available account data"}
                 </p>
               </div>
             </div>

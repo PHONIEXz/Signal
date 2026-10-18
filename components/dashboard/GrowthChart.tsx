@@ -179,12 +179,12 @@ export default function GrowthChart({ data, sampleData = data, platform, history
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
       {current && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {new Date(current.date).toLocaleString("en-US", {timeZone:"UTC"})} UTC</p>}
-      <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Days without measurements remain gaps.</p>
+      <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Only recorded measurements receive dots.</p>
       <div className="mt-6 flex flex-wrap gap-1 rounded-2xl border border-border bg-paper p-1.5" role="group" aria-label="Growth chart interval">
         {growthPeriods.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}
           className={`min-h-11 flex-1 rounded-xl px-3 text-sm font-semibold capitalize transition-all ${period === value ? "bg-action text-white shadow-md" : "text-ink-muted hover:bg-surface hover:text-ink"}`}>{value}</button>)}
       </div>
-      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Missing periods stay empty. Refreshing collects data; changing this view does not.</p>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Unmeasured periods have no dots. Refreshing collects data; changing this view does not.</p>
       {historyLimited && <p className="mt-2 text-xs text-ink-muted">Showing the latest 5,000 saved refreshes. Older history is outside this view.</p>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-ink-muted">{chartData.filter(point => point.captured).length} recorded periods · Times in UTC</p>
@@ -197,9 +197,10 @@ export default function GrowthChart({ data, sampleData = data, platform, history
         {observed.length === 0 ? "No recorded values for this metric yet. Refresh the account to collect a snapshot."
           : observed.length === 1 ? "One recorded value so far. Another successful refresh is needed to show change."
           : flat ? "The recorded values are unchanged, so this line is flat. New measurements will show movement only when the counts change."
-          : "Each dot is a saved measurement. Gaps mean a value was unavailable."}
+          : "Dots show recorded values. Solid lines connect consecutive measurements; dashed links span periods without measurements."}
         {observed.length > 0 && !zeroBaseline && " The vertical axis is zoomed to the recorded values; it may not start at zero."}
       </p>
+      {observed.length > 1 && <p className="mt-2 text-xs text-ink-muted">Dashed links connect known endpoints only. Values between them are unknown.</p>}
       {observed.length > 0 && <div className="mt-4 h-64" aria-label={`${metrics[activeMetric].label} history chart. Exact values are available below.`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart key={`${activeMetric}-${period}-${inView}`} data={chartData} margin={{ top: 12, right: 18, bottom: 8, left: 0 }}>
@@ -235,6 +236,9 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               }}
             />
 
+            <Line dataKey={metrics[activeMetric].key} type="linear" connectNulls
+              stroke="var(--color-action)" strokeWidth={2} strokeDasharray="5 5"
+              dot={false} activeDot={false} legendType="none" tooltipType="none" isAnimationActive={false} />
             <Line
               isAnimationActive={!reducedMotion && inView}
               animationDuration={1100}
@@ -245,7 +249,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               dataKey={metrics[activeMetric].key}
               stroke="var(--color-action)"
               strokeWidth={3}
-              dot={{ r: 4 }}
+              dot={{ r: 4, fill: "var(--color-action)", stroke: "var(--color-surface)", strokeWidth: 2 }}
               activeDot={{ r: 6 }}
             />
           </LineChart>
@@ -256,7 +260,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
         <div className="mt-3 max-h-64 overflow-auto">
           <table className="w-full text-left text-sm">
             <caption className="sr-only">Saved {metrics[activeMetric].label.toLowerCase()} measurements, UTC</caption>
-            <thead><tr className="text-ink-muted"><th scope="col" className="py-2">Refresh (UTC)</th><th scope="col" className="py-2 text-right">{metrics[activeMetric].label}</th></tr></thead>
+            <thead><tr className="text-ink-muted"><th scope="col" className="py-2">Period (UTC)</th><th scope="col" className="py-2 text-right">{metrics[activeMetric].label}</th></tr></thead>
             <tbody>{chartData.map((point, index) => <tr key={`${point.timestamp}-${index}`} className="border-t border-border">
               <td className="py-2 text-ink-muted">{new Date(point.timestamp).toLocaleString("en-US", { timeZone: "UTC" })}</td>
               <td className="py-2 text-right font-medium text-ink">{point[activeMetric]?.toLocaleString() ?? "Unavailable"}</td>

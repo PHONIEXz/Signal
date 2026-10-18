@@ -1,3 +1,4 @@
+import WorkspaceClock from "@/components/dashboard/WorkspaceClock";
 import MotionScene from "@/components/motion/MotionScene";
 import Link from "next/link";
 import { isAdmin } from "@/lib/service-config";
@@ -33,9 +34,7 @@ export default async function DashboardLayout({
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
               Signal workspace
             </p>
-            <p className="mt-1 text-sm font-medium text-ink">
-              Make your next move clear
-            </p>
+            <WorkspaceClock initialTime={new Date().toISOString()} />
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
