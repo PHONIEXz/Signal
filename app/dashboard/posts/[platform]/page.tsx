@@ -1,3 +1,4 @@
+import { getMetricRefreshGate } from "@/lib/metric-refresh-gate";
 import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import SyncDetails from "@/components/dashboard/SyncDetails";
 import MetricsImport from "@/components/dashboard/MetricsImport";
@@ -40,6 +41,7 @@ export default async function PlatformPostsPage({
     notFound();
   }
 
+  const refreshGate = await getMetricRefreshGate(connectedAccount.id);
   const storedPosts = await prisma.post.findMany({
     where: {
       connectedAccountId: connectedAccount.id,
@@ -79,7 +81,7 @@ export default async function PlatformPostsPage({
         </div>
       </div>
 
-      <PostsRefresh platform={platform} />
+      <PostsRefresh platform={platform} refreshGate={refreshGate} />
       <SyncDetails accountId={connectedAccount.id} />
       <MetricsImport platform={platform} />
       {contentOnly && <p className="text-sm text-ink-muted">Post content is available. Engagement counts could not be retrieved and are shown as unavailable.</p>}

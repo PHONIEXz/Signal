@@ -1,5 +1,6 @@
 "use client";
 
+import { metricTime } from "@/lib/metric-time";
 import { useState } from "react";
 import MeasurementHistory, {
   type MeasurementPoint,
@@ -97,9 +98,7 @@ export default function PostsList({
             Source: {post.measurements?.[0]?.source ?? "Unverified legacy"}.
             Measured:{" "}
             {post.measurements?.[0]
-              ? new Date(post.measurements[0].capturedAt).toLocaleString(
-                  "en-US",
-                )
+              ? metricTime(post.measurements[0].capturedAt)
               : "Unknown"}
             .
           </p>

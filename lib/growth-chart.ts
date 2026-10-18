@@ -52,3 +52,19 @@ export function groupGrowth(data: GrowthPoint[], period: GrowthPeriod, asOf?: st
   }
   return result;
 }
+
+/** Axis ticks must be real bucket boundaries, not interpolated times. */
+export function growthTicks(points: {timestamp: number}[], maximum = 5): number[] {
+  if (points.length <= maximum) return points.map(point=>point.timestamp);
+  return Array.from({length:maximum}, (_, index) => points[Math.round(index * (points.length - 1) / (maximum - 1))].timestamp);
+}
+
+/** Compare actual observations across gaps without inventing intervening values. */
+export function recordedComparison(points: ReturnType<typeof groupGrowth>, metric: keyof Omit<GrowthPoint,"date">) {
+  const current = points.findLast(point=>point.captured);
+  const previous = current ? points.slice(0,points.indexOf(current)).findLast(point=>point[metric] !== null) : undefined;
+  const currentValue = current?.[metric] ?? null;
+  const previousValue = previous?.[metric] ?? null;
+  const change = currentValue !== null && previousValue !== null ? currentValue - previousValue : null;
+  return {current,previous,change,percentage:change !== null && previousValue !== null && previousValue > 0 ? change / previousValue * 100 : null};
+}

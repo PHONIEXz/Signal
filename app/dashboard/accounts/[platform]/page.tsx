@@ -1,3 +1,4 @@
+import { getMetricRefreshGate } from "@/lib/metric-refresh-gate";
 import BackToTop from "@/components/dashboard/BackToTop";
 import { postEngagement } from "@/lib/metric-measurements";
 import SyncDetails from "@/components/dashboard/SyncDetails";
@@ -39,6 +40,7 @@ export default async function AccountDetailPage({
     notFound();
   }
 
+  const refreshGate = await getMetricRefreshGate(connectedAccount.id);
   const plan = normalizePlan(connectedAccount.user.plan);
   const sampleSize = normalizeSampleSize(query.posts, plan);
 
@@ -91,6 +93,7 @@ export default async function AccountDetailPage({
       <MetricsPanel
         key={`${platform}-${sampleSize}`}
         platform={platform}
+        refreshGate={refreshGate}
         plan={plan}
         sampleSize={sampleSize}
         pageMediaViews={latestPageMediaView?.value ?? null}

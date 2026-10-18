@@ -53,7 +53,7 @@ export default function SignalScore({ result }: { result: SignalScoreResult }) {
       </div>
 
       <p className="mt-5 text-xs text-ink-muted">
-        Data confidence: {result.confidence}%. Unavailable metrics are excluded instead of scored as zero.
+        Data coverage: {result.confidence}% of the score’s weighted inputs. This is not statistical confidence. Unavailable metrics are excluded instead of scored as zero.
       </p>
     </div>
   );

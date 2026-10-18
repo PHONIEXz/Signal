@@ -1,10 +1,14 @@
 "use client";
+import { useRefreshGate } from "./useRefreshGate";
+import type { RefreshGate } from "@/lib/refresh-gate";
+import { metricTime } from "@/lib/metric-time";
 import { metricRefreshError } from "@/lib/metric-diagnostics";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function PostsRefresh({ platform }: { platform: string }) {
+export default function PostsRefresh({ platform, refreshGate }: { platform: string; refreshGate?: RefreshGate }) {
   const router = useRouter();
+  const refreshBlocked = useRefreshGate(refreshGate);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   async function refresh() {
@@ -17,5 +21,5 @@ export default function PostsRefresh({ platform }: { platform: string }) {
     } catch { setNotice("Could not reach Signal. Try again when your connection is available."); }
     finally { setBusy(false); }
   }
-  return <div className="rounded-xl border border-border bg-surface p-4"><button type="button" disabled={busy} onClick={refresh} className="rounded-md bg-action px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{busy ? "Retrieving posts..." : "Retrieve recent posts"}</button><p className="mt-2 text-xs text-ink-muted">Requests the latest 10 posts. X requests may consume your app&apos;s API credits.</p>{notice && <p role="status" className="mt-3 text-sm text-ink">{notice}</p>}</div>;
+  return <div className="rounded-xl border border-border bg-surface p-4"><button type="button" disabled={busy || refreshBlocked} onClick={refresh} className="rounded-md bg-action px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{busy ? "Retrieving posts..." : "Retrieve recent posts"}</button><p className="mt-2 text-xs text-ink-muted">Requests the latest 10 posts. X requests may consume your app&apos;s API credits.</p>{refreshGate?.reason && <p role="status" className="mt-3 text-sm text-ink-muted">{refreshGate.reason} {refreshGate.availableAt && <>Next refresh: <time dateTime={refreshGate.availableAt}>{metricTime(refreshGate.availableAt)}</time>.</>}</p>}{notice && <p role="status" className="mt-3 text-sm text-ink">{notice}</p>}</div>;
 }

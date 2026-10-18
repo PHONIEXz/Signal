@@ -1,5 +1,6 @@
 "use client";
 
+import { metricTime } from "@/lib/metric-time";
 import { COUNT_FIELDS, measurementDelta, type Counts } from "@/lib/metric-measurements";
 
 export type MeasurementPoint = Counts & { source: string; capturedAt: string };
@@ -21,7 +22,7 @@ export default function MeasurementHistory({ points, platform }: { points: Measu
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left">
           <caption className="sr-only">Post measurements and changes from earlier measurements of the same source</caption>
-          <thead><tr><th scope="col" className="p-2">Measured / source</th>{fields.map(field => <th scope="col" className="p-2" key={field}>{labels[field]} / change</th>)}</tr></thead>
+          <thead><tr><th scope="col" className="p-2">Measured (UTC) / source</th>{fields.map(field => <th scope="col" className="p-2" key={field}>{labels[field]} / change</th>)}</tr></thead>
           <tbody>
             {points.map((point, index) => {
               const previous = points.slice(index + 1).find(candidate => candidate.source === point.source);
@@ -31,7 +32,7 @@ export default function MeasurementHistory({ points, platform }: { points: Measu
               );
               return (
                 <tr className="border-t border-border" key={`${point.source}-${point.capturedAt}-${index}`}>
-                  <td className="whitespace-nowrap p-2">{new Date(point.capturedAt).toLocaleString("en-US")} / {point.source}</td>
+                  <td className="whitespace-nowrap p-2">{metricTime(point.capturedAt)} / {point.source}</td>
                   {fields.map(field => (
                     <td className="whitespace-nowrap p-2" key={field}>
                       {display(point[field])}

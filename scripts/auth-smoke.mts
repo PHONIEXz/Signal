@@ -246,6 +246,14 @@ try {
   assert.match(await invalidReportPage.text(),/That account is unavailable/);
 
   await prisma.authRateLimit.update({ where: { key: `usage:metrics:user:${owner.id}:${new Date().toISOString().slice(0,10)}` }, data: { count: 8 } });
+  for (const path of ["/dashboard/accounts/x","/dashboard/posts/x"]) {
+    const gatePage = await fetch(base + path, {headers:{Cookie:studioSession}});
+    assert.equal(gatePage.status,200);
+    const gateHtml = await gatePage.text();
+    assert.match(gateHtml,/Your daily metrics allowance has been used/);
+    assert.match(gateHtml,/Next refresh/);
+  }
+  assert.equal((await prisma.authRateLimit.findUniqueOrThrow({where:{key:`usage:metrics:user:${owner.id}:${new Date().toISOString().slice(0,10)}`}})).count,8);
   await allowRefresh();
   const allowance = await metricRequest("/api/metrics/refresh/x", {});
   assert.equal(allowance.status, 429);
