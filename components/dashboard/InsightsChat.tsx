@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
+import { useReducedMotion } from "@/components/motion/useMotion";
 import { waitForSignalAnalysis } from "@/lib/minimum-duration";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -17,11 +18,14 @@ export default function InsightsChat({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!messages.length) return;
+    const panel = conversationRef.current;
+    panel?.scrollTo({top: panel.scrollHeight, behavior: reduced ? "instant" : "smooth"});
+  }, [messages, loading, reduced]);
 
   async function handleSend() {
     const trimmed = input.trim();
@@ -69,30 +73,23 @@ export default function InsightsChat({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
-      <p className="font-display text-lg font-medium text-ink">
+    <div className="rounded-3xl border border-border bg-surface p-5 sm:p-7">
+      <h2 className="font-display text-xl font-bold tracking-tight text-ink">
         Ask about your account
-      </p>
-      <p className="mt-1 text-xs text-ink-muted">
-        Try &quot;what&apos;s my best post&quot; or &quot;how can I grow faster.&quot;
-      </p>
+      </h2>
+      <p className="mt-2 text-sm text-ink-muted">A focused conversation about your saved metrics.</p>
 
-      <div className="mt-4 flex max-h-80 flex-col gap-3 overflow-y-auto">
-        {messages.length === 0 && (
-          <p className="text-sm text-ink-muted">
-            No questions yet - try asking one below.
-          </p>
-        )}
+      <div ref={conversationRef} role="log" aria-label="Account conversation" aria-live="polite" tabIndex={messages.length ? 0 : undefined} className={`${messages.length || loading ? "mt-5" : ""} flex max-h-80 flex-col gap-3 overflow-y-auto overscroll-contain`}>
         {messages.map((m, i) => (
           <div
             key={i}
             className={
               m.role === "user"
-                ? "ml-auto max-w-[85%] rounded-lg bg-action px-4 py-2 text-sm text-white"
-                : "mr-auto max-w-[85%] rounded-lg bg-paper px-4 py-2 text-sm text-ink"
+                ? "ml-auto max-w-[90%] whitespace-pre-wrap break-words rounded-2xl bg-action px-4 py-2 text-sm text-white"
+                : "mr-auto max-w-[90%] whitespace-pre-wrap break-words rounded-2xl bg-paper px-4 py-2 text-sm text-ink"
             }
           >
-            {m.content}
+            <span className="sr-only">{m.role === "user" ? "You: " : "Signal: "}</span>{m.content}
           </div>
         ))}
         {loading && (
@@ -100,33 +97,20 @@ export default function InsightsChat({
             <SignalThinkingState compact />
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
 
-      <div className="mt-4 flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder="Ask a question..."
-          className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-muted/60 focus:border-navy"
-        />
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={loading}
-          className="rounded-md bg-action px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-action-hover disabled:opacity-50"
-        >
-          Send
+      <form className="mt-5 flex items-end gap-2 rounded-2xl border border-border bg-paper p-2 focus-within:border-action" onSubmit={event => {event.preventDefault(); void handleSend();}}>
+        <label htmlFor={`account-question-${platform}`} className="sr-only">Your account question</label>
+        <input id={`account-question-${platform}`} value={input} onChange={event => setInput(event.target.value)}
+          placeholder="What would you like to know?" maxLength={2000}
+          className="min-h-11 min-w-0 flex-1 bg-transparent px-3 text-sm text-ink outline-none placeholder:text-ink-muted" />
+        <button type="submit" disabled={loading || !input.trim()} aria-label="Send question"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-action text-white transition-colors hover:bg-action-hover disabled:opacity-40">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7M12 5v14" /></svg>
         </button>
-      </div>
+      </form>
     </div>
   );
 }

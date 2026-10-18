@@ -2,13 +2,13 @@ import SettingsPanel from "@/components/dashboard/SettingsPanel";
 
 export default function SettingsPage() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <div className="mb-8">
         <p className="font-mono text-xs uppercase tracking-wider text-ink-muted">
           Preferences
         </p>
 
-        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-ink">
+        <h1 className="mt-2 font-display text-4xl font-bold tracking-[-0.04em] text-ink">
           Settings
         </h1>
 

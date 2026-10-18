@@ -1,3 +1,4 @@
+import BackToTop from "@/components/dashboard/BackToTop";
 import { postEngagement } from "@/lib/metric-measurements";
 import SyncDetails from "@/components/dashboard/SyncDetails";
 import AccountAIAnalysis from "@/components/dashboard/AccountAIAnalysis";
@@ -84,7 +85,7 @@ export default async function AccountDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="font-display text-lg font-medium capitalize text-ink">
+      <h1 id="account-heading" tabIndex={-1} className="scroll-mt-24 font-display text-3xl font-bold capitalize tracking-tight text-ink focus:outline-none">
         {platform}
       </h1>
       <MetricsPanel
@@ -136,7 +137,8 @@ export default async function AccountDetailPage({
             : null
         }
       />
-      <InsightsChat platform={platform} sampleSize={sampleSize} />
+      <BackToTop />
+      <InsightsChat key={platform} platform={platform} sampleSize={sampleSize} />
     </div>
   );
 }
