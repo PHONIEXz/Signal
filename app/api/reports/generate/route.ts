@@ -16,6 +16,10 @@ export async function POST(request: Request) {
   return withAiRequest(request,async (userId,body) => {
 
 
+    if (body.accountId !== undefined && (typeof body.accountId !== "string" || !body.accountId.trim() || body.accountId.length > 200)) {
+      return NextResponse.json({ error: "Choose a valid account." }, { status: 400 });
+    }
+    const accountId = typeof body.accountId === "string" ? body.accountId : undefined;
     const user=await prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true },
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
     );
 
     const connections=await prisma.connectedAccount.findMany({
-      where: { userId },
+      where: { userId, ...(accountId ? { id: accountId } : {}) },
       include: {
         metricSnapshots: {
           orderBy: { fetchedAt: "desc" },
@@ -44,8 +48,8 @@ export async function POST(request: Request) {
 
     if(connections.length===0) {
       return NextResponse.json(
-        { error: "Connect at least one account before generating a report." },
-        { status: 400 }
+        { error: accountId ? "This account is unavailable. Choose one of your connected accounts." : "Connect at least one account before generating a report." },
+        { status: accountId ? 404 : 400 }
       );
     }
 
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
 
 You are Signal AI, the analytics and growth intelligence engine inside a social media dashboard.
 
-Create a concise but useful cross-platform performance report from ONLY the supplied data.
+Create a concise but useful ${accountId ? "single-account" : "cross-platform"} performance report from ONLY the supplied data.
 
 Return valid JSON with exactly these keys:
 {

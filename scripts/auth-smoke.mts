@@ -236,6 +236,15 @@ try {
   const other = await prisma.user.create({ data: { email: "other-owner@example.com" } });
   await prisma.connectedAccount.create({ data: { userId: other.id, platform: "facebook", accessToken: "test-only" } });
   assert.equal((await metricRequest("/api/metrics/import/facebook", csvBody)).status, 404);
+  const foreignAccount = await prisma.connectedAccount.findFirstOrThrow({where:{userId:other.id}});
+  assert.equal((await metricRequest("/api/reports/generate", {accountId:foreignAccount.id})).status,404);
+  assert.equal((await metricRequest("/api/reports/generate", {accountId:123})).status,400);
+  const reportPage = await fetch(base + `/dashboard/reports?account=${xAccount.id}&posts=10`, {headers:{Cookie:studioSession}});
+  assert.equal(reportPage.status,200);
+  assert.match(await reportPage.text(),/Fixture X/);
+  const invalidReportPage = await fetch(base + `/dashboard/reports?account=${foreignAccount.id}`, {headers:{Cookie:studioSession}});
+  assert.match(await invalidReportPage.text(),/That account is unavailable/);
+
   await prisma.authRateLimit.update({ where: { key: `usage:metrics:user:${owner.id}:${new Date().toISOString().slice(0,10)}` }, data: { count: 8 } });
   await allowRefresh();
   const allowance = await metricRequest("/api/metrics/refresh/x", {});
