@@ -103,7 +103,7 @@ export default async function InsightsPage({
 
           <Link
             href="/dashboard/accounts"
-            className="mt-5 inline-flex rounded-md bg-navy px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            className="mt-5 inline-flex rounded-md bg-action px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             Connect an account
           </Link>

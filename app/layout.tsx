@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import localFont from "next/font/local";
+
+const manrope = localFont({ src: "./fonts/manrope-latin.woff2", display: "swap", variable: "--font-manrope", weight: "200 800" });
 import Providers from "./providers";
 
 export const metadata: Metadata = {
@@ -25,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={manrope.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

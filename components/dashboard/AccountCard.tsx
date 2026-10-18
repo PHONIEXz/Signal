@@ -23,7 +23,7 @@ export default function AccountCard({ id, platform, displayName, followers }: Ac
   const details = PLATFORM_DETAILS[platform] ?? {
     label: fallbackLabel,
     mark: fallbackLabel.charAt(0),
-    style: "bg-navy text-white",
+    style: "bg-action text-white",
   };
 
   async function unlinkAccount() {

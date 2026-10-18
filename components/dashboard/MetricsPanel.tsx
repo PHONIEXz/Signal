@@ -81,7 +81,7 @@ export default function MetricsPanel({
   return (
     <div className="space-y-4">
       <PostSampleSelector plan={plan} selected={sampleSize} />
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div data-reveal className="rounded-lg border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="font-display text-lg font-medium text-ink">

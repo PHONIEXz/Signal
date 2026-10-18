@@ -6,7 +6,7 @@ export default function EmptyState() {
       <div className="pointer-events-none absolute -left-24 -top-24 h-56 w-56 rounded-full bg-navy/[0.08] blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-56 w-56 rounded-full bg-amber/10 blur-3xl" />
 
-      <div className="signal-visual mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-navy text-white shadow-xl shadow-navy/20 animate-float-soft">
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-action text-white shadow-xl shadow-navy/20">
         <svg viewBox="0 0 44 44" className="h-11 w-11" fill="none" aria-hidden="true">
           <path d="M5 28c4.5 0 4.5-14 9-14s4.5 18 9 18 4.5-23 9-23 4.5 11 7 11" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
           <circle cx="39" cy="20" r="3.2" fill="var(--color-amber)" />
@@ -19,7 +19,7 @@ export default function EmptyState() {
         Connect a social account and Signal will turn its metrics into one clear, focused dashboard.
       </p>
 
-      <Link href="/dashboard/accounts" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-navy px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy/20 transition-all hover:-translate-y-0.5 hover:bg-navy-dark">
+      <Link href="/dashboard/accounts" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-action px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy/20 transition-all hover:-translate-y-0.5 hover:bg-action-hover">
         Choose a platform
         <span aria-hidden="true">→</span>
       </Link>

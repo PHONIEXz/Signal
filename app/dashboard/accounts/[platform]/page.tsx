@@ -42,14 +42,17 @@ export default async function AccountDetailPage({
   const sampleSize = normalizeSampleSize(query.posts, plan);
 
   const recentSnapshotHistory = await prisma.metricSnapshot.findMany({
-    where: { connectedAccountId: connectedAccount.id, sampleSize },
+    where: { connectedAccountId: connectedAccount.id },
     orderBy: { fetchedAt: "desc" },
-    take: 30,
+    take: 5001,
+    select: { fetchedAt: true, followersCount: true, followingCount: true, postCount: true, totalLikes: true, totalViews: true, totalEngagements: true, postsAnalyzed: true, sampleSize: true, postMetricsStatus: true },
   });
-  const snapshotHistory = recentSnapshotHistory.reverse();
+  const historyLimited = recentSnapshotHistory.length > 5000;
+  const snapshotHistory = recentSnapshotHistory.slice(0, 5000).reverse();
   // Keep a useful saved view when this exact sample has not been collected.
   // This fallback is display-only: never add another sample to growth history.
-  const latestSnapshot = snapshotHistory.at(-1) ?? await prisma.metricSnapshot.findFirst({
+  const sampleHistory = snapshotHistory.filter(snapshot => snapshot.sampleSize === sampleSize);
+  const latestSnapshot = sampleHistory.at(-1) ?? await prisma.metricSnapshot.findFirst({
     where: { connectedAccountId: connectedAccount.id, postMetricsStatus: { not: "LEGACY" } },
     orderBy: { fetchedAt: "desc" },
   });
@@ -64,10 +67,8 @@ export default async function AccountDetailPage({
     : null;
 
   const growthData = snapshotHistory.map((s) => ({
-    date: s.fetchedAt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
+    date: s.fetchedAt.toISOString(),
+    sampleSize: s.sampleSize,
     followers: s.followersCount,
     likes: s.postMetricsStatus === "LEGACY" ? null : s.totalLikes,
     views: s.postMetricsStatus === "LEGACY" ? null : s.totalViews,
@@ -112,7 +113,7 @@ export default async function AccountDetailPage({
         }
       />
       <SyncDetails accountId={connectedAccount.id} />
-      <GrowthChart data={growthData} platform={platform} />
+      <GrowthChart asOf={new Date().toISOString()} sampleData={growthData.filter(point => point.sampleSize === sampleSize)} data={growthData} platform={platform} historyLimited={historyLimited} />
 
       <AccountAIAnalysis
         key={`${platform}-${sampleSize}`}

@@ -263,7 +263,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">Content</p>
-          <h1 className="mt-1 font-display text-2xl font-medium tracking-tight text-ink">Content Studio</h1>
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em] text-ink sm:text-4xl">Content Studio</h1>
           <p className="mt-2 text-sm text-ink-muted">From first idea to published post. Write, preview, plan and send from one workspace.</p>
         </div>
         <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm">
@@ -274,7 +274,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
         </div>
       </div>
 
-      {recovery && <section className="rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-navy px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
+      {recovery && <section className="rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-action px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
       <p className="text-xs text-ink-muted">Unsaved work is kept temporarily in this browser tab when storage is available. Save your draft to keep it across devices.</p>
       <div className="grid grid-cols-3 gap-3">
         {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-xs text-ink-muted">{label}</p><p className="mt-1 font-display text-2xl text-ink">{count}</p></div>)}
@@ -285,8 +285,9 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
           <button
             key={item}
             onClick={() => setView(item)}
+            aria-pressed={view === item}
             className={`rounded-md px-4 py-2 text-sm font-medium capitalize ${
-              view === item ? "bg-navy text-white" : "bg-surface text-ink-muted hover:text-ink"
+              view === item ? "bg-action text-white" : "bg-surface text-ink-muted hover:text-ink"
             }`}
           >
             {item === "compose" ? (editingId ? "Edit draft" : "New draft") : item}
@@ -304,7 +305,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
         <div className="rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
           <h2 className="font-display text-xl font-medium text-ink">Connect an account first</h2>
           <p className="mt-2 text-sm text-ink-muted">Content previews need at least one connected platform.</p>
-          <Link href="/dashboard/accounts" className="mt-5 inline-flex rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">
+          <Link href="/dashboard/accounts" className="mt-5 inline-flex rounded-md bg-action px-4 py-2 text-sm font-medium text-white">
             Go to Accounts
           </Link>
         </div>
@@ -390,7 +391,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => saveDraft(false)} disabled={busy || conflict || (!!editingId && !dirty)} className="rounded-md bg-navy px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">
+              <button onClick={() => saveDraft(false)} disabled={busy || conflict || (!!editingId && !dirty)} className="rounded-md bg-action px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">
                 {busy ? "Saving..." : editingId ? "Update draft" : "Save draft"}
               </button>
               {editingId && (
@@ -451,7 +452,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
               <option value="PARTIAL">Partly sent</option><option value="PUBLISHED">Published</option>
             </select>
             <button onClick={() => refreshDrafts().then(() => setMessage("Draft library refreshed.")).catch(() => setMessage("Could not refresh drafts. Your editor is unchanged."))} disabled={busy} className="rounded-md border border-border px-4 py-2 text-sm text-ink">Refresh library</button>
-            <button onClick={() => { if (canReplaceEditor()) { resetEditor(); setView("compose"); } }} disabled={busy} className="ml-auto rounded-md bg-navy px-4 py-2 text-sm font-medium text-white">New draft</button>
+            <button onClick={() => { if (canReplaceEditor()) { resetEditor(); setView("compose"); } }} disabled={busy} className="ml-auto rounded-md bg-action px-4 py-2 text-sm font-medium text-white">New draft</button>
           </div>
           {visibleDrafts.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center text-sm text-ink-muted">No drafts match these filters.</div>

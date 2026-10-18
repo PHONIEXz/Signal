@@ -16,7 +16,7 @@ import * as http from "./auth-http.ts";
 function load(relative: string, modules: Record<string, unknown>) {
   const source = readFileSync(new URL(relative, import.meta.url), "utf8");
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  const exports: Record<string, (...args: any[]) => any> = {};
+  const exports: Record<string, (...args: unknown[]) => Promise<Response>> = {};
   runInNewContext(code, { exports, require: (name: string) => {
     if (!(name in modules)) throw new Error(`Unexpected import ${name}`);
     return modules[name];
@@ -142,4 +142,41 @@ test("usage reservations roll back on any cap and reset by UTC day", async () =>
   const blocked=load("./service-usage.ts",{"./prisma.ts":{prisma},"./service-config.ts":{...config,enabled:()=>false}});
   await assert.rejects(()=>blocked.reserveUsage("ai","u","FREE",now));
   assert.equal(rows.get("usage:ai:global:2026-09-21"),2);
+});
+
+test("settings and post tags reject malformed, oversized and cross-origin writes", async (t) => {
+  const previous = process.env.APP_URL;
+  process.env.APP_URL = "https://signal.test";
+  t.after(() => { if (previous === undefined) delete process.env.APP_URL; else process.env.APP_URL = previous; });
+  let writes = 0;
+  const prisma = {
+    user: { update: async () => { writes++; return { hashedPassword: null, aiInsightsEnabled: false }; } },
+    post: {
+      findUnique: async () => ({ connectedAccount: { userId: "u" } }),
+      update: async () => { writes++; },
+    },
+  };
+  const modules = { "next/server": { NextResponse: Response }, "@/auth": { auth: async () => ({ user: { id: "u" } }) }, "@/lib/prisma": { prisma }, "@/lib/auth-http": http };
+  const request = (body: string, origin = "https://signal.test") => new Request("https://signal.test/api", { method: "PATCH", headers: { "content-type": "application/json", origin }, body });
+  for (const path of ["settings", "posts/[id]"]) {
+    const route = load(`../app/api/${path}/route.ts`, modules);
+    const context = { params: Promise.resolve({ id: "post" }) };
+    for (const body of ["null", "[]", "invalid", "x".repeat(5000)]) {
+      const result = await route.PATCH(request(body), context);
+      assert.ok(result.status === 400 || result.status === 413);
+    }
+    assert.equal((await route.PATCH(request("{}", "https://other.test"), context)).status, 403);
+  }
+  assert.equal(writes, 0);
+  const tags = load("../app/api/posts/[id]/route.ts", modules);
+  const context = { params: Promise.resolve({ id: "post" }) };
+  assert.equal((await tags.PATCH(request(JSON.stringify({ tags: "x".repeat(501) })), context)).status, 400);
+  assert.equal((await tags.PATCH(request('{"tags":"launch, news"}'), context)).status, 200);
+  assert.equal(writes, 1);
+  const foreign = load("../app/api/posts/[id]/route.ts", { ...modules, "@/lib/prisma": { prisma: { post: { ...prisma.post, findUnique: async () => ({ connectedAccount: { userId: "someone-else" } }) } } } });
+  assert.equal((await foreign.PATCH(request('{"tags":"test"}'), context)).status, 404);
+  assert.equal(writes, 1);
+  const settings = load("../app/api/settings/route.ts", modules);
+  assert.equal((await settings.PATCH(request('{"aiInsightsEnabled":false}'))).status, 200);
+  assert.equal(writes, 2);
 });

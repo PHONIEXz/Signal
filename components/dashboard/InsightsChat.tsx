@@ -88,7 +88,7 @@ export default function InsightsChat({
             key={i}
             className={
               m.role === "user"
-                ? "ml-auto max-w-[85%] rounded-lg bg-navy px-4 py-2 text-sm text-white"
+                ? "ml-auto max-w-[85%] rounded-lg bg-action px-4 py-2 text-sm text-white"
                 : "mr-auto max-w-[85%] rounded-lg bg-paper px-4 py-2 text-sm text-ink"
             }
           >
@@ -122,7 +122,7 @@ export default function InsightsChat({
           type="button"
           onClick={handleSend}
           disabled={loading}
-          className="rounded-md bg-navy px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-navy-dark disabled:opacity-50"
+          className="rounded-md bg-action px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-action-hover disabled:opacity-50"
         >
           Send
         </button>

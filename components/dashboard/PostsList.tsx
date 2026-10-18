@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import MeasurementHistory, { type MeasurementPoint } from "./MeasurementHistory";
+import MeasurementHistory, {
+  type MeasurementPoint,
+} from "./MeasurementHistory";
 
 type Post = {
   id: string;
@@ -16,20 +18,38 @@ type Post = {
   measurements?: MeasurementPoint[];
 };
 
-export default function PostsList({ posts, platform }: { posts: Post[]; platform?: string }) {
+export default function PostsList({
+  posts,
+  platform,
+}: {
+  posts: Post[];
+  platform?: string;
+}) {
   const [tagDrafts, setTagDrafts] = useState<Record<string, string>>(
-    Object.fromEntries(posts.map((p) => [p.id, p.tags ?? ""]))
+    Object.fromEntries(posts.map((p) => [p.id, p.tags ?? ""])),
   );
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<Record<string, string>>({});
+
+  function postTags(id: string) {
+    return posts.find((post) => post.id === id)?.tags ?? "";
+  }
 
   async function saveTags(id: string) {
-    setSavingId(id);
-    await fetch(`/api/posts/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tags: tagDrafts[id] }),
-    });
-    setSavingId(null);
+    setSaveStatus((current) => ({ ...current, [id]: "Saving…" }));
+    try {
+      const response = await fetch(`/api/posts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tags: tagDrafts[id] ?? postTags(id) }),
+      });
+      if (!response.ok) throw new Error("Could not save tags. Try again.");
+      setSaveStatus((current) => ({ ...current, [id]: "Saved" }));
+    } catch {
+      setSaveStatus((current) => ({
+        ...current,
+        [id]: "Could not save. Try again.",
+      }));
+    }
   }
 
   if (posts.length === 0) {
@@ -49,20 +69,46 @@ export default function PostsList({ posts, platform }: { posts: Post[]; platform
         >
           <p className="text-sm text-ink">{post.text}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
-            <span>{post.likeCount === null ? `${platform === "facebook" ? "Reactions" : "Likes"} unavailable` : `${post.likeCount.toLocaleString()} ${platform === "facebook" ? "reactions" : "likes"}`}</span>
+            <span>
+              {post.likeCount === null
+                ? `${platform === "facebook" ? "Reactions" : "Likes"} unavailable`
+                : `${post.likeCount.toLocaleString()} ${platform === "facebook" ? "reactions" : "likes"}`}
+            </span>
             <span>
               {post.viewCount === null
                 ? "Views unavailable"
                 : `${post.viewCount.toLocaleString()} views`}
             </span>
-            <span>{post.replyCount === null ? "Replies unavailable" : `${post.replyCount.toLocaleString()} replies`}</span>
-            <span>{post.retweetCount === null ? "Shares unavailable" : `${post.retweetCount.toLocaleString()} reposts`}</span>
+            <span>
+              {post.replyCount === null
+                ? "Replies unavailable"
+                : `${post.replyCount.toLocaleString()} replies`}
+            </span>
+            <span>
+              {post.retweetCount === null
+                ? "Shares unavailable"
+                : `${post.retweetCount.toLocaleString()} reposts`}
+            </span>
             {post.quoteCount !== null && post.quoteCount > 0 && (
               <span>{post.quoteCount.toLocaleString()} quotes</span>
             )}
           </div>
-          <p className="mt-3 text-xs text-ink-muted">Source: {post.measurements?.[0]?.source ?? "Unverified legacy"}. Measured: {post.measurements?.[0] ? new Date(post.measurements[0].capturedAt).toLocaleString("en-US") : "Unknown"}.</p>
-          {post.measurements && post.measurements.length > 0 && <MeasurementHistory points={post.measurements} platform={platform} />}
+          <p className="mt-3 text-xs text-ink-muted">
+            Source: {post.measurements?.[0]?.source ?? "Unverified legacy"}.
+            Measured:{" "}
+            {post.measurements?.[0]
+              ? new Date(post.measurements[0].capturedAt).toLocaleString(
+                  "en-US",
+                )
+              : "Unknown"}
+            .
+          </p>
+          {post.measurements && post.measurements.length > 0 && (
+            <MeasurementHistory
+              points={post.measurements}
+              platform={platform}
+            />
+          )}
           {post.url && (
             <a
               href={post.url}
@@ -75,18 +121,28 @@ export default function PostsList({ posts, platform }: { posts: Post[]; platform
           )}
           <div className="mt-3 flex items-center gap-2">
             <input
-              value={tagDrafts[post.id]}
+              value={tagDrafts[post.id] ?? post.tags ?? ""}
+              aria-label="Post tags"
+              maxLength={500}
+              disabled={saveStatus[post.id] === "Saving…"}
               onChange={(e) =>
                 setTagDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))
               }
-              onBlur={() => saveTags(post.id)}
               placeholder="Add tags, comma separated (e.g. promo, meme)"
-              className="flex-1 rounded-md border border-border bg-paper px-3 py-1.5 text-xs text-ink placeholder:text-ink-muted/60 focus:border-navy"
+              className="min-w-0 flex-1 rounded-md border border-border bg-paper px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-navy"
             />
-            {savingId === post.id && (
-              <span className="text-xs text-ink-muted">Saving...</span>
-            )}
+            <button
+              type="button"
+              onClick={() => saveTags(post.id)}
+              disabled={saveStatus[post.id] === "Saving…"}
+              className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold text-navy disabled:opacity-50"
+            >
+              Save tags
+            </button>
           </div>
+          <p role="status" className="mt-2 text-xs text-ink-muted">
+            {saveStatus[post.id]}
+          </p>
         </div>
       ))}
     </div>
