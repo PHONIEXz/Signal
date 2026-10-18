@@ -22,11 +22,11 @@ function cleanText(value: string) {
   return value.replace(/[—–]/g, "-");
 }
 
-async function requestReport(sampleSize: number) {
+async function requestReport(sampleSize: number, accountId?: string) {
   const response = await fetch("/api/reports/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ postLimit: sampleSize }),
+    body: JSON.stringify({ postLimit: sampleSize, accountId }),
   });
 
   const data = await response.json();
@@ -38,11 +38,12 @@ async function requestReport(sampleSize: number) {
   return data.report as Report;
 }
 
-export default function SignalReport({ sampleSize }: { sampleSize: number }) {
-  return <ReportContent key={sampleSize} sampleSize={sampleSize} />;
+type ReportProps = { sampleSize: number; accountId?: string; scopeLabel: string };
+export default function SignalReport(props: ReportProps) {
+  return <ReportContent key={`${props.accountId || "all"}-${props.sampleSize}`} {...props} />;
 }
 
-function ReportContent({ sampleSize }: { sampleSize: number }) {
+function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
 
     try {
       const [nextReport] = await Promise.all([
-        requestReport(sampleSize),
+        requestReport(sampleSize, accountId),
         waitForSignalAnalysis(),
       ]);
       setReport(nextReport);
@@ -75,7 +76,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
       <div className="rounded-xl border border-border bg-surface p-6">
         <SignalThinkingState />
         <p className="mt-3 text-sm text-ink-muted">
-          Comparing every connected account using Balanced Intelligence.
+          Analyzing {scopeLabel} using your selected post sample.
         </p>
       </div>
     );
@@ -101,7 +102,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
 
   if (!report) return <section className="rounded-xl border border-border bg-surface p-6">
     <h2 className="font-display text-lg font-medium text-ink">Your AI report</h2>
-    <p className="mt-2 text-sm text-ink-muted">Generate a report from your selected post sample when you need it.</p>
+    <p className="mt-2 text-sm text-ink-muted">Generate a report for {scopeLabel} from your selected post sample. Analysis starts only when you choose Generate.</p>
     <button type="button" onClick={generateReport} className="mt-4 rounded-md bg-action px-4 py-2 text-sm text-white">Generate report</button>
   </section>;
 
@@ -163,7 +164,7 @@ function ReportContent({ sampleSize }: { sampleSize: number }) {
               Platform intelligence
             </p>
             <p className="mt-1 text-sm text-ink-muted">
-              A focused read of each connected platform.
+              A focused read of the accounts included in this report.
             </p>
           </div>
 

@@ -1,3 +1,4 @@
+import ReportAccountSelector from "@/components/dashboard/ReportAccountSelector";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +9,7 @@ import { normalizePlan, normalizeSampleSize } from "@/lib/metrics";
 export default async function ReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ posts?: string }>;
+  searchParams: Promise<{ posts?: string; account?: string }>;
 }) {
   const session = await auth();
   const query = await searchParams;
@@ -35,11 +36,15 @@ export default async function ReportsPage({
     }),
     prisma.connectedAccount.findMany({
       where: { userId: session.user.id },
-      select: { id: true, platform: true },
+      select: { id: true, platform: true, displayName: true },
     }),
   ]);
   const plan = normalizePlan(user?.plan);
   const sampleSize = normalizeSampleSize(query.posts, plan);
+
+  const selectedAccount = connections.find(account => account.id === query.account);
+  const invalidSelection = Boolean(query.account && !selectedAccount);
+  const scopeLabel = selectedAccount ? `${selectedAccount.displayName || selectedAccount.platform} (${selectedAccount.platform})` : "all connected accounts";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -51,11 +56,12 @@ export default async function ReportsPage({
           Reports
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
-          Signal AI automatically turns your latest account metrics and
-          stored content into practical growth insights.
+          Choose an account or compare all your platforms. Generate deeper analysis from saved metrics and posts when you need it.
         </p>
       </div>
 
+      <ReportAccountSelector accounts={connections} selected={query.account || ""} />
+      {invalidSelection && <p role="alert" className="rounded-xl border border-border bg-surface p-4 text-sm text-ink">That account is unavailable. Choose a connected account or select all accounts to continue.</p>}
       <PostSampleSelector plan={plan} selected={sampleSize} />
 
       {connections.length === 0 ? (
@@ -77,7 +83,7 @@ export default async function ReportsPage({
           </Link>
         </div>
       ) : (
-        <SignalReport key={sampleSize} sampleSize={sampleSize} />
+        invalidSelection ? null : <SignalReport sampleSize={sampleSize} accountId={selectedAccount?.id} scopeLabel={scopeLabel} />
       )}
     </div>
   );

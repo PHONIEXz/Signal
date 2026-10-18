@@ -1,7 +1,7 @@
 import BackToTop from "@/components/dashboard/BackToTop";
 import { postEngagement } from "@/lib/metric-measurements";
 import SyncDetails from "@/components/dashboard/SyncDetails";
-import AccountAIAnalysis from "@/components/dashboard/AccountAIAnalysis";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -116,11 +116,10 @@ export default async function AccountDetailPage({
       <SyncDetails accountId={connectedAccount.id} />
       <GrowthChart asOf={new Date().toISOString()} sampleData={growthData.filter(point => point.sampleSize === sampleSize)} data={growthData} platform={platform} historyLimited={historyLimited} />
 
-      <AccountAIAnalysis
-        key={`${platform}-${sampleSize}`}
-        platform={platform}
-        sampleSize={sampleSize}
-      />
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-surface p-6">
+        <div><h2 className="text-lg font-bold text-ink">Want a deeper analysis?</h2><p className="mt-1 text-sm text-ink-muted">Explore opportunities and next actions in Reports, when you need them.</p></div>
+        <Link href={`/dashboard/reports?account=${encodeURIComponent(connectedAccount.id)}&posts=${sampleSize}`} className="inline-flex min-h-11 items-center rounded-xl bg-action px-5 text-sm font-semibold text-white">View account report <span aria-hidden="true" className="ml-2">↗</span></Link>
+      </section>
 
       <TopPost platform={platform}
         post={
