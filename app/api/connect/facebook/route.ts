@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { AuthInputError, PRIVATE_HEADERS, readAuthBody, requestOrigin } from "@/lib/auth-http";
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const session = await auth();
 
@@ -12,6 +13,8 @@ export async function DELETE() {
         { status: 401 }
       );
     }
+
+    await readAuthBody(request, 1024, requestOrigin(request));
 
     const deleted = await prisma.connectedAccount.deleteMany({
       where: {
@@ -27,12 +30,18 @@ export async function DELETE() {
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
-      message: "Facebook account unlinked successfully",
-    });
+      message: "Facebook connection and its saved data deleted from Signal",
+    }, { headers: PRIVATE_HEADERS });
+    response.cookies.set("fb_page_selection", "", { maxAge: 0, path: "/", httpOnly: true, sameSite: "lax" });
+    response.cookies.set("fb_oauth_state", "", { maxAge: 0, path: "/", httpOnly: true, sameSite: "lax" });
+    return response;
   } catch (error) {
-    console.error("Facebook unlink error:", error);
+    if (error instanceof AuthInputError) {
+      return NextResponse.json({ error: error.message }, { status: error.status, headers: PRIVATE_HEADERS });
+    }
+    console.error("Facebook unlink failed", { event: "FACEBOOK_UNLINK_FAILED" });
 
     return NextResponse.json(
       { error: "Failed to unlink Facebook account" },

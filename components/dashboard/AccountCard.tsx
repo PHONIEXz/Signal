@@ -28,14 +28,14 @@ export default function AccountCard({ id, platform, displayName, followers }: Ac
 
   async function unlinkAccount() {
     const confirmed = window.confirm(
-      `Are you sure you want to unlink your ${details.label} account?`
+      platform === "facebook" ? "Unlink Facebook and delete this connection’s saved posts, metric history, Page insights and publishing records from Signal? This cannot be undone. Your Facebook Page and posts on Facebook will not be deleted. Your Signal drafts stay saved." : `Are you sure you want to unlink your ${details.label} account?`
     );
 
     if (!confirmed) return;
     setUnlinking(true);
 
     try {
-      const response = await fetch(`/api/connect/${platform}`, { method: "DELETE" });
+      const response = await fetch(`/api/connect/${platform}`, { method: "DELETE", ...(platform === "facebook" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) } : {}) });
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error || "Failed to unlink account");

@@ -219,6 +219,11 @@ export default function SettingsPanel() {
         <p className="section-kicker">03 / Keep access secure</p><h2 id="security-title" className="mt-2 text-xl font-bold text-ink">Password & security</h2>
         {settings.hasPassword ? <><p className="mt-2 text-sm leading-6 text-ink-muted">Update your password or recover access to your account.</p><details className="mt-5 rounded-2xl border border-border p-4"><summary className="cursor-pointer py-2 text-sm font-semibold text-ink">Change password</summary><ChangePasswordForm /></details><Link href="/forgot-password" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-navy hover:underline">Forgot your current password?</Link></> : <p className="mt-3 text-sm leading-6 text-ink-muted">You sign in through a connected provider. Manage your password and verification with that provider.</p>}
       </section>
+      <section className="rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="deletion-title">
+        <h2 id="deletion-title" className="text-lg font-bold text-ink">Your data, your choice</h2>
+        <p className="mt-2 text-sm leading-6 text-ink-muted">Unlink Facebook to delete its saved connection and history. For a full Signal account deletion request, follow our instructions.</p>
+        <Link href="/data-deletion" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-navy underline">View deletion instructions</Link>
+      </section>
       <section id="session" className="scroll-mt-24 flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="session-title">
         <div><h2 id="session-title" className="text-lg font-bold text-ink">Current session</h2><p className="mt-1 text-sm text-ink-muted">Sign out of Signal on this device.</p></div><button type="button" onClick={() => signOut({callbackUrl:"/login"})} className="min-h-11 rounded-xl border border-border px-5 text-sm font-semibold text-ink hover:bg-paper">Sign out</button>
       </section>

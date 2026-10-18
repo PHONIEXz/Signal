@@ -9,6 +9,8 @@ export default function LegalLinks({ inverse = false }: { inverse?: boolean }) {
     <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs">
       <Link href="/privacy" className={`font-medium transition-colors ${linkClass}`}>Privacy Policy</Link>
       <span className={inverse ? "text-white/25" : "text-border"} aria-hidden="true">•</span>
+      <Link href="/data-deletion" className={`font-medium transition-colors ${linkClass}`}>Data deletion</Link>
+      <span className={inverse ? "text-white/25" : "text-border"} aria-hidden="true">•</span>
       <Link href="/terms" className={`font-medium transition-colors ${linkClass}`}>Terms of Service</Link>
     </nav>
   );
