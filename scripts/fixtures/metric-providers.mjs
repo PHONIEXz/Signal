@@ -7,6 +7,8 @@ if (process.env.SIGNAL_METRIC_HTTP_FIXTURES === "1") {
     if (!token.startsWith("Bearer signal-metric-fixture-")) return originalFetch(input, options);
     const url = new URL(input instanceof Request ? input.url : String(input));
     const response = (body, status = 200) => Response.json(body, { status });
+    if (token.endsWith("daily") && url.pathname === "/2/users/me") return response({data:{id:"daily-123",name:"Daily fixture",public_metrics:{followers_count:102,following_count:8,tweet_count:21}}});
+    if (token.endsWith("daily") && url.pathname === "/2/users/daily-123/tweets") return response({data:[{id:"daily-post",text:"Daily fixture post",created_at:new Date().toISOString(),public_metrics:{like_count:5,reply_count:1,retweet_count:0,quote_count:0,impression_count:60}}],meta:{}});
     if (token.endsWith("credits") && url.pathname === "/2/users/me") return response({ title: "CreditsDepleted" }, 402);
     if (token.endsWith("posts") && url.pathname === "/2/users/me") return response({ data: { id: "123", name: "Fixture X", public_metrics: { following_count: 3, tweet_count: 100 } } });
     if (token.endsWith("posts") && url.pathname === "/2/users/123/tweets") return response({ data: [{ id: "999", text: "Fresh API fixture", created_at: new Date().toISOString(), public_metrics: { like_count: 9, reply_count: 2, retweet_count: 0, quote_count: 0, impression_count: 100 } }], meta: {} });

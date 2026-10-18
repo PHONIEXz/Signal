@@ -17,23 +17,37 @@ export async function refreshMetrics(request: Request, platform: string) {
   const json = (body: unknown, status=200) => NextResponse.json(body, { status, headers: PRIVATE_HEADERS });
   const session = await auth();
   if (!session?.user?.id) return json({error:"Not authenticated"},401);
+  try {
+    const body = await readAuthBody(request, 4096, requestOrigin(request));
+    const account = await prisma.connectedAccount.findUnique({ where: { userId_platform: { userId: session.user.id, platform } }, select: { id: true } });
+    if (!account) return json({error:"No account connected"},404);
+    return refreshAccountMetrics(account.id, body.postLimit);
+  } catch (error) {
+    return json({error:error instanceof AuthInputError ? error.message : "Signal could not start collection."}, error instanceof AuthInputError ? error.status : 500);
+  }
+}
+
+/** Internal collector shared by authenticated refreshes and the secret-protected daily job. */
+export async function refreshAccountMetrics(connectedAccountId: string, postLimit: unknown = 10) {
+  const json = (body: unknown, status=200) => NextResponse.json(body, { status, headers: PRIVATE_HEADERS });
   let lockId: string | null = null;
   let accountId = "";
   try {
-    const body = await readAuthBody(request, 4096, requestOrigin(request));
-    const account = await prisma.connectedAccount.findUnique({ where: { userId_platform: { userId: session.user.id, platform } }, include: { user: { select: { plan: true, analyticsCollectionEnabled: true } } } });
+    const account = await prisma.connectedAccount.findUnique({ where: { id: connectedAccountId }, include: { user: { select: { plan: true, analyticsCollectionEnabled: true } } } });
     if (!account) return json({ error:"No account connected" },404);
     if (!account.user.analyticsCollectionEnabled) return json({ error:"Analytics collection is disabled in settings." },403);
+    const platform = account.platform;
+    if (!["x", "facebook", "tiktok"].includes(platform)) return json({error:"Unsupported platform"},400);
     accountId = account.id;
     if (!await metricsSchemaReady()) return json({ error:"Metrics are temporarily unavailable. Please try again later.", code:"METRICS_SCHEMA_PENDING" },503);
-    const requested = normalizeSampleSize(typeof body.postLimit === "number" || typeof body.postLimit === "string" ? body.postLimit : undefined, account.user.plan);
-    lockId = await claimMetricSync(account.id, session.user.id, account.user.plan, requested);
+    const requested = normalizeSampleSize(typeof postLimit === "number" || typeof postLimit === "string" ? postLimit : undefined, account.user.plan);
+    lockId = await claimMetricSync(account.id, account.userId, account.user.plan, requested);
     if (!lockId) {
       const sync = await prisma.metricSync.findUnique({ where: { connectedAccountId: account.id } });
       return json({ success:true, cached:true, sampleSize:sync?.requestedPosts ?? 0, postsAnalyzed:sync?.receivedPosts ?? 0,
         ...refreshFeedback(sync?.status ?? "NEVER", true), warning:sync?.warning, nextAllowedAt:sync?.nextAllowedAt });
     }
-    await reserveUsage("metrics", session.user.id, account.user.plan);
+    await reserveUsage("metrics", account.userId, account.user.plan);
     const token = platform === "x" ? await getValidXAccessToken(account.id) : platform === "tiktok" ? await getValidTikTokAccessToken(account.id) : decrypt(account.accessToken);
     let userId = account.platformUserId;
     const profileUrl = platform === "x" ? "https://api.x.com/2/users/me?user.fields=public_metrics,name,username" : platform === "facebook" ? `https://graph.facebook.com/v26.0/${userId}?fields=name,followers_count` : "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,follower_count,following_count,video_count";

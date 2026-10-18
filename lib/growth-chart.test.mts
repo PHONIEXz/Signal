@@ -44,3 +44,9 @@ test("history windows are bounded and empty inputs stay empty", () => {
     assert.deepEqual(groupGrowth([], period), []);
   }
 });
+
+test("stale history exposes missing days through the current day instead of ending at an old refresh", () => {
+  const result = groupGrowth([point("2026-10-16T10:00:00Z",100)], "daily", "2026-10-18T12:00:00Z");
+  assert.deepEqual(result.map(p=>p.followers),[100,null,null]);
+  assert.equal(new Date(result.at(-1)!.timestamp).toISOString(),"2026-10-18T00:00:00.000Z");
+});

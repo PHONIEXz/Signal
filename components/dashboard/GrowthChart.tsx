@@ -35,7 +35,7 @@ const metrics = {
 
 type MetricKey = keyof typeof metrics;
 
-export default function GrowthChart({ data, platform, historyLimited }: { data: GrowthPoint[]; platform?: string; historyLimited?: boolean }) {
+export default function GrowthChart({ data, sampleData = data, platform, historyLimited, asOf }: { data: GrowthPoint[]; sampleData?: GrowthPoint[]; platform?: string; historyLimited?: boolean; asOf?: string }) {
   const [activeMetric, setActiveMetric] =
     useState<MetricKey>("followers");
 
@@ -53,12 +53,13 @@ export default function GrowthChart({ data, platform, historyLimited }: { data: 
     observer.observe(chartRoot.current);
     return () => observer.disconnect();
   }, []);
-  const chartData = useMemo(() => groupGrowth(data, period), [data, period]);
+  const metricData = activeMetric === "likes" || activeMetric === "views" ? sampleData : data;
+  const chartData = useMemo(() => groupGrowth(metricData, period, asOf), [metricData, period, asOf]);
   const observed = chartData.map(point => point[activeMetric]).filter((value): value is number => value !== null && Number.isFinite(value));
   const domain = growthRange(observed, zeroBaseline);
   const flat = observed.length >= 2 && observed.every(value => value === observed[0]);
-  const current = chartData[chartData.length - 1];
-  const previous = chartData[chartData.length - 2];
+  const current = chartData.findLast(point => point.captured);
+  const previous = current ? chartData[chartData.indexOf(current) - 1] : undefined;
 
   const values = useMemo(() => {
     if (!current || !previous || activeMetric === "likes" || activeMetric === "views") {
@@ -177,11 +178,13 @@ export default function GrowthChart({ data, platform, historyLimited }: { data: 
       </div>
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
+      {current && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {new Date(current.date).toLocaleString("en-US", {timeZone:"UTC"})} UTC</p>}
+      <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Days without measurements remain gaps.</p>
       <div className="mt-6 flex flex-wrap gap-1 rounded-2xl border border-border bg-paper p-1.5" role="group" aria-label="Growth chart interval">
         {growthPeriods.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}
           className={`min-h-11 flex-1 rounded-xl px-3 text-sm font-semibold capitalize transition-all ${period === value ? "bg-action text-white shadow-md" : "text-ink-muted hover:bg-surface hover:text-ink"}`}>{value}</button>)}
       </div>
-      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the latest saved refresh. Each point is the last snapshot in its UTC period, not a sum. Missing periods stay empty. Refreshing collects data; changing this view does not.</p>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Missing periods stay empty. Refreshing collects data; changing this view does not.</p>
       {historyLimited && <p className="mt-2 text-xs text-ink-muted">Showing the latest 5,000 saved refreshes. Older history is outside this view.</p>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-ink-muted">{chartData.filter(point => point.captured).length} recorded periods · Times in UTC</p>
@@ -193,7 +196,7 @@ export default function GrowthChart({ data, platform, historyLimited }: { data: 
       <p className="mt-2 text-sm text-ink-muted" role="status">
         {observed.length === 0 ? "No recorded values for this metric yet. Refresh the account to collect a snapshot."
           : observed.length === 1 ? "One recorded value so far. Another successful refresh is needed to show change."
-          : flat ? "The recorded values are unchanged, so this line is flat. Refresh after your account metrics change to see movement."
+          : flat ? "The recorded values are unchanged, so this line is flat. New measurements will show movement only when the counts change."
           : "Each dot is a saved measurement. Gaps mean a value was unavailable."}
         {observed.length > 0 && !zeroBaseline && " The vertical axis is zoomed to the recorded values; it may not start at zero."}
       </p>

@@ -34,12 +34,13 @@ function shift(time: number, period: GrowthPeriod, amount: number): number {
   return date.getTime();
 }
 /** Counters are snapshots, never summed. Missing buckets remain explicit gaps. */
-export function groupGrowth(data: GrowthPoint[], period: GrowthPeriod) {
+export function groupGrowth(data: GrowthPoint[], period: GrowthPeriod, asOf?: string) {
   const sorted = data.filter(point => Number.isFinite(Date.parse(point.date)))
     .toSorted((a, b) => Date.parse(a.date) - Date.parse(b.date));
   const latest = sorted.at(-1);
   if (!latest) return [];
-  const end = bucketStart(Date.parse(latest.date), period);
+  const anchor = asOf && Number.isFinite(Date.parse(asOf)) ? Math.max(Date.parse(asOf), Date.parse(latest.date)) : Date.parse(latest.date);
+  const end = bucketStart(anchor, period);
   const first = Math.max(bucketStart(Date.parse(sorted[0].date), period), shift(end, period, 1 - counts[period]));
   const buckets = new Map<number, GrowthPoint>();
   for (const point of sorted) buckets.set(bucketStart(Date.parse(point.date), period), point);
