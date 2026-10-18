@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.035em] text-ink sm:text-4xl">
         Privacy Policy
       </h1>
-      <p className="mt-2 text-sm text-ink-muted">Last updated: September 2026</p>
+      <p className="mt-2 text-sm text-ink-muted">Last updated: October 18, 2026</p>
 
       <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-ink">
         <section>
@@ -33,8 +33,8 @@ export default function PrivacyPage() {
             When you create an account, we collect your name and email
             address (or the information provided by Google if you sign in
             that way). When you connect a social media account, we receive
-            and store an access token for that account, along with public
-            metrics the platform makes available to you as the account owner
+            and store an access token for that account, along with Page or account identifiers, display names, posts and
+            metrics the platform makes available through your authorization
             - such as follower counts, post text, and engagement numbers
             (likes, views, replies, shares). We also store content drafts and
             attachments you choose to save in Signal.
@@ -80,6 +80,7 @@ export default function PrivacyPage() {
             does not publish TikTok drafts; you complete those on TikTok. If
             you use optional AI features, your request and relevant account
             data are sent to Google&apos;s Gemini API to generate a response.
+            Hosting and database providers, including Vercel and Turso, process data to run Signal. Access tokens and passwords are not included in AI prompts.
             These providers have their own privacy policies governing how
             they handle that data.
           </p>
@@ -91,9 +92,11 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-2 text-ink-muted">
             You can disconnect any connected account at any time from your
-            dashboard, which stops further data collection from that
-            platform. You can request deletion of your account and associated
-            data by contacting us at the address below.
+            dashboard. Unlinking Facebook deletes that connection, its saved access token, posts, post measurements, metric history, Page insights and related publishing records from Signal&apos;s active database. It stops new collection for that connection. Your saved Signal drafts remain until separately deleted, and posts already published on Facebook are not deleted.
+            Disabling analytics in Settings pauses new collection without deleting saved history. Data remains available while your connection is active until you unlink it or request deletion.
+            For full Signal account deletion, contact us from your registered email address. These requests are handled manually after ownership verification.
+            See the <Link href="/data-deletion" className="font-semibold text-navy underline">data deletion instructions</Link> for the steps and scope.
+            Provider backups and operational records may have separate retention; we do not promise immediate removal from every backup or from third-party systems.
           </p>
         </section>
 
