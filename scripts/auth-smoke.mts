@@ -272,7 +272,10 @@ try {
   const dailyAccount = await prisma.connectedAccount.create({data:{userId:dailyUser.id,platform:"x",platformUserId:"daily-123",accessToken:encrypt("signal-metric-fixture-daily")}});
   await prisma.metricSnapshot.create({data:{connectedAccountId:dailyAccount.id,followersCount:100,postCount:20,totalLikes:3,totalViews:40,sampleSize:10,fetchedAt:new Date(Date.now()-86400000)}});
   const dailyRequest = () => fetch(base + "/api/cron/daily-metrics", {headers:{Authorization:`Bearer ${process.env.CRON_SECRET}`}});
-  const daily = await dailyRequest(); assert.equal(daily.status, 200); assert.equal((await daily.json()).collected, 1);
+  const daily = await dailyRequest(); assert.equal(daily.status, 200);
+  const dailyBody = await daily.json(); assert.equal(dailyBody.collected, 1);
+  const runLedger = await prisma.$queryRawUnsafe<{id:string;status:string;trigger:string;collected:number;finishedAt:string}[]>('SELECT * FROM "SignalDailyRun" WHERE "id" = ?',dailyBody.runId);
+  assert.equal(runLedger[0].status,"COMPLETE"); assert.equal(runLedger[0].trigger,"authorized"); assert.equal(runLedger[0].collected,1); assert.ok(runLedger[0].finishedAt);
   const history = await prisma.metricSnapshot.findMany({where:{connectedAccountId:dailyAccount.id},orderBy:{fetchedAt:"asc"}});
   assert.deepEqual(history.map(row=>row.followersCount),[100,102]);
   assert.deepEqual(history.map(row=>row.postCount),[20,21]);
@@ -280,6 +283,10 @@ try {
   assert.deepEqual(history.map(row=>row.totalViews),[40,60]);
   assert.equal((await dailyRequest()).status,200);
   assert.equal(await prisma.metricSnapshot.count({where:{connectedAccountId:dailyAccount.id}}),2);
+  const ledgerCount = await prisma.$queryRawUnsafe<{total:number}[]>('SELECT COUNT(*) AS total FROM "SignalDailyRun"');
+  assert.equal(Number(ledgerCount[0].total),2);
+  const healthSettings = await fetch(base + "/dashboard/settings",{headers:{Cookie:studioSession}});
+  assert.equal(healthSettings.status,200); assert.match(await healthSettings.text(),/Daily history monitoring/);
   await prisma.user.update({where:{id:owner.id},data:{analyticsCollectionEnabled:true}});
   // Facebook deletion uses real database cascades without calling Meta.
   const deletionPage = await fetch(base + "/data-deletion");

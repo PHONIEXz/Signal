@@ -1,3 +1,4 @@
+import { ScheduledCollectionHealth } from "@/components/dashboard/CollectionHealth";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
 
 export default function SettingsPage() {
@@ -18,6 +19,7 @@ export default function SettingsPage() {
       </div>
 
       <SettingsPanel />
+      <ScheduledCollectionHealth />
 
     </div>
   );

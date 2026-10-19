@@ -14,6 +14,7 @@ export function utcDayStart(now: Date) {
 export async function runDailyMetrics(accounts: { id: string }[], dependencies: {
   claim: (id: string) => Promise<boolean>;
   collect: (id: string) => Promise<{ ok: boolean; cached: boolean }>;
+  recordOutcome?: (outcome: "collected" | "skipped" | "failed") => Promise<void>;
   time?: () => number;
   budgetMs?: number;
 }) {
@@ -22,19 +23,27 @@ export async function runDailyMetrics(accounts: { id: string }[], dependencies: 
   const result = { collected: 0, skipped: 0, failed: 0, deferred: 0 };
   // Three bounded workers; stop starting new accounts well before the function deadline.
   let next = 0;
+  let stopped = false;
   async function worker() {
-    while (next < accounts.length && time() < deadline) {
+    while (!stopped && next < accounts.length && time() < deadline) {
       const account = accounts[next++];
+      let outcome: "collected" | "skipped" | "failed";
       try {
-        if (!await dependencies.claim(account.id)) { result.skipped++; continue; }
-        const response = await dependencies.collect(account.id);
-        if (response.cached) result.skipped++;
-        else if (response.ok) result.collected++;
-        else result.failed++;
-      } catch { result.failed++; }
+        if (!await dependencies.claim(account.id)) outcome = "skipped";
+        else {
+          const response = await dependencies.collect(account.id);
+          outcome = response.cached ? "skipped" : response.ok ? "collected" : "failed";
+        }
+      } catch { outcome = "failed"; }
+      result[outcome]++;
+      try { await dependencies.recordOutcome?.(outcome); }
+      catch (error) { stopped = true; throw error; }
     }
   }
-  await Promise.all([worker(), worker(), worker()]);
+  // Let in-flight work settle before finalizing a failed ledger; never start more work.
+  const workers = await Promise.allSettled([worker(), worker(), worker()]);
+  const failure = workers.find(worker => worker.status === "rejected");
+  if (failure?.status === "rejected") throw failure.reason;
   result.deferred = accounts.length - next;
   return result;
 }

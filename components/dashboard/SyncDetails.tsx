@@ -1,3 +1,4 @@
+import { AccountCollectionCoverage } from "./CollectionHealth";
 import { getMetricRefreshGate } from "@/lib/metric-refresh-gate";
 import { LocalTime } from "@/components/dashboard/TimePreferences";
 import { prisma } from "@/lib/prisma";
@@ -26,5 +27,6 @@ export default async function SyncDetails({ accountId }: { accountId: string }) 
     {sync?.lastAttemptAt && <p className="mt-1 text-ink-muted">Last attempt: {<LocalTime value={sync.lastAttemptAt} />}.</p>}
     {sync?.warning && <p role="status" className="mt-4 rounded-lg bg-paper p-3 leading-6 text-ink">{sync.warning}</p>}
     {insight && <p className="mt-4 border-t border-border pt-3 text-ink-muted">Daily Facebook Page media views: {insight.value.toLocaleString()}, for the period ending {<LocalTime value={insight.periodEnd} />}. {insight.periodEnd > new Date() && "This period is still in progress; its value is provisional."} Includes Page content and ads; separate from views on selected posts.</p>}
+    <AccountCollectionCoverage accountId={accountId} />
   </section>;
 }
