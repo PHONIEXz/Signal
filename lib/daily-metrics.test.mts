@@ -28,3 +28,22 @@ test("deadline defers work without claiming or charging untouched accounts", asy
   const result = await runDailyMetrics([{id:"a"}], {claim:async()=>{throw new Error("must not claim");},collect:async()=>({ok:true,cached:false}),time:()=>100,budgetMs:0});
   assert.equal(result.deferred, 1); assert.equal(result.failed, 0);
 });
+test("durable progress records one outcome for collected, cached, duplicate and failed accounts", async () => {
+  const outcomes: string[] = [];
+  const result = await runDailyMetrics([{id:"ok"},{id:"cached"},{id:"duplicate"},{id:"failed"}], {
+    claim:async id=>id!=="duplicate",
+    collect:async id=>({ok:id!=="failed",cached:id==="cached"}),
+    recordOutcome:async outcome=>{outcomes.push(outcome);},
+  });
+  assert.deepEqual(result,{collected:1,skipped:2,failed:1,deferred:0});
+  assert.deepEqual(outcomes.sort(),["collected","failed","skipped","skipped"]);
+});
+test("ledger failures stop new work and wait for in-flight accounts before returning", async () => {
+  let collected = 0, completed = 0;
+  await assert.rejects(runDailyMetrics(Array.from({length:10},(_,id)=>({id:String(id)})), {
+    claim:async()=>true,
+    collect:async()=>{collected++; await Promise.resolve(); completed++; return {ok:true,cached:false};},
+    recordOutcome:async()=>{throw new Error("ledger unavailable");},
+  }),/ledger unavailable/);
+  assert.equal(collected,3); assert.equal(completed,3);
+});

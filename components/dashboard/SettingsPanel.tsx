@@ -197,7 +197,7 @@ export default function SettingsPanel() {
       </section>
 
       <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
-        {[["preferences","Preferences"],["data","Data & AI"],["security","Security"],["session","Session"]].map(([id,label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:border-action hover:text-action">{label}</a>)}
+        {[["preferences","Preferences"],["data","Data & AI"],["collection-health","Collection health"],["security","Security"],["session","Session"]].map(([id,label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:border-action hover:text-action">{label}</a>)}
       </nav>
       <div role="status" aria-live="polite" className="min-h-6 text-sm text-ink-muted">{saving ? "Saving your preference…" : savedAt ? <>Saved <LocalTime value={savedAt} /></> : "Preferences save automatically."}</div>
       {error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm text-red-700 dark:text-red-300">{error}</p>}
