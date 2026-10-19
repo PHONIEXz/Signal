@@ -1,4 +1,5 @@
 "use client";
+import { LocalTime } from "./TimePreferences";
 
 import { useState } from "react";
 import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
@@ -120,7 +121,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
                   Signal AI
                 </p>
                 <p className="mt-0.5 text-xs text-ink-muted">
-                  {generatedAt ? <time dateTime={generatedAt}>Received {new Date(generatedAt).toLocaleString("en-GB", {timeZone:"UTC",dateStyle:"medium",timeStyle:"short"})} UTC</time> : "Generated from your available account data"}
+                  {generatedAt ? <>Received <LocalTime value={generatedAt} /></> : "Generated from your available account data"}
                 </p>
               </div>
             </div>

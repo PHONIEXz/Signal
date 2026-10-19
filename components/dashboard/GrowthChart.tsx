@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { useTimeZone } from "./TimePreferences";
 import { metricTime } from "@/lib/metric-time";
 import { growthTicks, recordedComparison, growthRange, groupGrowth, growthPeriods, periodDescriptions, type GrowthPoint, type GrowthPeriod } from "@/lib/growth-chart";
 import { useReducedMotion } from "@/components/motion/useMotion";
@@ -40,6 +41,8 @@ export default function GrowthChart({ data, sampleData = data, platform, history
   const [activeMetric, setActiveMetric] =
     useState<MetricKey>("followers");
 
+  const timeZone = useTimeZone();
+  const formatTime = (value: string | number) => metricTime(value, timeZone);
   const [zeroBaseline, setZeroBaseline] = useState(false);
   const [period, setPeriod] = useState<GrowthPeriod>("daily");
   const reducedMotion = useReducedMotion();
@@ -151,21 +154,21 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               </>
             )}
           </p>
-          {!sampleMetric && values.change !== null && current && previous && <p className="mt-2 text-xs leading-5 text-ink-muted">Comparing {metricTime(previous.date)} to {metricTime(current.date)}. This is the change between those observations, not a daily rate.</p>}
+          {!sampleMetric && values.change !== null && current && previous && <p className="mt-2 text-xs leading-5 text-ink-muted">Comparing {formatTime(previous.date)} to {formatTime(current.date)}. This is the change between those observations, not a daily rate.</p>}
         </div>
       </div>
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
-      {current && currentValue !== null && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {metricTime(current.date)}</p>}
+      {current && currentValue !== null && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {formatTime(current.date)}</p>}
       <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Only recorded measurements receive dots.</p>
       <div className="mt-6 flex flex-wrap gap-1 rounded-2xl border border-border bg-paper p-1.5" role="group" aria-label="Growth chart interval">
         {growthPeriods.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}
           className={`min-h-11 flex-1 rounded-xl px-3 text-sm font-semibold capitalize transition-all ${period === value ? "bg-action text-white shadow-md" : "text-ink-muted hover:bg-surface hover:text-ink"}`}>{value}</button>)}
       </div>
-      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Unmeasured periods have no dots. Refreshing collects data; changing this view does not.</p>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Labels show those period boundaries in your selected time zone. Unmeasured periods have no dots. Refreshing collects data; changing this view does not.</p>
       {historyLimited && <p className="mt-2 text-xs text-ink-muted">Showing the latest 5,000 saved refreshes. Older history is outside this view.</p>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-ink-muted">{observed.length} recorded {observed.length === 1 ? "period" : "periods"} for this metric · Times in UTC</p>
+        <p className="text-xs text-ink-muted">{observed.length} recorded {observed.length === 1 ? "period" : "periods"} for this metric · Times in {timeZone === "Africa/Lagos" ? "WAT" : timeZone}</p>
         <button type="button" aria-pressed={zeroBaseline} onClick={() => setZeroBaseline(value => !value)}
           className="min-h-11 rounded-full border border-border px-4 text-sm font-medium text-ink">
           {zeroBaseline ? "Scale: from zero" : "Scale: focused range"}
@@ -188,7 +191,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               type="number"
               ticks={growthTicks(chartData)}
               domain={["dataMin", "dataMax"]}
-              tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", ...(period === "hourly" ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), ...(period === "yearly" ? { year: "numeric" as const } : {}), timeZone: "UTC" })}
+              tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", ...(period === "hourly" ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), ...(period === "yearly" ? { year: "numeric" as const } : {}), timeZone })}
               minTickGap={48}
               tick={{ fontSize: 11 }}
               axisLine={false}
@@ -205,7 +208,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
             />
 
             <Tooltip
-              labelFormatter={value => "Period starting " + metricTime(Number(value))}
+              labelFormatter={value => "Period starting " + formatTime(Number(value))}
               contentStyle={{
                 fontSize: 12,
                 borderRadius: 8,
@@ -238,10 +241,10 @@ export default function GrowthChart({ data, sampleData = data, platform, history
         <summary className="cursor-pointer py-2 text-sm font-medium text-ink">View period measurements</summary>
         <div className="mt-3 max-h-64 overflow-auto">
           <table className="w-full text-left text-sm">
-            <caption className="sr-only">Saved {metrics[activeMetric].label.toLowerCase()} measurements, UTC</caption>
-            <thead><tr className="text-ink-muted"><th scope="col" className="py-2">Period (UTC)</th><th scope="col" className="py-2 text-right">{metrics[activeMetric].label}</th></tr></thead>
+            <caption className="sr-only">Saved {metrics[activeMetric].label.toLowerCase()} measurements</caption>
+            <thead><tr className="text-ink-muted"><th scope="col" className="py-2">Period start</th><th scope="col" className="py-2 text-right">{metrics[activeMetric].label}</th></tr></thead>
             <tbody>{chartData.map((point, index) => <tr key={`${point.timestamp}-${index}`} className="border-t border-border">
-              <td className="py-2 text-ink-muted">{metricTime(point.timestamp)}</td>
+              <td className="py-2 text-ink-muted">{formatTime(point.timestamp)}</td>
               <td className="py-2 text-right font-medium text-ink">{point[activeMetric]?.toLocaleString() ?? "Unavailable"}</td>
             </tr>)}</tbody>
           </table>

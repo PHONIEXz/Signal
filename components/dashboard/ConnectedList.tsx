@@ -26,9 +26,7 @@ export default function ConnectedList({
             </span>
           </div>
           <span className="text-xs text-ink-muted">
-            Connected {new Date(c.createdAt).toLocaleDateString("en-US", {
-              dateStyle: "medium",
-            })}
+            Connected <LocalTime value={c.createdAt} />
           </span>
         </div>
       ))}
@@ -41,4 +39,5 @@ export default function ConnectedList({
     </div>
   );
 }
+import { LocalTime } from "./TimePreferences";
 

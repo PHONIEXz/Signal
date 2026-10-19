@@ -1,4 +1,5 @@
 "use client";
+import { LocalTime } from "./TimePreferences";
 import { isDraftImage } from "@/lib/draft-image";
 import StudioMediaPreview from "./StudioMediaPreview";
 import { useState } from "react";
@@ -42,7 +43,7 @@ export default function DraftDeliveryActions({ draft, refresh, notify }: { draft
           </div>
         </div>
         {receipt?.errorMessage && <p className="mt-2 text-xs leading-5 text-ink-muted">{receipt.errorMessage}</p>}
-        {receipt?.publishedAt && <p className="mt-2 text-xs text-ink-muted">Sent {new Date(receipt.publishedAt).toLocaleString()}</p>}
+        {receipt?.publishedAt && <p className="mt-2 text-xs text-ink-muted">Sent <LocalTime value={receipt.publishedAt} /></p>}
       </div>;
     })}
   </div>;

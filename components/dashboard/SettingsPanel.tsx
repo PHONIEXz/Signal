@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import TimePreferences, { LocalTime } from "./TimePreferences";
 import { signOut } from "next-auth/react";
 import ThemeToggle from "@/components/ThemeToggle";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
@@ -198,12 +199,13 @@ export default function SettingsPanel() {
       <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
         {[["preferences","Preferences"],["data","Data & AI"],["security","Security"],["session","Session"]].map(([id,label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:border-action hover:text-action">{label}</a>)}
       </nav>
-      <div role="status" aria-live="polite" className="min-h-6 text-sm text-ink-muted">{saving ? "Saving your preference…" : savedAt ? <>Saved <time dateTime={savedAt}>{new Date(savedAt).toLocaleString("en-GB", {timeZone:"UTC",dateStyle:"medium",timeStyle:"short"})} UTC</time></> : "Preferences save automatically."}</div>
+      <div role="status" aria-live="polite" className="min-h-6 text-sm text-ink-muted">{saving ? "Saving your preference…" : savedAt ? <>Saved <LocalTime value={savedAt} /></> : "Preferences save automatically."}</div>
       {error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
       <section id="preferences" className="scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface" aria-labelledby="preferences-title">
         <div className="border-b border-border p-5 sm:p-6"><p className="section-kicker">01 / Make it yours</p><h2 id="preferences-title" className="mt-2 text-xl font-bold text-ink">Appearance & connections</h2></div>
         <div className="flex items-center justify-between gap-5 p-5 sm:p-6"><div><h3 className="font-semibold text-ink">Colour theme</h3><p className="mt-1 text-sm text-ink-muted">Switch between light and dark on this browser.</p></div><ThemeToggle /></div>
+        <TimePreferences />
         <Link href="/dashboard/accounts" className="flex min-h-16 items-center justify-between gap-4 border-t border-border px-5 py-4 text-sm font-semibold text-ink hover:bg-paper sm:px-6">Manage connected accounts <span aria-hidden="true">↗</span></Link>
       </section>
 

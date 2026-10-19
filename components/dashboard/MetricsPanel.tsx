@@ -2,7 +2,7 @@
 
 import { useRefreshGate } from "./useRefreshGate";
 import type { RefreshGate } from "@/lib/refresh-gate";
-import { metricTime } from "@/lib/metric-time";
+import { LocalTime } from "@/components/dashboard/TimePreferences";
 import { metricRefreshError } from "@/lib/metric-diagnostics";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -96,11 +96,7 @@ export default function MetricsPanel({
             {snapshot && (
               <p className="mt-1 font-mono text-xs text-ink-muted">
                 Account counters measured{" "}
-                {new Date(snapshot.fetchedAt).toLocaleString("en-US", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                  timeZone: "UTC",
-                })} UTC
+                <LocalTime value={snapshot.fetchedAt} />
               </p>
             )}
           </div>
@@ -115,7 +111,7 @@ export default function MetricsPanel({
           </Button>
         </div>
 
-        {refreshGate?.reason && <p role="status" className="mt-4 text-sm text-ink-muted">{refreshGate.reason} {refreshGate.availableAt && <>Next refresh: <time dateTime={refreshGate.availableAt}>{metricTime(refreshGate.availableAt)}</time>.</>}</p>}
+        {refreshGate?.reason && <p role="status" className="mt-4 text-sm text-ink-muted">{refreshGate.reason} {refreshGate.availableAt && <>Next refresh: <LocalTime value={refreshGate.availableAt} />.</>}</p>}
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         {notice && <p className="mt-4 text-sm text-amber-600">{notice}</p>}
 
@@ -173,7 +169,7 @@ export default function MetricsPanel({
                 </div>
               </>
             )}
-            {postMeasuredAt && <p className="mt-3 text-xs text-ink-muted">Newest selected post measurement: {new Date(postMeasuredAt).toLocaleString("en-US", {dateStyle: "medium", timeStyle: "short", timeZone: "UTC"})} UTC. Posts may contain measurements from different refreshes or CSV imports.</p>}
+            {postMeasuredAt && <p className="mt-3 text-xs text-ink-muted">Newest selected post measurement: <LocalTime value={postMeasuredAt} />. Posts may contain measurements from different refreshes or CSV imports.</p>}
             <p className="mt-3 text-xs text-ink-muted">
               Based on {analyzed} available post
               {analyzed === 1 ? "" : "s"}
