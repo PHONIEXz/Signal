@@ -1,4 +1,4 @@
-import { metricTime } from "@/lib/metric-time";
+import { LocalTime } from "@/components/dashboard/TimePreferences";
 import { postEngagement } from "@/lib/metric-measurements";
 import Link from "next/link";
 import { auth } from "@/auth";
@@ -443,7 +443,7 @@ export default async function InsightsPage({
 
                     <p className="mt-0.5 text-xs text-ink-muted">
                       {snapshot
-                        ? `Updated ${snapshot.fetchedAt.toLocaleDateString()}`
+                        ? <>Updated <LocalTime value={snapshot.fetchedAt} /></>
                         : "No metric snapshot yet"}
                     </p>
                   </div>
@@ -494,7 +494,7 @@ function PageHeader({
 
       {latestSnapshotDate && (
         <p className="mt-2 text-xs text-ink-muted">
-          Latest data: {metricTime(latestSnapshotDate)}
+          Latest data: {<LocalTime value={latestSnapshotDate} />}
         </p>
       )}
     </div>

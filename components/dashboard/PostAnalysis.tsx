@@ -1,5 +1,6 @@
 "use client";
 
+import { LocalTime } from "./TimePreferences";
 import { useState } from "react";
 import Link from "next/link";
 import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
@@ -137,14 +138,7 @@ export default function PostAnalysis({
 
           {post.postedAt && (
             <span className="shrink-0 text-xs text-ink-muted">
-              {new Date(post.postedAt).toLocaleDateString(
-                "en-US",
-                {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                }
-              )}
+              <LocalTime value={post.postedAt} />
             </span>
           )}
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { LocalTime } from "./TimePreferences";
 import { useEffect, useMemo, useState } from "react";
 import { readRecovery, type RecoveryDraft } from "@/lib/draft-recovery";
 import Link from "next/link";
@@ -387,7 +388,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                 onChange={(event) => setScheduledFor(event.target.value)}
                 className="mt-2 w-full rounded-lg border border-border bg-paper px-4 py-3 text-sm text-ink"
               />
-              <p className="mt-1 text-xs text-ink-muted">This organizes your calendar. It does not publish automatically yet.</p>
+              <p className="mt-1 text-xs text-ink-muted">Enter times in your device’s time zone. This organizes your calendar; it does not publish automatically yet.</p>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -468,7 +469,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                   </div>
                   <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-ink">{draft.text}</p>
                   <p className="mt-3 text-xs text-ink-muted">
-                    {draft.scheduledFor ? `Planned for ${new Date(draft.scheduledFor).toLocaleString()}` : `Updated ${new Date(draft.updatedAt).toLocaleString()}`}
+                    {draft.scheduledFor ? <>Planned for <LocalTime value={draft.scheduledFor} /></> : <>Updated <LocalTime value={draft.updatedAt} /></>}
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -483,7 +484,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       ) : (
         <section className="rounded-xl border border-border bg-surface p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-lg font-medium text-ink">{calendar.title}</h2><div className="flex gap-2"><button aria-label="Previous month" onClick={() => setCalendarOffset((n) => n - 1)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Previous</button><button onClick={() => setCalendarOffset(0)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Today</button><button aria-label="Next month" onClick={() => setCalendarOffset((n) => n + 1)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Next</button></div></div>
-          <p className="mt-1 text-sm text-ink-muted">Browse planned content by month. Dates organize your calendar; sending still needs your confirmation.</p>
+          <p className="mt-1 text-sm text-ink-muted">Browse planned content by month in your device’s time zone. Dates organize your calendar; sending still needs your confirmation.</p>
           <div className="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-border text-center text-xs font-medium text-ink-muted">
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((day) => <div key={day} className="bg-paper p-2">{day}</div>)}
             {calendar.days.map((day, index) => (
