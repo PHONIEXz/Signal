@@ -88,7 +88,7 @@ export default function MetricsPanel({
     <div className="space-y-4">
       <PostSampleSelector plan={plan} selected={sampleSize} />
       <div data-reveal className="workspace-panel rounded-lg border border-border bg-surface p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="font-display text-lg font-medium text-ink">
               {platformLabel} metrics
@@ -103,7 +103,8 @@ export default function MetricsPanel({
           <Button
             type="button"
             variant="secondary"
-            className="w-auto px-4"
+            fullWidth={false}
+            className="shrink-0 px-4"
             onClick={handleRefresh}
             disabled={loading || refreshBlocked}
           >

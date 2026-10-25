@@ -2,16 +2,18 @@ import { ButtonHTMLAttributes } from "react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary";
+  fullWidth?: boolean;
 };
 
 export default function Button({
   variant = "primary",
+  fullWidth = true,
   className = "",
   children,
   ...props
 }: ButtonProps) {
   const base =
-    "min-h-11 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px";
+    "min-h-11 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px";
 
   const variants = {
     primary:
@@ -21,7 +23,7 @@ export default function Button({
   };
 
   return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
+    <button className={`${base} ${fullWidth ? "w-full" : "w-auto"} ${variants[variant]} ${className}`} {...props}>
       {children}
     </button>
   );
