@@ -22,7 +22,7 @@ export default async function ReportsPage({
             Reports
           </h1>
           <p className="mt-2 text-sm text-ink-muted">
-            Sign in to view your Signal AI report.
+            Sign in to view your SocialPanora AI report.
           </p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default async function ReportsPage({
             Connect an account first
           </p>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-muted">
-            Signal AI needs account data before it can generate your report.
+            SocialPanora AI needs account data before it can generate your report.
           </p>
           <Link
             href="/dashboard/accounts"

@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     if(!snapshots[0]) {
       return NextResponse.json({
         insight:
-          `Refresh metrics for the last ${sampleSize} posts before Signal analyzes this sample.`,
+          `Refresh metrics for the last ${sampleSize} posts before SocialPanora analyzes this sample.`,
         meta: {
           mode: "balanced",
           dataConfidence: { score: 0,label: "limited" },
@@ -104,7 +104,7 @@ ${JSON.stringify(evidence,null,2)}
 
     const insight=cleanAiText(
       response.text?.trim()||
-      "Signal couldn't generate an insight right now."
+      "SocialPanora couldn't generate an insight right now."
     );
 
     return NextResponse.json({

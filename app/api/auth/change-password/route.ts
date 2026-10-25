@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (currentPassword === password) return reply({ error: "Choose a different password." }, 400);
     if (!(await takeAuthQuota("change-password", session.user.id, 5, 15 * 60000))) return reply({ error: "Too many attempts. Please wait 15 minutes." }, 429);
     const outcome = await changePassword(session.user.id, currentPassword, password as string);
-    if (outcome === "PROVIDER_ACCOUNT") return reply({ error: "This account has no separate Signal password. Manage it with your sign-in provider." }, 409);
+    if (outcome === "PROVIDER_ACCOUNT") return reply({ error: "This account has no separate SocialPanora password. Manage it with your sign-in provider." }, 409);
     if (outcome === "INCORRECT_PASSWORD") return reply({ error: "Your current password is incorrect." }, 400);
     if (outcome === "STALE_PASSWORD") return reply({ error: "Your password changed during this request. Please sign in again." }, 409);
     return reply({ message: "Password changed. Sign in again with your new password." });

@@ -126,7 +126,7 @@ test("single-post evidence marks causation and missing account data limits", () 
 });
 
 test("AI text cleanup removes long dash characters", () => {
-  assert.equal(cleanAiText("Signal — clear – useful"), "Signal - clear - useful");
+  assert.equal(cleanAiText("SocialPanora — clear – useful"), "SocialPanora - clear - useful");
 });
 
 test("partial evidence retains measured views and zeros while identifying CSV and missing counts", () => {

@@ -191,7 +191,7 @@ export default function SettingsPanel() {
         <svg className="pointer-events-none absolute -right-10 -top-12 h-64 w-64 text-[#d9ed92]/15" aria-hidden="true" viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="16"><circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="40"/></svg>
         <div className="relative flex flex-wrap items-center gap-4">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d9ed92] text-2xl font-bold text-[#173e36]" aria-hidden="true">{(settings.name || settings.email).slice(0,1).toUpperCase()}</span>
-          <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-widest text-[#d9ed92]">Your workspace</p><h2 className="mt-1 break-words text-2xl font-bold">{settings.name || "Your Signal account"}</h2><p className="mt-1 break-all text-sm text-white/80">{settings.email}</p></div>
+          <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-widest text-[#d9ed92]">Your workspace</p><h2 className="mt-1 break-words text-2xl font-bold">{settings.name || "Your SocialPanora account"}</h2><p className="mt-1 break-all text-sm text-white/80">{settings.email}</p></div>
         </div>
         <div className="relative mt-6 flex flex-wrap gap-2 text-xs"><span className="rounded-full border border-white/25 px-3 py-2">{settings.hasPassword ? "Password sign-in" : "Connected-provider sign-in"}</span><span className="rounded-full border border-white/25 px-3 py-2">Analytics {settings.analyticsCollectionEnabled ? "on" : "paused"}</span></div>
       </section>
@@ -210,7 +210,7 @@ export default function SettingsPanel() {
       </section>
 
       <section id="data" className="scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface" aria-labelledby="data-title">
-        <div className="border-b border-border p-5 sm:p-6"><p className="section-kicker">02 / You decide</p><h2 id="data-title" className="mt-2 text-xl font-bold text-ink">Data & intelligence</h2><p className="mt-2 text-sm leading-6 text-ink-muted">Choose what Signal collects and how AI can use it.</p></div>
+        <div className="border-b border-border p-5 sm:p-6"><p className="section-kicker">02 / You decide</p><h2 id="data-title" className="mt-2 text-xl font-bold text-ink">Data & intelligence</h2><p className="mt-2 text-sm leading-6 text-ink-muted">Choose what SocialPanora collects and how AI can use it.</p></div>
         <SettingRow title="Analytics collection" description="Collect daily snapshots and allow manual refreshes. Turning this off pauses new collection; your saved history stays available." enabled={settings.analyticsCollectionEnabled} disabled={saving !== null} saving={saving === "analyticsCollectionEnabled"} onChange={() => updateSetting("analyticsCollectionEnabled")} />
         <SettingRow title="AI insights" description="Allow AI insights about your available social performance." enabled={settings.aiInsightsEnabled} disabled={saving !== null} saving={saving === "aiInsightsEnabled"} onChange={() => updateSetting("aiInsightsEnabled")} />
         <SettingRow title="Personalized recommendations" description="Allow account and post analysis, recommendations and reports. Turning this off pauses these AI features." enabled={settings.personalizedRecommendationsEnabled} disabled={saving !== null} saving={saving === "personalizedRecommendationsEnabled"} onChange={() => updateSetting("personalizedRecommendationsEnabled")} />
@@ -223,11 +223,11 @@ export default function SettingsPanel() {
       </section>
       <section className="rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="deletion-title">
         <h2 id="deletion-title" className="text-lg font-bold text-ink">Your data, your choice</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-muted">Unlink Facebook to delete its saved connection and history. For a full Signal account deletion request, follow our instructions.</p>
+        <p className="mt-2 text-sm leading-6 text-ink-muted">Unlink Facebook to delete its saved connection and history. For a full SocialPanora account deletion request, follow our instructions.</p>
         <Link href="/data-deletion" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-navy underline">View deletion instructions</Link>
       </section>
       <section id="session" className="scroll-mt-24 flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="session-title">
-        <div><h2 id="session-title" className="text-lg font-bold text-ink">Current session</h2><p className="mt-1 text-sm text-ink-muted">Sign out of Signal on this device.</p></div><button type="button" onClick={() => signOut({callbackUrl:"/login"})} className="min-h-11 rounded-xl border border-border px-5 text-sm font-semibold text-ink hover:bg-paper">Sign out</button>
+        <div><h2 id="session-title" className="text-lg font-bold text-ink">Current session</h2><p className="mt-1 text-sm text-ink-muted">Sign out of SocialPanora on this device.</p></div><button type="button" onClick={() => signOut({callbackUrl:"/login"})} className="min-h-11 rounded-xl border border-border px-5 text-sm font-semibold text-ink hover:bg-paper">Sign out</button>
       </section>
     </div>
   );

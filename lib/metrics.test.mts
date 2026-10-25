@@ -82,7 +82,7 @@ test("percentage change needs a real nonzero baseline", () => {
   assert.equal(calculateChangePercent(null, 10), null);
 });
 
-test("Signal Score waits until at least half of its inputs are available", () => {
+test("SocialPanora Score waits until at least half of its inputs are available", () => {
   const sparse = calculateSignalScore({
     engagementRate: null,
     followerGrowthRate: null,

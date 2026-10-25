@@ -23,7 +23,7 @@ export async function getValidXAccessToken(
   }
 
   if (!process.env.X_CLIENT_ID?.trim() || !process.env.X_CLIENT_SECRET?.trim()) {
-    throw new MetricTokenError({ code: "METRIC_CONFIGURATION", responsibility: "signal", message: "Signal's X renewal configuration is missing. The server configuration needs review; saved metrics are preserved.", stopAccountRequests: true });
+    throw new MetricTokenError({ code: "METRIC_CONFIGURATION", responsibility: "signal", message: "SocialPanora's X renewal configuration is missing. The server configuration needs review; saved metrics are preserved.", stopAccountRequests: true });
   }
 
   const basicAuth = Buffer.from(

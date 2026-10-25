@@ -23,7 +23,7 @@ export async function refreshMetrics(request: Request, platform: string) {
     if (!account) return json({error:"No account connected"},404);
     return refreshAccountMetrics(account.id, body.postLimit);
   } catch (error) {
-    return json({error:error instanceof AuthInputError ? error.message : "Signal could not start collection."}, error instanceof AuthInputError ? error.status : 500);
+    return json({error:error instanceof AuthInputError ? error.message : "SocialPanora could not start collection."}, error instanceof AuthInputError ? error.status : 500);
   }
 }
 
@@ -59,7 +59,7 @@ export async function refreshAccountMetrics(connectedAccountId: string, postLimi
       response = await fetch(profileUrl,{headers:{Authorization:`Bearer ${token}`},cache:"no-store",signal:AbortSignal.timeout(10000)});
       data = await response.json();
     } catch { response=null; profileWarning="Account counters could not be retrieved; cached account history was preserved."; }
-    // Persistence failures must reach the Signal error handler, rather than
+    // Persistence failures must reach the SocialPanora error handler, rather than
     // being mistaken for a platform/network failure and triggering more reads.
     if(response) {
       const failure=platformMetricFailure(platform,response.status,data);
@@ -82,7 +82,7 @@ export async function refreshAccountMetrics(connectedAccountId: string, postLimi
           metrics = { followers: measured(platform === "x" ? user.public_metrics?.followers_count : platform === "facebook" ? user.followers_count : user.follower_count), following: measured(platform === "x" ? user.public_metrics?.following_count : platform === "facebook" ? null : user.following_count), totalPosts:measured(platform === "x" ? user.public_metrics?.tweet_count : platform === "facebook" ? null : user.video_count) };
           await prisma.connectedAccount.update({where:{id:account.id},data:{platformUserId:userId,displayName:typeof name === "string" ? name : account.displayName}});
           if (metrics.followers === null) profileWarning = "Follower counters were unavailable. No substitute zero was saved.";
-        } else profileWarning="The account response had no usable profile. Signal needs to review it; cached account counters were preserved.";
+        } else profileWarning="The account response had no usable profile. SocialPanora needs to review it; cached account counters were preserved.";
       }
     }
     if (!userId) { await finishMetricFailure(account.id,lockId,"Reconnect this account to identify the platform profile."); return json({error:"Reconnect this account to identify the platform profile."},400); }
@@ -93,10 +93,10 @@ export async function refreshAccountMetrics(connectedAccountId: string, postLimi
     if (stored.status === "UNAVAILABLE") await recordUsageFailure("metrics");
     return json({ success: stored.status !== "UNAVAILABLE", sampleSize: stored.sampleSize, postsAnalyzed: stored.postsAnalyzed, ...refreshFeedback(stored.status), warning:stored.warning, ...(stored.status === "UNAVAILABLE" && stored.warning ? {error:stored.warning} : {}) }, stored.status === "UNAVAILABLE" ? 502 : 200);
   } catch (error) {
-    if (lockId) await finishMetricFailure(accountId,lockId,error instanceof MetricTokenError ? error.message : error instanceof UsageError ? error.message + (error.resetAt ? ` Resets ${error.resetAt.slice(0,10)} at 00:00 UTC.` : "") : "Signal could not finish collection. Cached data was preserved; the server needs review.", error instanceof UsageError ? error.resetAt : undefined).catch(()=>{});
+    if (lockId) await finishMetricFailure(accountId,lockId,error instanceof MetricTokenError ? error.message : error instanceof UsageError ? error.message + (error.resetAt ? ` Resets ${error.resetAt.slice(0,10)} at 00:00 UTC.` : "") : "SocialPanora could not finish collection. Cached data was preserved; the server needs review.", error instanceof UsageError ? error.resetAt : undefined).catch(()=>{});
     if (error instanceof MetricTokenError) return json({error:error.message,code:error.diagnostic.code,responsibility:error.diagnostic.responsibility},502);
     if (error instanceof UsageError) return json({ error:error.message + (error.resetAt ? ` Resets ${error.resetAt.slice(0,10)} at 00:00 UTC.` : ""), resetAt:error.resetAt },error.status);
     await recordUsageFailure("metrics");
-    return json({ error:error instanceof AuthInputError ? error.message : "Signal could not finish collection. Your saved data is still available; the server needs review."  , ...(error instanceof AuthInputError ? {} : {code:"METRIC_SIGNAL_ERROR",responsibility:"signal"}) },error instanceof AuthInputError ? error.status : 500);
+    return json({ error:error instanceof AuthInputError ? error.message : "SocialPanora could not finish collection. Your saved data is still available; the server needs review."  , ...(error instanceof AuthInputError ? {} : {code:"METRIC_SIGNAL_ERROR",responsibility:"signal"}) },error instanceof AuthInputError ? error.status : 500);
   }
 }

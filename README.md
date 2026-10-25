@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SocialPanora
 
-## Getting Started
+**Your social world. One clear view.**
 
-First, run the development server:
+SocialPanora, formerly Signal, is a social media workspace for connected-account analytics, metric history, AI-assisted insights, reports and content drafts. Missing platform data is labelled unavailable rather than invented.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Live app: https://signal-phoenix-dashboard.vercel.app/
+
+## Development
+
+Use Node.js 24. Install dependencies with `npm ci`, configure the variables documented in `.env.example`, then run `npm run dev`. Keep credentials private.
+
+```sh
+npm test
+npm run lint
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Built with Next.js, React, TypeScript, Prisma, Turso, NextAuth, Tailwind CSS and Google AI. Platform access and optional features depend on credentials, permissions and service allowances.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Operations and integrations
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [Authentication and publishing](docs/auth-and-publishing.md)
+- [Service activation](docs/service-activation.md)
+- [Daily metrics](docs/daily-metrics.md)
+- [Turso and Vercel setup](docs/turso-vercel-setup.md)
+- [Facebook review preparation](docs/facebook-app-review.md)
 
-## Learn More
+## Rename compatibility
 
-To learn more about Next.js, take a look at the following resources:
+The public product name is SocialPanora. The existing repository, deployment URL, OAuth callback URLs, `SIGNAL_*` configuration variables, database model names, internal component identifiers and storage keys remain compatible with the existing installation. The former icon URL also remains available for cached clients. This branding update requires no database migration or reconnection.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+External Google, Meta, X and TikTok developer-console display names are managed separately. Some provider screens may still say Signal until those app profiles are updated; historical provider names in review notes are retained accurately.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Created by Paul Ayoade David (Phoenix).

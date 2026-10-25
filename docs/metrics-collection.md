@@ -1,6 +1,6 @@
 # Metrics collection and measurement history
 
-Signal distinguishes a measured `0` from an unavailable `null`. A missing field, denied permission, malformed counter or unavailable API response is not a zero. Totals are unavailable if any required count is missing; cross-platform totals identify partial coverage. Engagement rates use views and interactions from the same eligible post samples.
+SocialPanora distinguishes a measured `0` from an unavailable `null`. A missing field, denied permission, malformed counter or unavailable API response is not a zero. Totals are unavailable if any required count is missing; cross-platform totals identify partial coverage. Engagement rates use views and interactions from the same eligible post samples.
 
 ## What the app collects
 
@@ -67,7 +67,7 @@ The upgrade command uses the supplied `--app-stopped` acknowledgement; it cannot
 ## Reference behavior
 
 - [X timeline pagination](https://docs.x.com/x-api/posts/timelines/integrate)
-- [X API pricing and owned reads](https://docs.x.com/x-api/getting-started/pricing): lower owned-read rates apply only where the authenticated user also owns the developer app; they do not cover every Signal customer.
+- [X API pricing and owned reads](https://docs.x.com/x-api/getting-started/pricing): lower owned-read rates apply only where the authenticated user also owns the developer app; they do not cover every SocialPanora customer.
 - [Meta Insights reference](https://developers.facebook.com/docs/graph-api/reference/insights/)
 - [TikTok video list](https://developers.tiktok.com/doc/tiktok-api-v2-video-list)
 - [Buffer Analyze](https://support.buffer.com/en-us/articles/using-buffer-analyze-nHvyBMdqz8): provider-fed measurements and collection windows, rather than a general free API workaround.

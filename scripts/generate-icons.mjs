@@ -1,8 +1,8 @@
-// Mechanical exports of the existing Signal mark. Sharp is bundled by Next.js.
+// Mechanical exports of the existing SocialPanora mark. Sharp is bundled by Next.js.
 import sharp from "sharp";
 import { writeFile } from "node:fs/promises";
 
-const source = new URL("../public/signal-icon.svg", import.meta.url);
+const source = new URL("../public/socialpanora-icon.svg", import.meta.url);
 const png = await sharp(source.pathname).resize(32, 32).png().toBuffer();
 const header = Buffer.alloc(22);
 header.writeUInt16LE(1, 2);

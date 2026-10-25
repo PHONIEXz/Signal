@@ -89,7 +89,7 @@ export default function InsightsChat({
                 : "mr-auto max-w-[90%] whitespace-pre-wrap break-words rounded-2xl bg-paper px-4 py-2 text-sm text-ink"
             }
           >
-            <span className="sr-only">{m.role === "user" ? "You: " : "Signal: "}</span>{m.content}
+            <span className="sr-only">{m.role === "user" ? "You: " : "SocialPanora: "}</span>{m.content}
           </div>
         ))}
         {loading && (

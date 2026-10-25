@@ -50,14 +50,14 @@ export default function BrandMark({
               inverse ? "text-white" : "text-ink"
             }`}
           >
-            Signal
+            SocialPanora
           </span>
           <span
-            className={`mt-1 max-w-40 text-xs leading-4 ${
+            className={`mt-1 max-w-44 text-xs leading-4 ${
               inverse ? "text-white/50" : "text-ink-muted"
             }`}
           >
-            Your platforms, one dashboard
+            Your social world. One clear view.
           </span>
         </span>
       )}

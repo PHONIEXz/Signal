@@ -21,7 +21,7 @@ export async function reserveUsage(service: Service, userId: string, plan: strin
       const row = await tx.authRateLimit.upsert({ where: { key: keys[i] }, create: { key: keys[i], count: 1, expiresAt: new Date(now.getTime()+35*86400000) }, update: { count: { increment: 1 } } });
       if (row.count > caps[i]) {
         const reset = i === 2 ? new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,1)).toISOString() : resetAt;
-        throw new UsageError(i === 0 ? "You have used today's allowance for this feature." : "Signal's shared allowance for this feature has been reached. Please try again after it resets.",429,reset);
+        throw new UsageError(i === 0 ? "You have used today's allowance for this feature." : "SocialPanora's shared allowance for this feature has been reached. Please try again after it resets.",429,reset);
       }
     }
   });

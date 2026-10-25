@@ -5,8 +5,8 @@ import LegalLinks from "@/components/LegalLinks";
 import SupportContact from "@/components/SupportContact";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Signal",
-  description: "The terms that apply when creating an account or connecting a social platform to Signal.",
+  title: "Terms of Service | SocialPanora",
+  description: "The terms that apply when creating an account or connecting a social platform to SocialPanora.",
 };
 
 export default function TermsPage() {
@@ -14,7 +14,7 @@ export default function TermsPage() {
     <main className="min-h-screen px-5 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-3xl">
       <header className="flex items-center justify-between gap-4">
-        <Link href="/" aria-label="Signal home"><BrandMark /></Link>
+        <Link href="/" aria-label="SocialPanora home"><BrandMark /></Link>
       </header>
       <article className="surface-card mt-10 p-6 sm:p-10">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">Legal</p>
@@ -29,7 +29,7 @@ export default function TermsPage() {
             1. Acceptance of terms
           </h2>
           <p className="mt-2 text-ink-muted">
-            By creating an account or using Signal (&quot;the Service&quot;), you agree
+            By creating an account or using SocialPanora (&quot;the Service&quot;), you agree
             to these Terms of Service. If you do not agree, do not use the
             Service.
           </p>
@@ -40,7 +40,7 @@ export default function TermsPage() {
             2. Description of the service
           </h2>
           <p className="mt-2 text-ink-muted">
-            Signal lets you connect your own social media accounts (such as X,
+            SocialPanora lets you connect your own social media accounts (such as X,
             Facebook, and TikTok) and view analytics about those accounts -
             such as follower counts, post engagement, and growth trends - in
             one dashboard.
@@ -53,9 +53,9 @@ export default function TermsPage() {
           </h2>
           <p className="mt-2 text-ink-muted">
             When you connect a third-party platform account, you authorize
-            Signal to read data from that account on your behalf, using the
+            SocialPanora to read data from that account on your behalf, using the
             permissions you explicitly grant during that platform&apos;s own
-            authorization process. Signal only reads data - it does not post,
+            authorization process. SocialPanora only reads data - it does not post,
             follow, or perform actions on your connected accounts unless a
             feature explicitly says otherwise. You can disconnect any account
             at any time from your dashboard.
@@ -91,7 +91,7 @@ export default function TermsPage() {
           </h2>
           <p className="mt-2 text-ink-muted">
             The Service is provided &quot;as is&quot; without warranties of any kind.
-            Signal is not responsible for the accuracy of data returned by
+            SocialPanora is not responsible for the accuracy of data returned by
             third-party platforms, or for any action taken by those platforms
             (such as API changes, rate limits, or account restrictions) that
             affects the Service.

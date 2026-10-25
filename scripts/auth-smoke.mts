@@ -89,7 +89,7 @@ try {
     const response = await fetch(base + route);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.ok(html.includes("/signal-icon.svg"));
+    assert.ok(html.includes("/socialpanora-icon.svg"));
     if (route !== "/login") assert.ok(html.includes('content="no-referrer"'));
   }
   assert.equal((await fetch(base + "/favicon.ico")).status, 200);
@@ -291,7 +291,7 @@ try {
   // Facebook deletion uses real database cascades without calling Meta.
   const deletionPage = await fetch(base + "/data-deletion");
   assert.equal(deletionPage.status,200);
-  assert.match(await deletionPage.text(),/Signal data deletion request/);
+  assert.match(await deletionPage.text(),/SocialPanora data deletion request/);
   const fb = await prisma.connectedAccount.create({data:{userId:owner.id,platform:"facebook",platformUserId:"delete-fixture",accessToken:"test-only"}});
   const fbPost = await prisma.post.create({data:{connectedAccountId:fb.id,platformPostId:"delete-post",text:"fixture"}});
   await prisma.postMeasurement.create({data:{postId:fbPost.id,source:"API",sampleId:"delete-sample",capturedAt:new Date(),likeCount:1}});

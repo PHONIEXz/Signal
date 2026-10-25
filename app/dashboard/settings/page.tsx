@@ -14,7 +14,7 @@ export default function SettingsPage() {
         </h1>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
-          Manage your account and control how Signal AI works with your data.
+          Manage your account and control how SocialPanora AI works with your data.
         </p>
       </div>
 

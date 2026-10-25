@@ -72,13 +72,13 @@ export default function PasswordRecovery({ mode }: { mode: "request" | "reset" }
       if (resetting) token.current = "";
       if (resetting) setCode("");
     } catch {
-      setError("Could not reach Signal. Check your connection and try again.");
+      setError("Could not reach SocialPanora. Check your connection and try again.");
     } finally { setLoading(false); }
   }
 
   return (
     <AuthShell title={message ? (resetting ? "Password updated" : "Check your inbox") : (resetting ? "Choose a new password" : "Forgot your password?")}
-      subtitle={resetting ? "Use a password you do not use anywhere else." : "Enter the email you use to sign in to Signal."}>
+      subtitle={resetting ? "Use a password you do not use anywhere else." : "Enter the email you use to sign in to SocialPanora."}>
       <div ref={feedback} tabIndex={-1} className="outline-none">
         {error && <p role="alert" className="mb-5 rounded-xl border border-red-500/25 bg-red-500/10 p-4 text-sm leading-6 text-red-700 dark:text-red-300">{error}</p>}
         {message && <p role="status" className="rounded-xl border border-connected/30 bg-connected/10 p-4 text-base leading-7 text-ink">{message}</p>}
@@ -96,7 +96,7 @@ export default function PasswordRecovery({ mode }: { mode: "request" | "reset" }
             <p id="password-help" className="text-sm leading-6 text-ink-muted">Use at least 12 characters. A few unrelated words make a good passphrase.</p>
             <PasswordInput id="confirm-password" label="Confirm password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)}
               autoComplete="new-password" required />
-            <p className="text-sm leading-6 text-ink-muted">Changing your password signs out your existing Signal sessions.</p>
+            <p className="text-sm leading-6 text-ink-muted">Changing your password signs out your existing SocialPanora sessions.</p>
           </> : <>
             <Input id="reset-email" label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" maxLength={254} required />
             <fieldset className="flex flex-col gap-2 text-sm text-ink" disabled={loading}>

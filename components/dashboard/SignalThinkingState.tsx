@@ -34,7 +34,7 @@ export default function SignalThinkingState({
       }`}
       role="status"
     >
-      <span className="sr-only">Signal is analyzing your account data.</span>
+      <span className="sr-only">SocialPanora is analyzing your account data.</span>
       <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[11px] bg-action text-white shadow-sm shadow-navy/20">
         <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" aria-hidden="true">
           <path
@@ -55,7 +55,7 @@ export default function SignalThinkingState({
       </span>
 
       <div className="min-w-0" aria-hidden="true">
-        <p className="text-xs font-semibold text-ink">Signal is analyzing</p>
+        <p className="text-xs font-semibold text-ink">SocialPanora is analyzing</p>
         <p key={step} className="signal-thinking-label mt-0.5 text-xs text-ink-muted">
           {STEPS[step]}
         </p>

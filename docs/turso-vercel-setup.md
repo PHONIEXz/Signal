@@ -1,8 +1,8 @@
-# Signal with Turso and Vercel
+# SocialPanora with Turso and Vercel
 
 ## What each service does
 
-- ngrok forwards a public URL to the app running on your laptop. It does not store Signal's database.
+- ngrok forwards a public URL to the app running on your laptop. It does not store SocialPanora's database.
 - Turso stores the hosted database. This integration uses its libSQL engine, supported by the Prisma libSQL adapter.
 - Vercel runs the deployed Next.js app. Its local filesystem is not a permanent shared database.
 
@@ -10,7 +10,7 @@ References: [ngrok](https://ngrok.com/docs/start), [Turso SDK](https://docs.turs
 
 ## 1. Get the updated code
 
-Use Node 24 in the Signal project folder. Keep `.env` private and back up your existing local SQLite database. These commands do not merge the PR:
+Use Node 24 in the SocialPanora project folder. Keep `.env` private and back up your existing local SQLite database. These commands do not merge the PR:
 
 ```sh
 git status --short
@@ -40,13 +40,13 @@ npm run db:turso:setup
 npm run db:turso:check
 ```
 
-`setup` initializes only an empty database. Its CREATE-only baseline and marker are written in one transaction; it does not replay old Prisma table rewrites. It refuses unrelated existing tables and never copies or deletes local data. Repeating setup on the same intact baseline preserves existing records. `check` verifies the connection, required tables/columns/indexes, and foreign-key integrity without changing data. Neither command prints tokens or account records. A fresh database reports 15 Signal tables.
+`setup` initializes only an empty database. Its CREATE-only baseline and marker are written in one transaction; it does not replay old Prisma table rewrites. It refuses unrelated existing tables and never copies or deletes local data. Repeating setup on the same intact baseline preserves existing records. `check` verifies the connection, required tables/columns/indexes, and foreign-key integrity without changing data. Neither command prints tokens or account records. A fresh database reports 15 SocialPanora tables.
 
-If authentication fails, check that the token is valid for this database and has write access for setup. If tables already exist without the Signal setup marker, stop and inspect their origin. Do not delete them to bypass the guard.
+If authentication fails, check that the token is valid for this database and has write access for setup. If tables already exist without the SocialPanora setup marker, stop and inspect their origin. Do not delete them to bypass the guard.
 
 ## 3. Decide what happens to existing data
 
-Initializing Turso makes tables, not copies of your existing accounts, drafts or metrics. To transfer existing data, stop every Signal app process and keep DATABASE_PROVIDER=sqlite and your original DATABASE_URL. Run:
+Initializing Turso makes tables, not copies of your existing accounts, drafts or metrics. To transfer existing data, stop every SocialPanora app process and keep DATABASE_PROVIDER=sqlite and your original DATABASE_URL. Run:
 
 ```sh
 npm run db:turso:transfer -- --app-stopped

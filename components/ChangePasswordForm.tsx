@@ -21,14 +21,14 @@ export default function ChangePasswordForm() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) { setError(data.error || "Unable to change your password."); return; }
       await signOut({ callbackUrl: "/login" });
-    } catch { setError("Could not reach Signal. Check your connection and try again."); }
+    } catch { setError("Could not reach SocialPanora. Check your connection and try again."); }
     finally { setLoading(false); }
   }
   return <form onSubmit={submit} className="mt-5 grid gap-4" aria-busy={loading}>
     <PasswordInput id="current-password" label="Current password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} autoComplete="current-password" required />
     <PasswordInput id="settings-new-password" label="New password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" minLength={PASSWORD_MIN_LENGTH} required />
     <PasswordInput id="settings-confirm-password" label="Confirm new password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="new-password" required />
-    <p className="text-sm leading-6 text-ink-muted">Use at least 12 characters. Changing it signs out your existing Signal sessions.</p>
+    <p className="text-sm leading-6 text-ink-muted">Use at least 12 characters. Changing it signs out your existing SocialPanora sessions.</p>
     {error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
     <Button type="submit" disabled={loading} className="justify-self-start">{loading ? "Changing password..." : "Change password"}</Button>
   </form>;

@@ -58,7 +58,7 @@ export default function AuthShell({
         <div className="relative z-10 max-w-md rounded-2xl border border-white/12 bg-white/[0.07] p-5 backdrop-blur-md">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-white/80">
-              Platforms in Signal
+              Platforms in SocialPanora
             </p>
           </div>
           <SignalDots inverse />
@@ -76,7 +76,7 @@ export default function AuthShell({
 
             <div className="surface-card bg-surface/[0.88] p-6 backdrop-blur-xl sm:p-9">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">
-                Welcome to Signal
+                Welcome to SocialPanora
               </p>
               <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.035em] text-ink">
                 {title}

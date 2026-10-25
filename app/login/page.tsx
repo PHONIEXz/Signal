@@ -37,7 +37,7 @@ export default function LoginPage() {
       router.replace("/dashboard");
       router.refresh();
     } catch {
-      setError("Could not reach Signal. Please try again.");
+      setError("Could not reach SocialPanora. Please try again.");
     } finally { setLoading(false); }
   }
 

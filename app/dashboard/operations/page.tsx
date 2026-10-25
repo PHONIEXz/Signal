@@ -15,7 +15,7 @@ export default async function OperationsPage() {
   const rows = await prisma.authRateLimit.findMany({where:{key:{startsWith:"usage:"}},select:{key:true,count:true}});
   const count = (key:string) => rows.find(row=>row.key===key)?.count ?? 0;
   return <div className="mx-auto max-w-5xl space-y-6">
-    <h1 className="font-display text-3xl">Signal operations</h1>
+    <h1 className="font-display text-3xl">SocialPanora operations</h1>
     <p className="text-sm text-ink-muted">Private owner view. Credentials being present does not confirm provider approval, credit balance or API health.</p>
     <div className="grid gap-4 sm:grid-cols-3">{(["ai","metrics","publishing"] as const).map(service=><section key={service} className="rounded-xl border border-border bg-surface p-5">
       <h2 className="font-medium capitalize">{service}</h2>

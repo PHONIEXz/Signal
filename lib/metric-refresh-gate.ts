@@ -18,8 +18,8 @@ export const getMetricRefreshGate = cache(async (accountId: string): Promise<Ref
   return buildRefreshGate({now,enabled:enabled("metrics"),analyticsEnabled:account.user.analyticsCollectionEnabled,nextAllowedAt:account.metricSync?.nextAllowedAt,
     limits:[
       {count:counts.get(keys[0])??0,cap:userLimit("metrics",account.user.plan),resetAt:daily,reason:"Your daily metrics allowance has been used."},
-      {count:counts.get(keys[1])??0,cap:limit("SIGNAL_METRICS_GLOBAL_DAILY",100),resetAt:daily,reason:"Signal's shared daily metrics allowance has been used."},
-      {count:counts.get(keys[2])??0,cap:limit("SIGNAL_METRICS_GLOBAL_MONTHLY",2000),resetAt:monthly,reason:"Signal's shared monthly metrics allowance has been used."},
+      {count:counts.get(keys[1])??0,cap:limit("SIGNAL_METRICS_GLOBAL_DAILY",100),resetAt:daily,reason:"SocialPanora's shared daily metrics allowance has been used."},
+      {count:counts.get(keys[2])??0,cap:limit("SIGNAL_METRICS_GLOBAL_MONTHLY",2000),resetAt:monthly,reason:"SocialPanora's shared monthly metrics allowance has been used."},
       {count:counts.get(keys[3])??0,cap:account.user.plan==="PRO"?48:12,resetAt:daily,reason:"Your daily collection safety limit has been reached."},
     ]});
 });

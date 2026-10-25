@@ -109,7 +109,7 @@ export default function PostAnalysis({
         <div className="mt-4 flex items-center justify-between">
           <div>
             <p className="font-display text-xl font-medium text-ink">
-              Signal AI
+              SocialPanora AI
             </p>
 
             <p className="mt-1 text-sm text-ink-muted">
@@ -157,7 +157,7 @@ export default function PostAnalysis({
         </p>
 
         <p className="mt-1 text-xs text-ink-muted">
-          Ask Signal to analyze this specific post.
+          Ask SocialPanora to analyze this specific post.
         </p>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -250,7 +250,7 @@ export default function PostAnalysis({
                 askAI(input);
               }
             }}
-            placeholder="Ask Signal about this post..."
+            placeholder="Ask SocialPanora about this post..."
             className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-muted/60 focus:border-navy"
           />
 

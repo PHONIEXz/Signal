@@ -97,7 +97,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
   const { id } = await params;
   if (!(await publishingSchemaReady())) return NextResponse.json({ error: "Content Studio needs its publishing database upgrade.", code: "STUDIO_SCHEMA_PENDING" }, { status: 503 });
-  if (_request.headers.get("origin") !== new URL(process.env.APP_URL!).origin) return NextResponse.json({ error: "Submit this action from Signal." }, { status: 403 });
+  if (_request.headers.get("origin") !== new URL(process.env.APP_URL!).origin) return NextResponse.json({ error: "Submit this action from SocialPanora." }, { status: 403 });
   const result = await prisma.$transaction(async (tx) => {
     const draft = await tx.contentDraft.findFirst({ where: { id, userId: session.user!.id } });
     if (!draft) return "MISSING";

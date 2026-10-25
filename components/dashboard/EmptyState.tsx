@@ -16,7 +16,7 @@ export default function EmptyState() {
       <p className="mt-8 text-xs font-semibold uppercase tracking-[0.18em] text-navy">Ready when you are</p>
       <h1 className="mt-3 font-display text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Build your first signal</h1>
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink-muted">
-        Connect a social account and Signal will turn its metrics into one clear, focused dashboard.
+        Connect a social account and SocialPanora will turn its metrics into one clear, focused dashboard.
       </p>
 
       <Link href="/dashboard/accounts" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-action px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy/20 transition-all hover:-translate-y-0.5 hover:bg-action-hover">

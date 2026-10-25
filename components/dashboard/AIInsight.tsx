@@ -85,12 +85,12 @@ export default function AIInsight({
             <span className="text-lg">✦</span>
 
             <p className="font-display text-lg font-medium text-ink">
-              Signal AI
+              SocialPanora AI
             </p>
           </div>
 
           <p className="mt-1 text-xs text-ink-muted">
-            Your account, analyzed by Signal.
+            Your account, analyzed by SocialPanora.
           </p>
         </div>
 

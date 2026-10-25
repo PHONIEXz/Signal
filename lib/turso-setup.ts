@@ -23,13 +23,13 @@ export async function checkTursoSchema(client: Pick<Client, "execute">, sql: str
     const actual = await client.execute('PRAGMA table_info("' + name + '")');
     const names = new Set(actual.rows.map((row) => String(row.name)));
     if (expected.some((column) => !names.has(column))) {
-      throw new Error("Signal tables are missing or outdated. Run setup only for an empty database; existing databases need a reviewed migration.");
+      throw new Error("SocialPanora tables are missing or outdated. Run setup only for an empty database; existing databases need a reviewed migration.");
     }
   }
   const expectedIndexes = [...sql.matchAll(/CREATE (?:UNIQUE )?INDEX "(\w+)"/g)].map((match) => match[1]);
   const indexes = await client.execute("SELECT name FROM sqlite_master WHERE type = 'index'");
   const names = new Set(indexes.rows.map((row) => String(row.name)));
-  if (expectedIndexes.some((name) => !names.has(name))) throw new Error("Signal database indexes are incomplete.");
+  if (expectedIndexes.some((name) => !names.has(name))) throw new Error("SocialPanora database indexes are incomplete.");
   const integrity = await client.execute("PRAGMA foreign_key_check");
   if (integrity.rows.length) throw new Error("Database relationship checks failed; no data was modified.");
   return tables.length;
