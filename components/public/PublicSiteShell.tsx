@@ -10,7 +10,7 @@ export default function PublicSiteShell({ children }: { children: React.ReactNod
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-4">Skip to content</a>
       <header className="border-b border-border bg-paper">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-4 px-5 py-4 sm:px-8">
-          <Link href="/" aria-label="Signal home"><BrandMark /></Link>
+          <Link href="/" aria-label="SocialPanora home"><BrandMark /></Link>
           <nav aria-label="Product" className="order-3 flex w-full flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium sm:order-2 sm:w-auto">
             <Link href="/product" className="text-ink-muted hover:text-ink">How it works</Link>
             <Link href="/product#tiktok" className="text-ink-muted hover:text-ink">TikTok integration</Link>
@@ -25,7 +25,7 @@ export default function PublicSiteShell({ children }: { children: React.ReactNod
       <footer className="border-t border-border bg-surface">
         <div className="mx-auto grid max-w-7xl gap-7 px-5 py-10 sm:px-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <Link href="/" aria-label="Signal home"><BrandMark /></Link>
+            <Link href="/" aria-label="SocialPanora home"><BrandMark /></Link>
             <p className="mt-4 max-w-md text-sm leading-6 text-ink-muted">A creator workspace for account analytics, insights, reports and content drafts. Data access depends on each platform.</p>
             <p className="mt-3 text-xs text-ink-muted">Questions? <SupportContact /></p>
           </div>

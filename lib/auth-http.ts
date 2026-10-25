@@ -36,7 +36,7 @@ export async function readAuthBody(request: Request, maxBytes = 4096, additional
       trusted = isLoopback(local) && ["http:", "https:"].includes(local.protocol);
     } catch { /* Reject invalid origins. */ }
   }
-  if (!trusted) throw new AuthInputError("Please submit this form from Signal.", 403);
+  if (!trusted) throw new AuthInputError("Please submit this form from SocialPanora.", 403);
   // Bound the actual stream, not the caller-controlled Content-Length.
   const reader = request.body?.getReader();
   if (!reader) throw new AuthInputError("The request is empty.");

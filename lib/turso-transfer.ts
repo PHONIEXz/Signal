@@ -20,7 +20,7 @@ export async function transferTables(client: Client, sql: string, tables: Transf
   progress("checking remote schema");
   await checkTursoSchema(client, sql);
   const expected = [...sql.matchAll(/CREATE TABLE "(\w+)"/g)].map(m => m[1]);
-  if (JSON.stringify(tables.map(t => t.name)) !== JSON.stringify(expected)) throw new TransferError("Source table list does not match Signal's schema.");
+  if (JSON.stringify(tables.map(t => t.name)) !== JSON.stringify(expected)) throw new TransferError("Source table list does not match SocialPanora's schema.");
   progress("opening remote transaction");
   const tx = await client.transaction("write");
   try {

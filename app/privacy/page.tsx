@@ -5,8 +5,8 @@ import LegalLinks from "@/components/LegalLinks";
 import SupportContact from "@/components/SupportContact";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Signal",
-  description: "How Signal collects, uses, protects and deletes account and social analytics data.",
+  title: "Privacy Policy | SocialPanora",
+  description: "How SocialPanora collects, uses, protects and deletes account and social analytics data.",
 };
 
 export default function PrivacyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
     <main className="min-h-screen px-5 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-3xl">
       <header className="flex items-center justify-between gap-4">
-        <Link href="/" aria-label="Signal home"><BrandMark /></Link>
+        <Link href="/" aria-label="SocialPanora home"><BrandMark /></Link>
       </header>
       <article className="surface-card mt-10 p-6 sm:p-10">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-navy">Legal</p>
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
             metrics the platform makes available through your authorization
             - such as follower counts, post text, and engagement numbers
             (likes, views, replies, shares). We also store content drafts and
-            attachments you choose to save in Signal.
+            attachments you choose to save in SocialPanora.
           </p>
         </section>
 
@@ -75,11 +75,11 @@ export default function PrivacyPage() {
           <p className="mt-2 text-ink-muted">
             The Service connects to X, Facebook and TikTok to read data you
             authorize. When you explicitly request a supported publishing
-            action, Signal sends that content to the selected platform. Signal
+            action, SocialPanora sends that content to the selected platform. SocialPanora
             does not publish TikTok drafts; you complete those on TikTok. If
             you use optional AI features, your request and relevant account
             data are sent to Google&apos;s Gemini API to generate a response.
-            Hosting and database providers, including Vercel and Turso, process data to run Signal. Access tokens and passwords are not included in AI prompts.
+            Hosting and database providers, including Vercel and Turso, process data to run SocialPanora. Access tokens and passwords are not included in AI prompts.
             These providers have their own privacy policies governing how
             they handle that data.
           </p>
@@ -91,9 +91,9 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-2 text-ink-muted">
             You can disconnect any connected account at any time from your
-            dashboard. Unlinking Facebook deletes that connection, its saved access token, posts, post measurements, metric history, Page insights and related publishing records from Signal&apos;s active database. It stops new collection for that connection. Your saved Signal drafts remain until separately deleted, and posts already published on Facebook are not deleted.
+            dashboard. Unlinking Facebook deletes that connection, its saved access token, posts, post measurements, metric history, Page insights and related publishing records from SocialPanora&apos;s active database. It stops new collection for that connection. Your saved SocialPanora drafts remain until separately deleted, and posts already published on Facebook are not deleted.
             Disabling analytics in Settings pauses new collection without deleting saved history. Data remains available while your connection is active until you unlink it or request deletion.
-            For full Signal account deletion, contact us from your registered email address. These requests are handled manually after ownership verification.
+            For full SocialPanora account deletion, contact us from your registered email address. These requests are handled manually after ownership verification.
             See the <Link href="/data-deletion" className="font-semibold text-navy underline">data deletion instructions</Link> for the steps and scope.
             Provider backups and operational records may have separate retention; we do not promise immediate removal from every backup or from third-party systems.
           </p>

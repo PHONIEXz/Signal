@@ -13,7 +13,7 @@ export async function collectPosts(platform: string, userId: string, token: stri
   let warning: string | null = null;
   // Meta's field expansion expects summary(true). Asking for
   // summary(total_count) causes current Graph API versions to reject the
-  // complete field set, which previously made Signal fall back to content-only
+  // complete field set, which previously made SocialPanora fall back to content-only
   // posts even when the Page token had pages_read_engagement access.
   const fields = "id,message,created_time,permalink_url,reactions.limit(0).summary(true),comments.limit(0).summary(true),shares";
   try {
@@ -85,7 +85,7 @@ export async function collectPageInsights(pageId: string, token: string, fetcher
       const response = await fetcher(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(10000) });
       const data = await response.json();
       const failure=platformMetricFailure("facebook",response.status,data);
-      if (failure || !Array.isArray(data?.data)) { warnings.push(failure?.message ?? `${metric} returned an unexpected response. Signal needs to review the API response.`); continue; }
+      if (failure || !Array.isArray(data?.data)) { warnings.push(failure?.message ?? `${metric} returned an unexpected response. SocialPanora needs to review the API response.`); continue; }
       for (const item of data.data) {
         if (item.name !== metric || item.period !== "day" || !Array.isArray(item.values)) continue;
         for (const point of item.values) { const value = measured(point.value); const periodEnd = metricDate(point.end_time); if (value !== null && periodEnd) values.push({ metric, period: "day", periodEnd, value }); }

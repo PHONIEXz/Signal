@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import PasswordRecovery from "@/components/PasswordRecovery";
 
 export const metadata: Metadata = {
-  title: "Choose a new password | Signal",
+  title: "Choose a new password | SocialPanora",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };

@@ -87,7 +87,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
     return (
       <div className="rounded-xl border border-red-500/20 bg-surface p-6">
         <p className="font-display text-lg font-medium text-ink">
-          Signal AI could not generate this report
+          SocialPanora AI could not generate this report
         </p>
         <p className="mt-2 text-sm text-red-600">{cleanText(error)}</p>
         <button
@@ -118,7 +118,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
               </span>
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
-                  Signal AI
+                  SocialPanora AI
                 </p>
                 <p className="mt-0.5 text-xs text-ink-muted">
                   {generatedAt ? <>Received <LocalTime value={generatedAt} /></> : "Generated from your available account data"}

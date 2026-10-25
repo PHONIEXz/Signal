@@ -28,7 +28,7 @@ export default function AccountCard({ id, platform, displayName, followers }: Ac
 
   async function unlinkAccount() {
     const confirmed = window.confirm(
-      platform === "facebook" ? "Unlink Facebook and delete this connection’s saved posts, metric history, Page insights and publishing records from Signal? This cannot be undone. Your Facebook Page and posts on Facebook will not be deleted. Your Signal drafts stay saved." : `Are you sure you want to unlink your ${details.label} account?`
+      platform === "facebook" ? "Unlink Facebook and delete this connection’s saved posts, metric history, Page insights and publishing records from SocialPanora? This cannot be undone. Your Facebook Page and posts on Facebook will not be deleted. Your SocialPanora drafts stay saved." : `Are you sure you want to unlink your ${details.label} account?`
     );
 
     if (!confirmed) return;

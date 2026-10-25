@@ -233,7 +233,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       const data = await response.json();
       setMessage(data.error ?? "Could not delete this draft.");
     }
-    } catch { setMessage("Could not reach Signal. Try deleting this draft again later."); }
+    } catch { setMessage("Could not reach SocialPanora. Try deleting this draft again later."); }
   }
 
   const calendar = useMemo(() => {

@@ -130,7 +130,7 @@ export default function WorkspacePreview() {
                     href="/product"
                     className="flex items-center justify-between rounded-2xl bg-[#173e36] p-5 text-sm font-semibold text-white"
                   >
-                    See how Signal works <span aria-hidden="true">↗</span>
+                    See how SocialPanora works <span aria-hidden="true">↗</span>
                   </Link>
                 </div>
               </div>

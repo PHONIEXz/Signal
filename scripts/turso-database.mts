@@ -10,10 +10,10 @@ async function main() {
     const sql = bootstrapSql();
     if (command === "setup") {
       const outcome = await initializeEmptyTurso(client, sql);
-      console.log(outcome === "created" ? "Signal tables created. No local records were copied." : "Signal tables are already ready. Existing records were preserved.");
+      console.log(outcome === "created" ? "SocialPanora tables created. No local records were copied." : "SocialPanora tables are already ready. Existing records were preserved.");
     }
     const tables = await checkTursoSchema(client, sql);
-    console.log("Turso connection OK. Signal schema OK (" + tables + " tables).");
+    console.log("Turso connection OK. SocialPanora schema OK (" + tables + " tables).");
   } finally { client.close(); }
 }
 

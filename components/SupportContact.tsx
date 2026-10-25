@@ -2,7 +2,7 @@ export default function SupportContact() {
   const email = process.env.SUPPORT_EMAIL?.trim() || "paulayoade18@gmail.com";
 
   if (!email) {
-    return <>the contact information published in Signal&apos;s developer profile</>;
+    return <>the contact information published in SocialPanora&apos;s developer profile</>;
   }
 
   return <a href={`mailto:${email}`} className="font-medium text-navy hover:underline">{email}</a>;

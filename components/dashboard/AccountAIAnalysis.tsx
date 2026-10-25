@@ -109,7 +109,7 @@ export default function AccountAIAnalysis({
       <div className="flex items-start justify-between">
         <div>
           <p className="font-display text-lg font-medium text-ink">
-            Signal AI Analysis
+            SocialPanora AI Analysis
           </p>
 
           <p className="mt-1 text-sm text-ink-muted">

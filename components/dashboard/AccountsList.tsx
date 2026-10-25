@@ -38,7 +38,7 @@ export default function AccountsList({ connections, plan }: { connections: Conne
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">Current plan</p>
-            <p className="mt-1 font-display text-xl font-semibold text-ink">{isPro ? "Signal Pro" : "Signal Free"}</p>
+            <p className="mt-1 font-display text-xl font-semibold text-ink">{isPro ? "SocialPanora Pro" : "SocialPanora Free"}</p>
           </div>
           <span className="rounded-full border border-border bg-paper px-3 py-1.5 text-xs font-semibold text-ink-muted">
             {isPro ? "Multiple accounts" : `${connections.length}/1 account used`}

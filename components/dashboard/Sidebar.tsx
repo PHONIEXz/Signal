@@ -26,7 +26,7 @@ export default function Sidebar() {
   return (
     <>
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border/80 bg-surface/[0.92] px-4 py-6 backdrop-blur-xl lg:flex">
-        <Link href="/" aria-label="Signal home"><BrandMark className="px-2" /></Link>
+        <Link href="/" aria-label="SocialPanora home"><BrandMark className="px-2" /></Link>
 
         <nav className="mt-10 flex flex-col gap-1.5" aria-label="Dashboard navigation">
           {NAV_ITEMS.map((item) => {

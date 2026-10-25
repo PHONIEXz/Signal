@@ -13,7 +13,7 @@ let stage = "checking configuration";
 function progress(next: string) { stage = next; console.log("Transfer step: " + next); }
 
 async function main() {
-  if (!process.argv.includes("--app-stopped")) throw new TransferError("Stop Signal first, then run npm run db:turso:transfer -- --app-stopped.");
+  if (!process.argv.includes("--app-stopped")) throw new TransferError("Stop SocialPanora first, then run npm run db:turso:transfer -- --app-stopped.");
   const config = databaseConfig();
   if (config.provider !== "sqlite") throw new TransferError("Keep DATABASE_PROVIDER=sqlite until the transfer is verified.");
   const remote = tursoConfig();
@@ -50,7 +50,7 @@ async function main() {
       progress("reading " + name);
       const columns = [...definition.matchAll(/^\s+"(\w+)"/gm)].map(m => m[1]);
       const actual = db.prepare("PRAGMA table_info(" + quote(name) + ")").all().map((r: { name: string }) => r.name);
-      if (JSON.stringify([...columns].sort()) !== JSON.stringify(actual.sort())) throw new TransferError("Snapshot columns differ from Signal's schema. Transfer stopped.");
+      if (JSON.stringify([...columns].sort()) !== JSON.stringify(actual.sort())) throw new TransferError("Snapshot columns differ from SocialPanora's schema. Transfer stopped.");
       tables.push({ name, columns, rows: db.prepare("SELECT " + columns.map(quote).join(",") + " FROM " + quote(name)).raw().all() });
     }
     progress("checking local table coverage");
@@ -76,6 +76,6 @@ async function main() {
 }
 main().catch(error => {
   console.error("Transfer stopped at: " + stage + ". Diagnostic: " + diagnosticCode(error));
-  console.error(error instanceof TransferError ? error.message : "Send the transfer step and diagnostic above. Original local database is unchanged. Keep Signal stopped and DATABASE_PROVIDER=sqlite until the result is checked.");
+  console.error(error instanceof TransferError ? error.message : "Send the transfer step and diagnostic above. Original local database is unchanged. Keep SocialPanora stopped and DATABASE_PROVIDER=sqlite until the result is checked.");
   process.exitCode = 1;
 });

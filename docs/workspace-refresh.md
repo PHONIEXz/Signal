@@ -1,4 +1,4 @@
-# Signal workspace refresh
+# SocialPanora workspace refresh
 
 ## Design
 

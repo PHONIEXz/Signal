@@ -17,7 +17,7 @@ export default function SignalScore({ result }: { result: SignalScoreResult }) {
       <div className="pointer-events-none absolute -left-20 -top-20 h-48 w-48 rounded-full bg-navy/[0.06] blur-3xl" />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-display text-lg font-medium text-ink">Signal Score</p>
+          <p className="font-display text-lg font-medium text-ink">SocialPanora Score</p>
           <p className="mt-1 text-sm text-ink-muted">
             Size-neutral account health from available recent data
           </p>
@@ -32,7 +32,7 @@ export default function SignalScore({ result }: { result: SignalScoreResult }) {
           className="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center rounded-full p-[9px] shadow-inner sm:mx-0"
           style={{ background: `conic-gradient(var(--color-navy) ${(score ?? 0) * 3.6}deg, color-mix(in srgb, var(--color-navy) 10%, transparent) 0deg)` }}
           role="img"
-          aria-label={score === null ? "Signal Score unavailable" : `Signal Score ${score} out of 100`}
+          aria-label={score === null ? "SocialPanora Score unavailable" : `SocialPanora Score ${score} out of 100`}
         >
           <div className="flex h-full w-full items-center justify-center rounded-full bg-surface shadow-sm">
             <div className="text-center">

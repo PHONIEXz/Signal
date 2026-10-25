@@ -11,7 +11,7 @@ export class MetricTokenError extends Error {
 export function tokenRefreshFailure(platform:string,status:number,payload:unknown) {
   const error=payload && typeof payload === "object" ? (payload as {error?:unknown}).error : undefined;
   if(error === "invalid_grant") return {code:"METRIC_RECONNECT",responsibility:"connection" as const,message:"The saved authorization can no longer be renewed. Reconnect this account in Accounts.",stopAccountRequests:true};
-  if(error === "invalid_client") return {code:"METRIC_CONFIGURATION",responsibility:"signal" as const,message:"The platform rejected Signal's application credentials. The site owner needs to check the server configuration.",stopAccountRequests:true};
+  if(error === "invalid_client") return {code:"METRIC_CONFIGURATION",responsibility:"signal" as const,message:"The platform rejected SocialPanora's application credentials. The site owner needs to check the server configuration.",stopAccountRequests:true};
   return platformMetricFailure(platform,status,payload);
 }
 
@@ -21,7 +21,7 @@ export function refreshedToken(platform: string, payload: unknown, now=Date.now(
       typeof data.expires_in !== "number" || !Number.isSafeInteger(data.expires_in) || data.expires_in<=0 ||
       !Number.isFinite(new Date(now+data.expires_in*1000).getTime()) ||
       (data.refresh_token !== undefined && (typeof data.refresh_token !== "string" || !data.refresh_token.trim())))
-    throw new MetricTokenError({code:"METRIC_TOKEN_RESPONSE",responsibility:"unknown",message:`${platform === "x" ? "X" : "TikTok"} returned an unusable token refresh response. Signal kept the previous connection; this response needs review.`,stopAccountRequests:true});
+    throw new MetricTokenError({code:"METRIC_TOKEN_RESPONSE",responsibility:"unknown",message:`${platform === "x" ? "X" : "TikTok"} returned an unusable token refresh response. SocialPanora kept the previous connection; this response needs review.`,stopAccountRequests:true});
   return {accessToken:data.access_token,refreshToken:data.refresh_token as string|undefined,expiresAt:new Date(now+data.expires_in*1000)};
 }
 
@@ -46,11 +46,11 @@ export function platformMetricFailure(platform: string, status: number, payload:
   // Meta code 100 includes invalid fields AND object-access problems. Do not
   // confidently blame a permission or the user without inspecting the request.
   if ((platform === "facebook" && providerCode === 100) || providerCode === "invalid_params" || status === 400)
-    return issue("METRIC_REQUEST_REVIEW", "unknown", `${label} rejected the requested fields or account identifier. Signal's API request and the account's access need review. Reconnecting may not fix this.`, false);
+    return issue("METRIC_REQUEST_REVIEW", "unknown", `${label} rejected the requested fields or account identifier. SocialPanora's API request and the account's access need review. Reconnecting may not fix this.`, false);
   if (status === 403)
     return issue("METRIC_PERMISSION", "connection", `${label} denied this API request. Check the application's approved permissions and the connected account's access.`, false);
   if (status >= 400 || (platform === "facebook" && typeof providerCode === "number") || (platform === "tiktok" && typeof providerCode === "string" && providerCode !== "ok"))
-    return issue("METRIC_UNKNOWN_PROVIDER", "unknown", `${label} rejected collection. Signal needs to inspect the response category before recommending a fix.`);
+    return issue("METRIC_UNKNOWN_PROVIDER", "unknown", `${label} rejected collection. SocialPanora needs to inspect the response category before recommending a fix.`);
   return null;
 }
 

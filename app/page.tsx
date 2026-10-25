@@ -4,7 +4,7 @@ import PublicSiteShell from "@/components/public/PublicSiteShell";
 import WorkspacePreview from "@/components/public/WorkspacePreview";
 
 export const metadata: Metadata = {
-  title: "Signal | Find your next move",
+  title: "SocialPanora | Find your next move",
   description:
     "A focused workspace for your social accounts, performance, insights and content drafts.",
 };
@@ -19,7 +19,7 @@ const steps = [
     symbol: "↗",
   },
   {
-    title: "Find your signal.",
+    title: "See your social world.",
     label: "Understand",
     detail:
       "Explore available metrics, compare saved snapshots and ask better questions about your content. Know what the numbers actually mean.",
@@ -61,7 +61,7 @@ export default function HomePage() {
               href="/signup"
               className="pill-link mt-6 bg-action text-white hover:bg-action-hover"
             >
-              Find your signal <span aria-hidden="true">↗</span>
+              See your social world <span aria-hidden="true">↗</span>
             </Link>
             <p className="mt-3 text-xs text-ink-muted">
               Start free with one connected account.

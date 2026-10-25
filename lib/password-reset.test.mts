@@ -123,7 +123,7 @@ test("codes expire, replace links and cannot be redeemed twice concurrently", as
 test("code delivery uses the existing email adapter and Gmail reply address", async () => {
   process.env.EMAIL_PROVIDER = "resend";
   process.env.RESEND_API_KEY = "test-only-key";
-  process.env.EMAIL_FROM = "Signal <security@example.com>";
+  process.env.EMAIL_FROM = "SocialPanora <security@example.com>";
   process.env.EMAIL_REPLY_TO = "paulayoade18@gmail.com";
   const original = globalThis.fetch;
   try {
@@ -131,7 +131,7 @@ test("code delivery uses the existing email adapter and Gmail reply address", as
       const payload = JSON.parse(init?.body as string);
       assert.deepEqual(payload.to, ["account@example.com"]);
       assert.equal(payload.reply_to, "paulayoade18@gmail.com");
-      assert.equal(payload.from, "Signal <security@example.com>");
+      assert.equal(payload.from, "SocialPanora <security@example.com>");
       assert.match(payload.text, /012345/);
       assert.match(payload.text, /10 minutes/);
       return Response.json({ id: "mock-code-email" });
@@ -199,7 +199,7 @@ test("email adapter is explicitly enabled, sends the expected request and handle
   await assert.rejects(sendResetEmail("test@example.com", "https://signal.example/reset-password#token=test"));
   process.env.EMAIL_PROVIDER = "resend";
   process.env.RESEND_API_KEY = "test-only-key";
-  process.env.EMAIL_FROM = "Signal <security@example.com>";
+  process.env.EMAIL_FROM = "SocialPanora <security@example.com>";
   const original = globalThis.fetch;
   try {
     globalThis.fetch = async (url, init) => {

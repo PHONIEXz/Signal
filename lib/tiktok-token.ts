@@ -23,7 +23,7 @@ export async function getValidTikTokAccessToken(
   }
 
   if (!process.env.TIKTOK_CLIENT_KEY?.trim() || !process.env.TIKTOK_CLIENT_SECRET?.trim()) {
-    throw new MetricTokenError({ code: "METRIC_CONFIGURATION", responsibility: "signal", message: "Signal's TikTok renewal configuration is missing. The server configuration needs review; saved metrics are preserved.", stopAccountRequests: true });
+    throw new MetricTokenError({ code: "METRIC_CONFIGURATION", responsibility: "signal", message: "SocialPanora's TikTok renewal configuration is missing. The server configuration needs review; saved metrics are preserved.", stopAccountRequests: true });
   }
 
   const res = await request("https://open.tiktokapis.com/v2/oauth/token/", {

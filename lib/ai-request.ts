@@ -34,7 +34,7 @@ export async function withAiRequest(request: Request, run: (userId: string, body
     await recordUsageFailure("ai");
     const reference = crypto.randomUUID();
     // Never log provider error objects: they may contain prompts or credentials.
-    console.error("Signal AI request failed", { reference, event: "AI_REQUEST_FAILED" });
-    return json({ error: "Signal AI could not complete this request. Please try again shortly.", reference }, 503);
+    console.error("SocialPanora AI request failed", { reference, event: "AI_REQUEST_FAILED" });
+    return json({ error: "SocialPanora AI could not complete this request. Please try again shortly.", reference }, 503);
   }
 }

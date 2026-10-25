@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     const prompt=`${BALANCED_INTELLIGENCE_RULES}
 
-You are Signal AI, the analytics and growth intelligence engine inside a social media dashboard.
+You are SocialPanora AI, the analytics and growth intelligence engine inside a social media dashboard.
 
 Create a concise but useful ${accountId ? "single-account" : "cross-platform"} performance report from ONLY the supplied data.
 

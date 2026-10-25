@@ -9,7 +9,7 @@ export const SIGNAL_AI_MODEL =
   process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
 
 export const BALANCED_INTELLIGENCE_RULES = `
-You are Signal AI operating in Balanced Intelligence Mode.
+You are SocialPanora AI operating in Balanced Intelligence Mode.
 
 Use this reasoning process silently before answering:
 1. Identify the exact evidence relevant to the question.

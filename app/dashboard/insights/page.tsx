@@ -49,7 +49,7 @@ export default async function InsightsPage({
       <div className="mx-auto max-w-3xl">
         <div className="rounded-xl border border-border bg-surface p-8">
           <h1 className="font-display text-xl font-medium text-ink">
-            Signal AI
+            SocialPanora AI
           </h1>
 
           <p className="mt-2 text-sm text-ink-muted">
@@ -97,7 +97,7 @@ export default async function InsightsPage({
           </h2>
 
           <p className="mt-2 max-w-xl text-sm leading-6 text-ink-muted">
-            Signal needs account performance data before it can identify
+            SocialPanora needs account performance data before it can identify
             growth patterns, content opportunities and changes in your
             audience.
           </p>
@@ -233,7 +233,7 @@ export default async function InsightsPage({
 
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
-                Signal intelligence
+                SocialPanora intelligence
               </p>
 
               <p className="mt-0.5 text-xs text-ink-muted">
@@ -246,7 +246,7 @@ export default async function InsightsPage({
         <div className="px-6 py-7">
           <h2 className="max-w-2xl font-display text-2xl font-medium tracking-tight text-ink">
             {followerGrowth === null
-              ? "Your Signal profile is starting to take shape."
+              ? "Your SocialPanora profile is starting to take shape."
               : growthDirection === "positive"
                 ? `Your audience is moving in the right direction.`
                 : growthDirection === "negative"
@@ -256,7 +256,7 @@ export default async function InsightsPage({
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-muted">
             {followerGrowth === null
-              ? "Signal has your current performance data, but it needs another snapshot before it can confidently compare growth over time."
+              ? "SocialPanora has your current performance data, but it needs another snapshot before it can confidently compare growth over time."
                 : growthDirection === "positive"
                   ? `You currently have ${formatNumber(
                     totalFollowers.value ?? 0
@@ -276,7 +276,7 @@ export default async function InsightsPage({
       <section>
         <SectionHeading
           title="Your current signal"
-          description="A quick read of the numbers Signal has available."
+          description="A quick read of the numbers SocialPanora has available."
         />
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -317,7 +317,7 @@ export default async function InsightsPage({
       <section className="rounded-xl border border-border bg-surface p-6">
         <SectionHeading
           title="What changed?"
-          description="The most useful differences Signal can identify right now."
+          description="The most useful differences SocialPanora can identify right now."
         />
 
         <div className="mt-6 space-y-5">
@@ -334,7 +334,7 @@ export default async function InsightsPage({
             }
             description={
               followerGrowth === null
-                ? "Once another metric snapshot is available, Signal can calculate a meaningful growth trend."
+                ? "Once another metric snapshot is available, SocialPanora can calculate a meaningful growth trend."
                 : `${formatNumber(
                     Math.abs(followerGrowth)
                   )} follower${Math.abs(followerGrowth) === 1 ? "" : "s"} ${
@@ -368,7 +368,7 @@ export default async function InsightsPage({
             }
             description={
               analyzedPosts > 0
-                ? "Signal can use these stored posts for content-level insights. New X posts may remain unavailable until your X API access is restored."
+                ? "SocialPanora can use these stored posts for content-level insights. New X posts may remain unavailable until your X API access is restored."
                 : "Your account metrics are available, but there are not enough stored posts yet for content-level analysis."
             }
             tone="neutral"
@@ -380,14 +380,14 @@ export default async function InsightsPage({
       <section>
         <SectionHeading
           title="What should you do next?"
-          description="Practical actions based on the data Signal currently has."
+          description="Practical actions based on the data SocialPanora currently has."
         />
 
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <Recommendation
             number="01"
             title="Keep measuring"
-            description="Refresh your account metrics regularly so Signal can build a stronger growth history."
+            description="Refresh your account metrics regularly so SocialPanora can build a stronger growth history."
           />
 
           <Recommendation
@@ -396,7 +396,7 @@ export default async function InsightsPage({
             description={
               strongestPost
                 ? `Your strongest stored post currently has ${strongestPost.likeCount} likes, ${strongestPost.replyCount} replies, ${strongestPost.retweetCount} reposts and ${strongestPost.quoteCount} quotes.`
-                : "Once posts are stored, Signal can identify which content deserves to be repeated."
+                : "Once posts are stored, SocialPanora can identify which content deserves to be repeated."
             }
           />
 
@@ -480,7 +480,7 @@ function PageHeader({
         <span className="text-lg text-navy">✦</span>
 
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-navy">
-          Signal AI
+          SocialPanora AI
         </p>
       </div>
 

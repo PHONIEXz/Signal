@@ -32,7 +32,7 @@ export async function DELETE(request: Request) {
 
     const response = NextResponse.json({
       success: true,
-      message: "Facebook connection and its saved data deleted from Signal",
+      message: "Facebook connection and its saved data deleted from SocialPanora",
     }, { headers: PRIVATE_HEADERS });
     response.cookies.set("fb_page_selection", "", { maxAge: 0, path: "/", httpOnly: true, sameSite: "lax" });
     response.cookies.set("fb_oauth_state", "", { maxAge: 0, path: "/", httpOnly: true, sameSite: "lax" });

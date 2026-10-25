@@ -72,7 +72,7 @@ export default function MetricsPanel({
     setNotice([data.message || "Your metrics have been updated.",data.warning].filter(Boolean).join(" "));
 
     router.refresh();
-    } catch { setError("Could not reach Signal. Check your connection and try again."); }
+    } catch { setError("Could not reach SocialPanora. Check your connection and try again."); }
     finally { setLoading(false); }
   }
 

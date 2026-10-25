@@ -5,7 +5,7 @@ export type RefreshLimit = { count: number; cap: number; resetAt: Date; reason: 
 export function buildRefreshGate({ now, enabled, analyticsEnabled, limits, nextAllowedAt }: {
   now: Date; enabled: boolean; analyticsEnabled: boolean; limits: RefreshLimit[]; nextAllowedAt?: Date | null;
 }): RefreshGate {
-  if (!enabled) return { reason: "Metric collection is temporarily paused by Signal.", availableAt: null };
+  if (!enabled) return { reason: "Metric collection is temporarily paused by SocialPanora.", availableAt: null };
   if (!analyticsEnabled) return { reason: "Analytics collection is paused in Settings.", availableAt: null };
   const blocked = limits.filter(limit => limit.count >= limit.cap && limit.resetAt > now)
     .sort((a,b) => b.resetAt.getTime() - a.resetAt.getTime());

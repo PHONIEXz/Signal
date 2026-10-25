@@ -6,9 +6,9 @@ const manrope = localFont({ src: "./fonts/manrope-latin.woff2", display: "swap",
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Signal | Your platforms, one dashboard",
-  applicationName: "Signal",
-  icons: { icon: "/signal-icon.svg", apple: "/apple-touch-icon.png" },
+  title: "SocialPanora | Your social world. One clear view.",
+  applicationName: "SocialPanora",
+  icons: { icon: "/socialpanora-icon.svg", apple: "/apple-touch-icon.png" },
   description: "Connect your social accounts and see every metric in one place.",
 };
 
