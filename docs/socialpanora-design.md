@@ -18,4 +18,4 @@ Decorative tiles use a single entrance animation. The interactive public preview
 
 ## Domain migration
 
-This visual update does not switch the authentication origin. The custom .tech hostname is attached, but the primary authentication URL changes only after external platform callback allowlists are ready.
+The custom .tech hostname is the canonical production origin. APP_URL, AUTH_URL and NEXTAUTH_URL use https://socialpanora.phoenixreborn.tech. The former Vercel hostname redirects to .tech, and provider callback URLs use the new origin. Existing host-scoped sessions may require signing in again. See the dated foundation audit for the earlier staged migration and its remaining verification limits.

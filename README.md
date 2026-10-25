@@ -4,7 +4,7 @@
 
 SocialPanora, formerly Signal, is a social media workspace for connected-account analytics, metric history, AI-assisted insights, reports and content drafts. Missing platform data is labelled unavailable rather than invented.
 
-Live app: https://signal-phoenix-dashboard.vercel.app/
+Live app: https://socialpanora.phoenixreborn.tech/
 
 ## Development
 
@@ -28,7 +28,7 @@ Built with Next.js, React, TypeScript, Prisma, Turso, NextAuth, Tailwind CSS and
 
 ## Rename compatibility
 
-The public product name is SocialPanora. The existing repository, deployment URL, OAuth callback URLs, `SIGNAL_*` configuration variables, database model names, internal component identifiers and storage keys remain compatible with the existing installation. The former icon URL also remains available for cached clients. This branding update requires no database migration or reconnection.
+The public product name is SocialPanora. The canonical address is https://socialpanora.phoenixreborn.tech. The former Vercel hostname redirects to this address. Provider callbacks use the canonical hostname; retain the former callback entries during migration. The existing repository, `SIGNAL_*` configuration variables, database model names, internal component identifiers and storage keys remain compatible with the existing installation. The former icon URL also remains available for cached clients. This branding update requires no database migration or reconnection.
 
 External Google, Meta, X and TikTok developer-console display names are managed separately. Some provider screens may still say Signal until those app profiles are updated; historical provider names in review notes are retained accurately.
 

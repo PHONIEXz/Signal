@@ -8,8 +8,9 @@ Keep the existing AUTH_SECRET and TOKEN_ENCRYPTION_KEY. Set these variables in t
 
 | Variable | Value |
 | --- | --- |
-| APP_URL | https://signal-phoenix-dashboard.vercel.app |
-| NEXTAUTH_URL | https://signal-phoenix-dashboard.vercel.app |
+| APP_URL | https://socialpanora.phoenixreborn.tech |
+| NEXTAUTH_URL | https://socialpanora.phoenixreborn.tech |
+| AUTH_URL | https://socialpanora.phoenixreborn.tech |
 | AUTH_TRUST_HOST | true |
 | EMAIL_PROVIDER | resend |
 | RESEND_API_KEY | Your Resend API key |

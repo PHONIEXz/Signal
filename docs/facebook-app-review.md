@@ -8,7 +8,7 @@ Prepared October 18, 2026. This is a preparation packet, not a submitted applica
 | --- | --- | --- |
 | Business verification | Dashboard says Signal - Phoenix Enterprise is unverified; owner says the business is unregistered | Obtain accepted, genuine documentation matching the business details; do not invent a registration or substitute another business |
 | Tech Provider access verification | Dashboard says business verification must finish first | Complete the actual access-verification questions after it unlocks |
-| Production application | https://signal-phoenix-dashboard.vercel.app/ | Confirm successful production deployment for this change |
+| Production application | https://socialpanora.phoenixreborn.tech/ | Confirm successful production deployment for this change |
 | Public privacy and deletion instructions | `/privacy` and `/data-deletion`; linked from legal navigation and Settings | Open both without login in production |
 | Facebook authorization | Login for Business using FACEBOOK_CONFIG_ID; CSRF state check; Page selection before saving an encrypted Page token | Confirm production FACEBOOK_APP_ID and configuration belong to the exact Meta app being reviewed, currently shown as Signal Backup |
 | Scope and access | Permissions come from the Meta Login for Business configuration, not hard-coded URL scopes | Inspect configuration and request only permissions whose features are demonstrated |
@@ -22,11 +22,11 @@ Prepared October 18, 2026. This is a preparation packet, not a submitted applica
 
 ## URLs to copy into the matching dashboard fields
 
-- Website: https://signal-phoenix-dashboard.vercel.app/
-- Privacy policy: https://signal-phoenix-dashboard.vercel.app/privacy
-- Terms: https://signal-phoenix-dashboard.vercel.app/terms
-- User data deletion **instructions**: https://signal-phoenix-dashboard.vercel.app/data-deletion
-- Facebook OAuth redirect: https://signal-phoenix-dashboard.vercel.app/api/connect/facebook/callback
+- Website: https://socialpanora.phoenixreborn.tech/
+- Privacy policy: https://socialpanora.phoenixreborn.tech/privacy
+- Terms: https://socialpanora.phoenixreborn.tech/terms
+- User data deletion **instructions**: https://socialpanora.phoenixreborn.tech/data-deletion
+- Facebook OAuth redirect: https://socialpanora.phoenixreborn.tech/api/connect/facebook/callback
 
 Use the deletion URL only in an instructions-URL field. It is a human-readable page, not a signed-request callback endpoint. If the selected Meta configuration requires a callback rather than instructions, implement and test that separately before submission.
 
@@ -64,7 +64,7 @@ Do not add messaging, advertising, business-management, Threads or Instagram per
 
 Fill the bracketed values only after testing. Do not paste this unfinished draft as a completed submission.
 
-1. Visit https://signal-phoenix-dashboard.vercel.app/login.
+1. Visit https://socialpanora.phoenixreborn.tech/login.
 2. Sign in using the dedicated SocialPanora reviewer account: [private reviewer email and password]. Do not use or disclose the owner's Facebook password.
 3. Open Dashboard > Accounts. Ensure the reviewer account has room under its plan's connection limit; a Free account allows one connection.
 4. Choose Connect Facebook and complete Meta's authorization flow with the reviewer-supported Page/testing setup required by the current dashboard. Document exactly how the reviewer obtains authorized Page access; do not assume access to the developer's Page.
