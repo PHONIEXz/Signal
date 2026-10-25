@@ -74,7 +74,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-surface p-6">
+      <div className="workspace-panel rounded-xl border border-border bg-surface p-6">
         <SignalThinkingState />
         <p className="mt-3 text-sm text-ink-muted">
           Analyzing {scopeLabel} using your selected post sample.
@@ -101,7 +101,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
     );
   }
 
-  if (!report) return <section className="rounded-xl border border-border bg-surface p-6">
+  if (!report) return <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
     <h2 className="font-display text-lg font-medium text-ink">Your AI report</h2>
     <p className="mt-2 text-sm text-ink-muted">Generate a report for {scopeLabel} from your selected post sample. Analysis starts only when you choose Generate.</p>
     <button type="button" onClick={generateReport} className="mt-4 rounded-md bg-action px-4 py-2 text-sm text-white">Generate report</button>
@@ -109,7 +109,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-xl border border-border bg-surface">
+      <section className="workspace-panel overflow-hidden rounded-xl border border-border bg-surface">
         <div className="border-b border-border bg-paper px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
             <button
               type="button"
               onClick={generateReport}
-              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
+              className="workspace-panel rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
             >
               Regenerate
             </button>
@@ -159,7 +159,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
       </div>
 
       {report.platformNotes?.length > 0 && (
-        <section className="rounded-xl border border-border bg-surface p-6">
+        <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
           <div>
             <p className="font-display text-lg font-medium text-ink">
               Platform intelligence
@@ -204,7 +204,7 @@ function InsightGroup({
   items: string[];
 }) {
   return (
-    <section className="rounded-xl border border-border bg-surface p-6">
+    <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
       <p className="font-display text-lg font-medium text-ink">{title}</p>
 
       <div className="mt-5 space-y-4">

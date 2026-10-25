@@ -6,7 +6,7 @@ import { metricsSchemaReady } from "@/lib/metric-storage";
 
 
 export default async function SyncDetails({ accountId }: { accountId: string }) {
-  if (!await metricsSchemaReady()) return <p className="rounded border border-border bg-surface p-4 text-sm">Metrics are temporarily unavailable. Please try again later.</p>;
+  if (!await metricsSchemaReady()) return <p className="workspace-panel rounded border border-border bg-surface p-4 text-sm">Metrics are temporarily unavailable. Please try again later.</p>;
   const [sync,insight,gate,snapshot]=await Promise.all([
     prisma.metricSync.findUnique({where:{connectedAccountId:accountId}}),
     prisma.pageInsight.findFirst({where:{connectedAccountId:accountId,metric:"page_media_view"},orderBy:{periodEnd:"desc"}}),
@@ -14,7 +14,7 @@ export default async function SyncDetails({ accountId }: { accountId: string }) 
     prisma.metricSnapshot.findFirst({where:{connectedAccountId:accountId},orderBy:{fetchedAt:"desc"},select:{fetchedAt:true}}),
   ]);
   const status=sync?.status === "RUNNING" ? "Refreshing" : sync?.status === "FAILED" ? "Refresh failed" : sync?.status === "LIMITED" ? "Daily limit reached" : sync?.status === "PARTIAL" ? "Some fields unavailable" : sync?.status === "EMPTY" ? "No posts returned" : sync?.status === "AVAILABLE" ? "Collection complete" : "Not collected yet";
-  return <section className="rounded-xl border border-border bg-surface p-5 text-sm">
+  return <section className="workspace-panel rounded-xl border border-border bg-surface p-5 text-sm">
     <h2 className="font-display text-lg font-medium text-ink">About your data</h2>
     <dl className="mt-4 grid gap-4 sm:grid-cols-3">
       <div><dt className="text-ink-muted">Collection</dt><dd className="mt-1 font-medium text-ink">{status}</dd></div>

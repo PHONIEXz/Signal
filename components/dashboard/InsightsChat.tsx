@@ -73,7 +73,7 @@ export default function InsightsChat({
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-surface p-5 sm:p-7">
+    <div className="workspace-panel rounded-3xl border border-border bg-surface p-5 sm:p-7">
       <h2 className="font-display text-xl font-bold tracking-tight text-ink">
         Ask about your account
       </h2>

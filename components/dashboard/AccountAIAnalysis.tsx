@@ -105,7 +105,7 @@ export default function AccountAIAnalysis({
   }, [platform, sampleSize]);
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
+    <div className="workspace-panel rounded-lg border border-border bg-surface p-6">
       <div className="flex items-start justify-between">
         <div>
           <p className="font-display text-lg font-medium text-ink">

@@ -130,7 +130,7 @@ export default function PostAnalysis({
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="workspace-panel rounded-lg border border-border bg-surface p-6">
         <div className="flex items-start justify-between gap-4">
           <p className="whitespace-pre-wrap text-sm leading-6 text-ink">
             {post.text}
@@ -151,7 +151,7 @@ export default function PostAnalysis({
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="workspace-panel rounded-lg border border-border bg-surface p-6">
         <p className="font-display text-lg font-medium text-ink">
           Quick analysis
         </p>
@@ -200,7 +200,7 @@ export default function PostAnalysis({
       </div>
 
       {messages.length > 0 && (
-        <div className="rounded-lg border border-border bg-surface p-6">
+        <div className="workspace-panel rounded-lg border border-border bg-surface p-6">
           <p className="font-display text-lg font-medium text-ink">
             Analysis
           </p>
@@ -234,7 +234,7 @@ export default function PostAnalysis({
         </p>
       )}
 
-      <div className="rounded-lg border border-border bg-surface p-4">
+      <div className="workspace-panel rounded-lg border border-border bg-surface p-4">
         <div className="flex gap-2">
           <input
             value={input}
@@ -251,7 +251,7 @@ export default function PostAnalysis({
               }
             }}
             placeholder="Ask SocialPanora about this post..."
-            className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-muted/60 focus:border-navy"
+            className="workspace-panel flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-muted/60 focus:border-navy"
           />
 
           <button
@@ -279,7 +279,7 @@ function QuickButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md border border-border bg-surface px-4 py-3 text-left text-sm text-ink transition-colors hover:bg-paper"
+      className="workspace-panel rounded-md border border-border bg-surface px-4 py-3 text-left text-sm text-ink transition-colors hover:bg-paper"
     >
       {children}
     </button>

@@ -12,7 +12,7 @@ export default function TopPost({ post, platform }: { post: Post | null; platfor
   if (!post) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
+    <div className="workspace-panel rounded-lg border border-border bg-surface p-6">
       <p className="font-display text-lg font-medium text-ink">Top post</p>
       <p className="mt-3 line-clamp-3 text-sm text-ink">{post.text}</p>
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-muted">

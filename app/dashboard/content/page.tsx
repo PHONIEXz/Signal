@@ -21,7 +21,7 @@ export default async function ContentStudioPage() {
   ]);
 
   const plan = normalizePlan(user?.plan ?? "FREE");
-  if (drafts === null) return <div className="mx-auto max-w-3xl rounded-xl border border-border bg-surface p-8"><h1 className="font-display text-2xl text-ink">Content Studio is temporarily unavailable</h1><p className="mt-3 text-sm text-ink-muted">Your saved drafts are safe. Please try again later.</p></div>;
+  if (drafts === null) return <div className="workspace-panel mx-auto max-w-3xl rounded-xl border border-border bg-surface p-8"><h1 className="font-display text-2xl text-ink">Content Studio is temporarily unavailable</h1><p className="mt-3 text-sm text-ink-muted">Your saved drafts are safe. Please try again later.</p></div>;
 
   return (
     <ContentStudio

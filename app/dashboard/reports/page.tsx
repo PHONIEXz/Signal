@@ -17,7 +17,7 @@ export default async function ReportsPage({
   if (!session?.user?.id) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="rounded-xl border border-border bg-surface p-8">
+        <div className="workspace-panel rounded-xl border border-border bg-surface p-8">
           <h1 className="font-display text-xl font-medium text-ink">
             Reports
           </h1>
@@ -61,11 +61,11 @@ export default async function ReportsPage({
       </div>
 
       <ReportAccountSelector accounts={connections} selected={query.account || ""} />
-      {invalidSelection && <p role="alert" className="rounded-xl border border-border bg-surface p-4 text-sm text-ink">That account is unavailable. Choose a connected account or select all accounts to continue.</p>}
+      {invalidSelection && <p role="alert" className="workspace-panel rounded-xl border border-border bg-surface p-4 text-sm text-ink">That account is unavailable. Choose a connected account or select all accounts to continue.</p>}
       <PostSampleSelector plan={plan} selected={sampleSize} />
 
       {connections.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
+        <div className="workspace-panel rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-navy/10 text-xl text-navy">
             ✦
           </div>

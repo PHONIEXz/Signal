@@ -16,7 +16,7 @@ export default function AuthShell({
     <div className="relative flex min-h-screen overflow-hidden bg-paper">
       <div className="pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full bg-amber/10 blur-3xl lg:hidden" />
 
-      <aside className="relative hidden min-h-screen w-[46%] max-w-[640px] flex-col justify-between overflow-hidden bg-action px-12 py-11 text-white lg:flex xl:px-16 xl:py-14">
+      <aside className="relative hidden min-h-screen w-[46%] max-w-[640px] flex-col justify-between overflow-hidden bg-[#132c70] px-12 py-11 text-white lg:flex xl:px-16 xl:py-14">
         <div className="auth-grid pointer-events-none absolute inset-0 opacity-70" />
         <div className="pointer-events-none absolute -left-36 bottom-[-10rem] h-[28rem] w-[28rem] rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-24 top-24 h-64 w-64 rounded-full bg-amber/20 blur-3xl" />

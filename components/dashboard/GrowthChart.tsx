@@ -72,12 +72,12 @@ export default function GrowthChart({ data, sampleData = data, platform, history
   const currentValue = current?.[metrics[activeMetric].key] ?? null;
 
   return (
-    <div ref={chartRoot} data-reveal className="rounded-3xl border border-border bg-surface p-5 sm:p-7">
+    <div ref={chartRoot} data-reveal className="workspace-panel rounded-3xl border border-border bg-surface p-5 sm:p-7">
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="font-display text-lg font-medium text-ink">
-              Growth Intelligence
+              Performance overview
             </p>
 
             <div className="mt-2 flex flex-wrap items-baseline gap-2">
@@ -123,7 +123,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               type="button"
               onClick={() => setActiveMetric(key)}
               aria-pressed={activeMetric === key}
-              className={`min-h-11 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
+              className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                 activeMetric === key
                   ? "bg-action text-white"
                   : "border border-border text-ink-muted hover:text-ink"
@@ -160,12 +160,12 @@ export default function GrowthChart({ data, sampleData = data, platform, history
 
       {(activeMetric === "likes" || activeMetric === "views") && <p className="mt-4 text-xs text-ink-muted">These totals come from recent post samples that can change between refreshes. They do not measure new interactions or same-post growth. Open a post’s measurement history for a comparable change.</p>}
       {current && currentValue !== null && <p className="mt-3 text-xs text-ink-muted">Latest measurement in this view: {formatTime(current.date)}</p>}
-      <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Only recorded measurements receive dots.</p>
+
       <div className="mt-6 flex flex-wrap gap-1 rounded-2xl border border-border bg-paper p-1.5" role="group" aria-label="Growth chart interval">
         {growthPeriods.map(value => <button key={value} type="button" aria-pressed={period === value} onClick={() => setPeriod(value)}
           className={`min-h-11 flex-1 rounded-xl px-3 text-sm font-semibold capitalize transition-all ${period === value ? "bg-action text-white shadow-md" : "text-ink-muted hover:bg-surface hover:text-ink"}`}>{value}</button>)}
       </div>
-      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Labels show those period boundaries in your selected time zone. Unmeasured periods have no dots. Refreshing collects data; changing this view does not.</p>
+
       {historyLimited && <p className="mt-2 text-xs text-ink-muted">Showing the latest 5,000 saved refreshes. Older history is outside this view.</p>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-ink-muted">{observed.length} recorded {observed.length === 1 ? "period" : "periods"} for this metric · Times in {timeZone === "Africa/Lagos" ? "WAT" : timeZone}</p>
@@ -182,10 +182,10 @@ export default function GrowthChart({ data, sampleData = data, platform, history
         {observed.length > 0 && !zeroBaseline && " The vertical axis is zoomed to the recorded values; it may not start at zero."}
       </p>
       {observed.length > 1 && <p className="mt-2 text-xs text-ink-muted">Dashed links connect known endpoints only. Values between them are unknown.</p>}
-      {observed.length > 0 && <div className="mt-4 h-64" aria-label={`${metrics[activeMetric].label} history chart. Exact values are available below.`}>
+      {observed.length > 0 && <div className="mt-4 h-72 sm:h-80" aria-label={`${metrics[activeMetric].label} history chart. Exact values are available below.`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart key={`${activeMetric}-${period}-${inView}`} data={chartData} margin={{ top: 12, right: 18, bottom: 8, left: 0 }}>
-            <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="4 4" />
+            <CartesianGrid vertical={false} stroke="var(--color-border)" strokeDasharray="3 5" />
             <XAxis
               dataKey="timestamp"
               type="number"
@@ -193,7 +193,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               domain={["dataMin", "dataMax"]}
               tickFormatter={value => new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", ...(period === "hourly" ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), ...(period === "yearly" ? { year: "numeric" as const } : {}), timeZone })}
               minTickGap={48}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 13, fill: "var(--color-ink-muted)" }}
               axisLine={false}
               tickLine={false}
             />
@@ -201,7 +201,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
             <YAxis
               domain={domain}
               allowDecimals={false}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 12, fill: "var(--color-ink-muted)" }}
               axisLine={false}
               tickLine={false}
               width={64}
@@ -211,7 +211,7 @@ export default function GrowthChart({ data, sampleData = data, platform, history
               labelFormatter={value => "Period starting " + formatTime(Number(value))}
               contentStyle={{
                 fontSize: 12,
-                borderRadius: 8,
+                borderRadius: 12,
                 border: "1px solid var(--color-border)",
                 background: "var(--color-surface)",
                 color: "var(--color-ink)",
@@ -237,6 +237,10 @@ export default function GrowthChart({ data, sampleData = data, platform, history
           </LineChart>
         </ResponsiveContainer>
       </div>}
+      <details className="mt-5 rounded-lg bg-paper px-4 py-2"><summary className="cursor-pointer py-2 text-sm font-semibold text-ink">How to read this chart</summary>
+      <p className="mt-4 text-sm leading-6 text-ink-muted">History grows from successful collections. Followers and post counts use all account snapshots; sample likes and views use your selected post sample. Only recorded measurements receive dots.</p>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Up to {periodDescriptions[period]}, ending at the current UTC period. Each point is the last snapshot in its UTC period, not a sum. Labels show those period boundaries in your selected time zone. Unmeasured periods have no dots. Refreshing collects data; changing this view does not.</p>
+      </details>
       {chartData.length > 0 && <details className="mt-4 border-t border-border pt-4">
         <summary className="cursor-pointer py-2 text-sm font-medium text-ink">View period measurements</summary>
         <div className="mt-3 max-h-64 overflow-auto">

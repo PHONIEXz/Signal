@@ -86,7 +86,7 @@ export default async function AccountDetailPage({
   const topPost = sampledPosts.filter(p => postEngagement(p) !== null).sort((a,b) => postEngagement(b)! - postEngagement(a)!)[0];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <h1 id="account-heading" tabIndex={-1} className="scroll-mt-24 font-display text-3xl font-bold capitalize tracking-tight text-ink focus:outline-none">
         {platform}
       </h1>
@@ -119,7 +119,7 @@ export default async function AccountDetailPage({
       <SyncDetails accountId={connectedAccount.id} />
       <GrowthChart asOf={new Date().toISOString()} sampleData={growthData.filter(point => point.sampleSize === sampleSize)} data={growthData} platform={platform} historyLimited={historyLimited} />
 
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-surface p-6">
+      <section className="workspace-panel flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-surface p-6">
         <div><h2 className="text-lg font-bold text-ink">Want a deeper analysis?</h2><p className="mt-1 text-sm text-ink-muted">Explore opportunities and next actions in Reports, when you need them.</p></div>
         <Link href={`/dashboard/reports?account=${encodeURIComponent(connectedAccount.id)}&posts=${sampleSize}`} className="inline-flex min-h-11 items-center rounded-xl bg-action px-5 text-sm font-semibold text-white">View account report <span aria-hidden="true" className="ml-2">↗</span></Link>
       </section>

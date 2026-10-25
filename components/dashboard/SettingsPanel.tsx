@@ -167,16 +167,16 @@ export default function SettingsPanel() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-24 animate-pulse rounded-lg border border-border bg-surface" />
-        <div className="h-52 animate-pulse rounded-lg border border-border bg-surface" />
-        <div className="h-52 animate-pulse rounded-lg border border-border bg-surface" />
+        <div className="workspace-panel h-24 animate-pulse rounded-lg border border-border bg-surface" />
+        <div className="workspace-panel h-52 animate-pulse rounded-lg border border-border bg-surface" />
+        <div className="workspace-panel h-52 animate-pulse rounded-lg border border-border bg-surface" />
       </div>
     );
   }
 
   if (!settings) {
     return (
-      <div className="rounded-lg border border-border bg-surface px-6 py-10 text-center">
+      <div className="workspace-panel rounded-lg border border-border bg-surface px-6 py-10 text-center">
         <p className="font-medium text-ink">Unable to load settings</p>
         <p className="mt-2 text-sm text-ink-muted">
           {error || "Please refresh the page and try again."}
@@ -187,29 +187,29 @@ export default function SettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl bg-[#173e36] p-6 text-white sm:p-8" aria-label="Account overview">
-        <svg className="pointer-events-none absolute -right-10 -top-12 h-64 w-64 text-[#d9ed92]/15" aria-hidden="true" viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="16"><circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="40"/></svg>
+      <section className="relative overflow-hidden rounded-3xl bg-[#123cbb] p-6 text-white sm:p-8" aria-label="Account overview">
+        <svg className="pointer-events-none absolute -right-10 -top-12 h-64 w-64 text-[#d9e6ff]/15" aria-hidden="true" viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="16"><circle cx="100" cy="100" r="70"/><circle cx="100" cy="100" r="40"/></svg>
         <div className="relative flex flex-wrap items-center gap-4">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#d9ed92] text-2xl font-bold text-[#173e36]" aria-hidden="true">{(settings.name || settings.email).slice(0,1).toUpperCase()}</span>
-          <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-widest text-[#d9ed92]">Your workspace</p><h2 className="mt-1 break-words text-2xl font-bold">{settings.name || "Your SocialPanora account"}</h2><p className="mt-1 break-all text-sm text-white/80">{settings.email}</p></div>
+          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e7efff] text-2xl font-bold text-[#123cbb]" aria-hidden="true">{(settings.name || settings.email).slice(0,1).toUpperCase()}</span>
+          <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-widest text-[#d9e6ff]">Your workspace</p><h2 className="mt-1 break-words text-2xl font-bold">{settings.name || "Your SocialPanora account"}</h2><p className="mt-1 break-all text-sm text-white/80">{settings.email}</p></div>
         </div>
         <div className="relative mt-6 flex flex-wrap gap-2 text-xs"><span className="rounded-full border border-white/25 px-3 py-2">{settings.hasPassword ? "Password sign-in" : "Connected-provider sign-in"}</span><span className="rounded-full border border-white/25 px-3 py-2">Analytics {settings.analyticsCollectionEnabled ? "on" : "paused"}</span></div>
       </section>
 
       <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
-        {[["preferences","Preferences"],["data","Data & AI"],["collection-health","Collection health"],["security","Security"],["session","Session"]].map(([id,label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:border-action hover:text-action">{label}</a>)}
+        {[["preferences","Preferences"],["data","Data & AI"],["collection-health","Collection health"],["security","Security"],["session","Session"]].map(([id,label]) => <a key={id} href={`#${id}`} className="workspace-panel inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:border-action hover:text-action">{label}</a>)}
       </nav>
       <div role="status" aria-live="polite" className="min-h-6 text-sm text-ink-muted">{saving ? "Saving your preference…" : savedAt ? <>Saved <LocalTime value={savedAt} /></> : "Preferences save automatically."}</div>
       {error && <p role="alert" className="rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-4 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
-      <section id="preferences" className="scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface" aria-labelledby="preferences-title">
+      <section id="preferences" className="workspace-panel scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface" aria-labelledby="preferences-title">
         <div className="border-b border-border p-5 sm:p-6"><p className="section-kicker">01 / Make it yours</p><h2 id="preferences-title" className="mt-2 text-xl font-bold text-ink">Appearance & connections</h2></div>
         <div className="flex items-center justify-between gap-5 p-5 sm:p-6"><div><h3 className="font-semibold text-ink">Colour theme</h3><p className="mt-1 text-sm text-ink-muted">Switch between light and dark on this browser.</p></div><ThemeToggle /></div>
         <TimePreferences />
         <Link href="/dashboard/accounts" className="flex min-h-16 items-center justify-between gap-4 border-t border-border px-5 py-4 text-sm font-semibold text-ink hover:bg-paper sm:px-6">Manage connected accounts <span aria-hidden="true">↗</span></Link>
       </section>
 
-      <section id="data" className="scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface" aria-labelledby="data-title">
+      <section id="data" className="workspace-panel scroll-mt-24 overflow-hidden rounded-3xl border border-border bg-surface" aria-labelledby="data-title">
         <div className="border-b border-border p-5 sm:p-6"><p className="section-kicker">02 / You decide</p><h2 id="data-title" className="mt-2 text-xl font-bold text-ink">Data & intelligence</h2><p className="mt-2 text-sm leading-6 text-ink-muted">Choose what SocialPanora collects and how AI can use it.</p></div>
         <SettingRow title="Analytics collection" description="Collect daily snapshots and allow manual refreshes. Turning this off pauses new collection; your saved history stays available." enabled={settings.analyticsCollectionEnabled} disabled={saving !== null} saving={saving === "analyticsCollectionEnabled"} onChange={() => updateSetting("analyticsCollectionEnabled")} />
         <SettingRow title="AI insights" description="Allow AI insights about your available social performance." enabled={settings.aiInsightsEnabled} disabled={saving !== null} saving={saving === "aiInsightsEnabled"} onChange={() => updateSetting("aiInsightsEnabled")} />
@@ -217,16 +217,16 @@ export default function SettingsPanel() {
         <div className="border-t border-border bg-paper p-5 text-xs leading-6 text-ink-muted sm:px-6">Scheduled collection: daily at 06:00 UTC, subject to platform permissions and usage limits. The exact collection time appears on each account page.</div>
       </section>
 
-      <section id="security" className="scroll-mt-24 rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="security-title">
+      <section id="security" className="workspace-panel scroll-mt-24 rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="security-title">
         <p className="section-kicker">03 / Keep access secure</p><h2 id="security-title" className="mt-2 text-xl font-bold text-ink">Password & security</h2>
         {settings.hasPassword ? <><p className="mt-2 text-sm leading-6 text-ink-muted">Update your password or recover access to your account.</p><details className="mt-5 rounded-2xl border border-border p-4"><summary className="cursor-pointer py-2 text-sm font-semibold text-ink">Change password</summary><ChangePasswordForm /></details><Link href="/forgot-password" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-navy hover:underline">Forgot your current password?</Link></> : <p className="mt-3 text-sm leading-6 text-ink-muted">You sign in through a connected provider. Manage your password and verification with that provider.</p>}
       </section>
-      <section className="rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="deletion-title">
+      <section className="workspace-panel rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="deletion-title">
         <h2 id="deletion-title" className="text-lg font-bold text-ink">Your data, your choice</h2>
         <p className="mt-2 text-sm leading-6 text-ink-muted">Unlink Facebook to delete its saved connection and history. For a full SocialPanora account deletion request, follow our instructions.</p>
         <Link href="/data-deletion" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-navy underline">View deletion instructions</Link>
       </section>
-      <section id="session" className="scroll-mt-24 flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="session-title">
+      <section id="session" className="workspace-panel scroll-mt-24 flex flex-wrap items-center justify-between gap-5 rounded-3xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="session-title">
         <div><h2 id="session-title" className="text-lg font-bold text-ink">Current session</h2><p className="mt-1 text-sm text-ink-muted">Sign out of SocialPanora on this device.</p></div><button type="button" onClick={() => signOut({callbackUrl:"/login"})} className="min-h-11 rounded-xl border border-border px-5 text-sm font-semibold text-ink hover:bg-paper">Sign out</button>
       </section>
     </div>

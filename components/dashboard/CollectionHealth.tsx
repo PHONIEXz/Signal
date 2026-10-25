@@ -13,10 +13,10 @@ const labels: Record<string, string> = {
 export async function ScheduledCollectionHealth() {
   const now = new Date();
   const runs = await readDailyRuns(prisma).catch(() => null);
-  if (!runs) return <p role="status" className="mt-6 rounded-xl border border-border bg-surface p-4 text-sm text-ink-muted">Collection monitoring is temporarily unavailable. This does not establish whether collection succeeded or failed.</p>;
+  if (!runs) return <p role="status" className="workspace-panel mt-6 rounded-xl border border-border bg-surface p-4 text-sm text-ink-muted">Collection monitoring is temporarily unavailable. This does not establish whether collection succeeded or failed.</p>;
   const health = scheduleHealth(runs, now);
   const warning = ["MISSING", "INTERRUPTED", "INCOMPLETE", "FAILED"].includes(health.state);
-  return <section id="collection-health" aria-labelledby="collection-health-title" className="mt-6 rounded-3xl border border-border bg-surface p-5 sm:p-6">
+  return <section id="collection-health" aria-labelledby="collection-health-title" className="workspace-panel mt-6 rounded-3xl border border-border bg-surface p-5 sm:p-6">
     <p className="section-kicker">Collection health</p>
     <h2 id="collection-health-title" className="mt-2 text-xl font-bold text-ink">Daily history monitoring</h2>
     <p role="status" className={`mt-4 rounded-xl border p-3 text-sm font-semibold ${warning ? "border-amber-500/30 bg-amber-500/10 text-ink" : "border-border bg-paper text-ink"}`}>{labels[health.state] ?? health.state}</p>

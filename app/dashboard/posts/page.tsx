@@ -42,7 +42,7 @@ export default async function PostsPage() {
       </div>
 
       {connections.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
+        <div className="workspace-panel rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
           <p className="font-display text-xl font-medium text-ink">
             No platforms connected
           </p>
@@ -70,7 +70,7 @@ export default async function PostsPage() {
               <Link
                 key={connection.id}
                 href={`/dashboard/posts/${connection.platform}`}
-                className="group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-navy/30 hover:bg-paper"
+                className="workspace-panel group rounded-xl border border-border bg-surface p-6 transition-colors hover:border-navy/30 hover:bg-paper"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>

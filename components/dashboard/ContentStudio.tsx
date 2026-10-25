@@ -267,7 +267,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
           <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em] text-ink sm:text-4xl">Content Studio</h1>
           <p className="mt-2 text-sm text-ink-muted">From first idea to published post. Write, preview, plan and send from one workspace.</p>
         </div>
-        <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm">
+        <div className="workspace-panel rounded-lg border border-border bg-surface px-4 py-3 text-sm">
           <span className="font-medium text-ink">{plan} plan</span>
           <span className="ml-2 text-ink-muted">
             {drafts.length}{draftLimit === null ? " drafts, unlimited" : ` of ${draftLimit} drafts`}
@@ -275,10 +275,10 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
         </div>
       </div>
 
-      {recovery && <section className="rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-action px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
+      {recovery && <section className="workspace-panel rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-action px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
       <p className="text-xs text-ink-muted">Unsaved work is kept temporarily in this browser tab when storage is available. Save your draft to keep it across devices.</p>
       <div className="grid grid-cols-3 gap-3">
-        {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="rounded-xl border border-border bg-surface p-4"><p className="text-xs text-ink-muted">{label}</p><p className="mt-1 font-display text-2xl text-ink">{count}</p></div>)}
+        {[["Drafts", drafts.filter((d) => d.status === "DRAFT").length], ["Planned", drafts.filter((d) => d.status === "SCHEDULED").length], ["Published", drafts.filter((d) => d.status === "PUBLISHED").length]].map(([label, count]) => <div key={label} className="workspace-panel rounded-xl border border-border bg-surface p-4"><p className="text-xs text-ink-muted">{label}</p><p className="mt-1 font-display text-2xl text-ink">{count}</p></div>)}
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-border pb-3">
@@ -297,13 +297,13 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       </div>
 
       {message && (
-        <p className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-ink" role="status">
+        <p className="workspace-panel rounded-lg border border-border bg-surface px-4 py-3 text-sm text-ink" role="status">
           {message}
         </p>
       )}
 
       {accounts.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
+        <div className="workspace-panel rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
           <h2 className="font-display text-xl font-medium text-ink">Connect an account first</h2>
           <p className="mt-2 text-sm text-ink-muted">Content previews need at least one connected platform.</p>
           <Link href="/dashboard/accounts" className="mt-5 inline-flex rounded-md bg-action px-4 py-2 text-sm font-medium text-white">
@@ -312,7 +312,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
         </div>
       ) : view === "compose" ? (
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="rounded-xl border border-border bg-surface p-6">
+          <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
             <p role="status" className="mb-4 text-xs font-medium text-ink-muted">{busy ? "Saving your changes..." : dirty ? "Unsaved changes" : editingId ? "All changes saved" : "Ready for your next idea"}</p>
             <fieldset disabled={busy} className="space-y-5">
             <div>
@@ -420,7 +420,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                 const length = Array.from(previewText).length;
                 const overLimit = length > limit;
                 return (
-                  <article key={account.id} className="rounded-xl border border-border bg-surface p-5">
+                  <article key={account.id} className="workspace-panel rounded-xl border border-border bg-surface p-5">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <Image src={`/api/accounts/${account.id}/profile-image`} alt="" width={40} height={40} unoptimized className="h-10 w-10 rounded-full bg-paper object-cover" />
@@ -441,12 +441,12 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       ) : view === "library" ? (
         <section className="space-y-4">
           <div className="flex flex-wrap gap-3">
-            <input type="search" aria-label="Search drafts" placeholder="Search your content" value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
-            <select value={platformFilter} onChange={(event) => setPlatformFilter(event.target.value)} className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
+            <input type="search" aria-label="Search drafts" placeholder="Search your content" value={search} onChange={(event) => setSearch(event.target.value)} className="workspace-panel rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+            <select value={platformFilter} onChange={(event) => setPlatformFilter(event.target.value)} className="workspace-panel rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
               <option value="all">All platforms</option>
               {accounts.map((account) => <option key={account.id} value={account.platform}>{labelFor(account.platform)}</option>)}
             </select>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="workspace-panel rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink">
               <option value="all">All statuses</option>
               <option value="DRAFT">Draft</option>
               <option value="SCHEDULED">Planned</option>
@@ -456,9 +456,9 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
             <button onClick={() => { if (canReplaceEditor()) { resetEditor(); setView("compose"); } }} disabled={busy} className="ml-auto rounded-md bg-action px-4 py-2 text-sm font-medium text-white">New draft</button>
           </div>
           {visibleDrafts.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center text-sm text-ink-muted">No drafts match these filters.</div>
+            <div className="workspace-panel rounded-xl border border-dashed border-border bg-surface p-12 text-center text-sm text-ink-muted">No drafts match these filters.</div>
           ) : visibleDrafts.map((draft) => (
-            <article key={draft.id} className="rounded-xl border border-border bg-surface p-5">
+            <article key={draft.id} className="workspace-panel rounded-xl border border-border bg-surface p-5">
               <div className="flex flex-col justify-between gap-4 sm:flex-row">
                 <div className="min-w-0">
                   <div className="flex flex-wrap gap-2">
@@ -482,7 +482,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
           ))}
         </section>
       ) : (
-        <section className="rounded-xl border border-border bg-surface p-4 sm:p-6">
+        <section className="workspace-panel rounded-xl border border-border bg-surface p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-lg font-medium text-ink">{calendar.title}</h2><div className="flex gap-2"><button aria-label="Previous month" onClick={() => setCalendarOffset((n) => n - 1)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Previous</button><button onClick={() => setCalendarOffset(0)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Today</button><button aria-label="Next month" onClick={() => setCalendarOffset((n) => n + 1)} className="rounded-md border border-border px-3 py-2 text-sm text-ink">Next</button></div></div>
           <p className="mt-1 text-sm text-ink-muted">Browse planned content by month in your device’s time zone. Dates organize your calendar; sending still needs your confirmation.</p>
           <div className="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-border text-center text-xs font-medium text-ink-muted">

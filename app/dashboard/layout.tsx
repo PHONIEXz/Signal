@@ -1,11 +1,8 @@
-import WorkspaceClock from "@/components/dashboard/WorkspaceClock";
+import WorkspaceHeader from "@/components/dashboard/WorkspaceHeader";
 import MotionScene from "@/components/motion/MotionScene";
 import Link from "next/link";
 import { isAdmin } from "@/lib/service-config";
 import Sidebar from "@/components/dashboard/Sidebar";
-import UserMenu from "@/components/dashboard/UserMenu";
-import ThemeToggle from "@/components/ThemeToggle";
-import BrandMark from "@/components/BrandMark";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import LegalLinks from "@/components/LegalLinks";
@@ -22,28 +19,14 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="workspace-shell min-h-screen bg-paper">
       <a href="#dashboard-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-surface focus:p-3">Skip to content</a>
       <Sidebar />
 
-      <div className="min-h-screen lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-border/80 bg-surface/[0.82] px-4 backdrop-blur-xl sm:px-7 lg:px-10">
-          <BrandMark compact className="lg:hidden" />
+      <div className="min-h-screen lg:pl-60">
+        <WorkspaceHeader email={session.user.email} initialTime={new Date().toISOString()} />
 
-          <div className="hidden lg:block">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-              SocialPanora workspace
-            </p>
-            <WorkspaceClock initialTime={new Date().toISOString()} />
-          </div>
-
-          <div className="flex items-center gap-3 sm:gap-4">
-            <ThemeToggle />
-            <UserMenu email={session.user.email} />
-          </div>
-        </header>
-
-        <main id="dashboard-content" tabIndex={-1} className="px-4 py-7 pb-28 sm:px-7 sm:py-9 lg:pb-10 lg:px-10 lg:py-11">
+        <main id="dashboard-content" tabIndex={-1} className="workspace-content px-4 py-6 pb-28 sm:px-7 sm:py-8 lg:pb-10 lg:px-8">
           <MotionScene>{children}</MotionScene>
         </main>
         <footer className="border-t border-border/70 px-4 py-7 pb-28 sm:px-7 lg:pb-7 lg:px-10">
