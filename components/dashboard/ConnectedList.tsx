@@ -14,7 +14,7 @@ export default function ConnectedList({
       {connections.map((c) => (
         <div
           key={c.id}
-          className="flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4"
+          className="workspace-panel flex items-center justify-between rounded-lg border border-border bg-surface px-5 py-4"
         >
           <div className="flex items-center gap-3">
             <span

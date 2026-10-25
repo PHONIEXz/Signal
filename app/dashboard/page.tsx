@@ -1,3 +1,4 @@
+import OverviewHistory from "@/components/dashboard/OverviewHistory";
 import EmptyState from "@/components/dashboard/EmptyState";
 import AccountCard from "@/components/dashboard/AccountCard";
 import SignalScore from "@/components/dashboard/SignalScore";
@@ -39,7 +40,7 @@ export default async function DashboardPage({
         include: {
           metricSnapshots: {
             orderBy: { fetchedAt: "desc" },
-            take: 2,
+            take: 91,
           },
           posts: {
             orderBy: { postedAt: "desc" },
@@ -146,7 +147,7 @@ export default async function DashboardPage({
   return (
     <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8">
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div><p className="section-kicker">Your workspace at a glance</p><h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.045em] text-ink">Overview<span className="text-navy">.</span></h1><p className="mt-3 text-sm text-ink-muted">{connections.length} connected {connections.length === 1 ? "account" : "accounts"}. A clearer view of what comes next.</p></div>
+        <div><p className="section-kicker">Analytics workspace</p><h1 className="mt-3 font-display text-4xl font-bold tracking-[-0.045em] text-ink">Dashboard overview</h1><p className="mt-3 text-sm text-ink-muted">{connections.length} connected {connections.length === 1 ? "account" : "accounts"}. A clearer view of what comes next.</p></div>
         <Link href="/dashboard/content" className="pill-link self-start bg-action text-white hover:bg-action-hover sm:self-auto">Create content <span aria-hidden="true">+</span></Link>
       </section>
 
@@ -179,6 +180,19 @@ export default async function DashboardPage({
         />
       </section>
 
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)]">
+        <OverviewHistory asOf={new Date().toISOString()} accounts={connections.map(connection=>{
+          const history = connection.metricSnapshots.slice(0,90).toReversed().map(snapshot=>({
+            date:snapshot.fetchedAt.toISOString(), sampleSize:snapshot.sampleSize,
+            followers:snapshot.followersCount, posts:snapshot.postCount,
+            likes:snapshot.postMetricsStatus === "LEGACY" ? null : snapshot.totalLikes,
+            views:snapshot.postMetricsStatus === "LEGACY" ? null : snapshot.totalViews,
+          }));
+          return {id:connection.id,platform:connection.platform,name:connection.displayName || connection.platform,data:history,sampleData:history.filter(point=>point.sampleSize===sampleSize),limited:connection.metricSnapshots.length>90};
+        })}/>
+        <div className="space-y-5"><SignalScore result={score}/><section className="workspace-panel rounded-xl border border-border bg-surface p-6"><span className="ai-orb" aria-hidden="true"/><h2 className="mt-4 text-lg font-bold text-ink">A little more perspective</h2><p className="mt-2 text-sm leading-6 text-ink-muted">Explore a question about your available account data, or build a focused report when you need one.</p><div className="mt-5 flex flex-wrap gap-3"><Link href="/dashboard/insights" className="rounded-lg bg-action px-4 py-3 text-sm font-semibold text-white">Ask a question ↗</Link><Link href="/dashboard/reports" className="rounded-lg border border-border px-4 py-3 text-sm font-semibold text-ink">Reports</Link></div></section></div>
+      </div>
+
       <section className="animate-reveal [animation-delay:160ms]">
         <div className="mb-4 flex items-end justify-between">
           <div>
@@ -204,10 +218,6 @@ export default async function DashboardPage({
             />
           ))}
         </div>
-      </section>
-
-      <section className="animate-reveal [animation-delay:220ms]">
-        <SignalScore result={score} />
       </section>
 
       <section className="surface-card animate-reveal overflow-hidden p-5 [animation-delay:340ms] sm:p-6">
@@ -268,8 +278,8 @@ function SummaryCard({
   note?: string;
 }) {
   return (
-    <div className="surface-card group relative min-h-32 overflow-hidden p-4 sm:p-5">
-      <div className="absolute -right-9 -top-9 h-24 w-24 rounded-full bg-navy/[0.05] transition-transform duration-500 group-hover:scale-125" />
+    <div className="summary-card surface-card group relative min-h-36 overflow-hidden p-5">
+      <span className="summary-glyph" aria-hidden="true">↗</span>
       <p className="relative break-words font-display text-xl font-bold tracking-[-0.035em] text-ink sm:text-3xl">
         {value === null ? "Unavailable" : value.toLocaleString()}
       </p>

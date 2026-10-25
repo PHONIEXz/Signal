@@ -19,7 +19,7 @@ export default function WorkspacePreview() {
     return () => window.clearInterval(timer);
   }, [playing, reduced]);
   return (
-    <div data-reveal className="relative mt-12 overflow-hidden rounded-[1.75rem] bg-[#2457e7] p-4 pt-6 sm:mt-16 sm:p-8 lg:p-10">
+    <div data-reveal className="relative mt-12 overflow-hidden rounded-[1.75rem] bg-[#171b2b] p-4 pt-6 sm:mt-16 sm:p-8 lg:p-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.16em]">
           A little perspective changes everything.
@@ -31,7 +31,7 @@ export default function WorkspacePreview() {
       <div className="overflow-hidden rounded-2xl bg-[#f5f6f8] text-[#172524] shadow-2xl shadow-[#071b69]/25">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e2e6e9] bg-white px-4 py-4 sm:px-6">
           <span className="text-lg font-bold tracking-tight">
-            signal<span className="text-[#2457e7]">.</span>
+            SocialPanora<span className="text-[#2457e7]">.</span>
           </span>
           <div
             className="flex gap-1 rounded-full bg-[#f0f2f6] p-1"
@@ -113,7 +113,7 @@ export default function WorkspacePreview() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-4">
-                  <div className="flex-1 rounded-2xl bg-[#e3eacb] p-5">
+                  <div className="flex-1 rounded-2xl bg-[#edf2ff] p-5">
                     <span className="text-xs font-semibold uppercase tracking-wider">
                       From insight to idea
                     </span>
@@ -128,7 +128,7 @@ export default function WorkspacePreview() {
                   </div>
                   <Link
                     href="/product"
-                    className="flex items-center justify-between rounded-2xl bg-[#173e36] p-5 text-sm font-semibold text-white"
+                    className="flex items-center justify-between rounded-2xl bg-[#175cff] p-5 text-sm font-semibold text-white"
                   >
                     See how SocialPanora works <span aria-hidden="true">↗</span>
                   </Link>

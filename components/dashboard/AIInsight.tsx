@@ -78,7 +78,7 @@ export default function AIInsight({
   }, [platform]);
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <div className="workspace-panel rounded-xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">

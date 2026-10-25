@@ -63,7 +63,7 @@ export default function AccountsList({ connections, plan }: { connections: Conne
         </div>
 
         {connections.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface/60 p-8 text-center text-sm text-ink-muted">
+          <div className="workspace-panel mt-4 rounded-2xl border border-dashed border-border bg-surface/60 p-8 text-center text-sm text-ink-muted">
             No accounts connected yet.
           </div>
         ) : (

@@ -25,10 +25,11 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border/80 bg-surface/[0.92] px-4 py-6 backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col workspace-sidebar border-r border-border bg-surface px-3 py-5 lg:flex">
         <Link href="/" aria-label="SocialPanora home"><BrandMark className="px-2" /></Link>
 
-        <nav className="mt-10 flex flex-col gap-1.5" aria-label="Dashboard navigation">
+        <p className="mt-9 px-3 text-[11px] font-bold uppercase tracking-widest text-ink-muted">Workspace</p>
+        <nav className="mt-3 flex flex-col gap-1" aria-label="Dashboard navigation">
           {NAV_ITEMS.map((item) => {
             const active = isItemActive(pathname, item.href);
             return (
@@ -36,28 +37,28 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                className={`group flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition-all duration-200 ${
                   active
-                    ? "bg-action text-white shadow-md shadow-navy/15"
+                    ? "bg-navy/10 text-navy shadow-none"
                     : "text-ink-muted hover:bg-paper hover:text-ink"
                 }`}
               >
                 <NavIcon name={item.icon} />
                 <span>{item.label}</span>
-                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-amber" />}
+                {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-navy" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto rounded-2xl border border-border bg-paper/70 p-4">
+        <div className="mt-auto rounded-xl border border-blue-400/25 bg-[#123cbb] p-4 text-white">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink">Your workspace</span>
+            <span className="text-sm font-semibold text-white">A clearer perspective</span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-ink-muted">
+          <p className="mt-2 text-xs leading-5 text-white/80">
             Connect a channel, explore its performance, then create your next post.
           </p>
-          <Link href="/dashboard/get-started" className="mt-3 inline-flex text-sm font-semibold text-navy">Workspace guide <span aria-hidden="true">↗</span></Link>
+          <Link href="/dashboard/get-started" className="mt-3 inline-flex text-sm font-semibold text-white">Workspace guide <span aria-hidden="true">↗</span></Link>
         </div>
       </aside>
 

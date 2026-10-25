@@ -47,7 +47,7 @@ export default async function InsightsPage({
   if (!userId) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="rounded-xl border border-border bg-surface p-8">
+        <div className="workspace-panel rounded-xl border border-border bg-surface p-8">
           <h1 className="font-display text-xl font-medium text-ink">
             SocialPanora AI
           </h1>
@@ -87,7 +87,7 @@ export default async function InsightsPage({
       <div className="mx-auto max-w-3xl space-y-6">
         <PageHeader />
 
-        <div className="rounded-xl border border-border bg-surface p-8">
+        <div className="workspace-panel rounded-xl border border-border bg-surface p-8">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/10 text-lg text-navy">
             ✦
           </div>
@@ -224,7 +224,7 @@ export default async function InsightsPage({
       <PostSampleSelector plan={plan} selected={sampleSize} />
 
       {/* Hero insight */}
-      <section className="overflow-hidden rounded-xl border border-border bg-surface">
+      <section className="workspace-panel overflow-hidden rounded-xl border border-border bg-surface">
         <div className="border-b border-border bg-paper px-6 py-5">
           <div className="flex items-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-navy/10 text-sm text-navy">
@@ -314,7 +314,7 @@ export default async function InsightsPage({
       </section>
 
       {/* What changed */}
-      <section className="rounded-xl border border-border bg-surface p-6">
+      <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
         <SectionHeading
           title="What changed?"
           description="The most useful differences SocialPanora can identify right now."
@@ -409,7 +409,7 @@ export default async function InsightsPage({
       </section>
 
       {/* Supporting data */}
-      <section className="rounded-xl border border-border bg-surface p-6">
+      <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
         <div className="flex items-start justify-between gap-4">
           <SectionHeading
             title="Supporting data"
@@ -531,7 +531,7 @@ function MetricCard({
   change?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
+    <div className="workspace-panel rounded-xl border border-border bg-surface p-5">
       <p className="text-xs text-ink-muted">
         {label}
       </p>
@@ -598,7 +598,7 @@ function Recommendation({
   description: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
+    <div className="workspace-panel rounded-xl border border-border bg-surface p-5">
       <span className="text-[10px] font-medium tracking-[0.15em] text-navy">
         {number}
       </span>

@@ -1,3 +1,4 @@
+import ThemeToggle from "@/components/ThemeToggle";
 import MotionScene from "@/components/motion/MotionScene";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
@@ -6,23 +7,25 @@ import SupportContact from "@/components/SupportContact";
 
 export default function PublicSiteShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="public-shell min-h-screen bg-paper">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:p-4">Skip to content</a>
-      <header className="border-b border-border bg-paper">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-4 px-5 py-4 sm:px-8">
+      <header className="public-header">
+        <div className="public-nav mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-4 px-5 py-4 sm:px-8">
           <Link href="/" aria-label="SocialPanora home"><BrandMark /></Link>
           <nav aria-label="Product" className="order-3 flex w-full flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium sm:order-2 sm:w-auto">
-            <Link href="/product" className="text-ink-muted hover:text-ink">How it works</Link>
+            <Link href="/product" className="text-ink-muted hover:text-ink">Product</Link>
+            <Link href="/#workspace-preview" className="text-ink-muted hover:text-ink">Explore demo</Link>
             <Link href="/product#tiktok" className="text-ink-muted hover:text-ink">TikTok integration</Link>
           </nav>
           <div className="order-2 flex items-center gap-3 sm:order-3">
+            <span className="hidden sm:block"><ThemeToggle /></span>
             <Link href="/login" className="text-sm font-semibold text-navy hover:underline">Log in</Link>
-            <Link href="/signup" className="rounded-full bg-action px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-action-hover sm:text-sm">Create account</Link>
+            <Link href="/signup" className="rounded-xl bg-action px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-action-hover sm:text-sm">Create account</Link>
           </div>
         </div>
       </header>
       <main id="main-content"><MotionScene>{children}</MotionScene></main>
-      <footer className="border-t border-border bg-surface">
+      <footer className="public-footer border-t border-border bg-surface">
         <div className="mx-auto grid max-w-7xl gap-7 px-5 py-10 sm:px-8 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <Link href="/" aria-label="SocialPanora home"><BrandMark /></Link>

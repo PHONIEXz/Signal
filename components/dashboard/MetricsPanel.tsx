@@ -87,7 +87,7 @@ export default function MetricsPanel({
   return (
     <div className="space-y-4">
       <PostSampleSelector plan={plan} selected={sampleSize} />
-      <div data-reveal className="rounded-lg border border-border bg-surface p-6">
+      <div data-reveal className="workspace-panel rounded-lg border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="font-display text-lg font-medium text-ink">
@@ -204,11 +204,11 @@ function Stat({
   suffix?: string;
 }) {
   return (
-    <div>
-      <p className="font-display text-2xl font-medium text-ink">
+    <div className="metric-tile">
+      <p className="font-display text-2xl font-bold text-ink">
         {value === null ? "Unavailable" : `${value.toLocaleString("en-US")}${suffix}`}
       </p>
-      <p className="text-xs text-ink-muted">{label}</p>
+      <p className="mt-2 text-sm font-medium text-ink-muted">{label}</p>
     </div>
   );
 }

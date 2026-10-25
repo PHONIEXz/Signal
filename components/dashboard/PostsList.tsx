@@ -66,7 +66,7 @@ export default function PostsList({
       {posts.map((post) => (
         <div
           key={post.id}
-          className="rounded-lg border border-border bg-surface p-5"
+          className="workspace-panel rounded-lg border border-border bg-surface p-5"
         >
           <p className="text-sm text-ink">{post.text}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
