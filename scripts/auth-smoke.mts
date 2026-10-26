@@ -196,7 +196,13 @@ try {
   assert.equal(await prisma.postMeasurement.count(), 1);
   const postsPage = await fetch(base + "/dashboard/posts/x", { headers: { Cookie: studioSession } });
   assert.equal(postsPage.status, 200);
-  assert.match(await postsPage.text(), /Measurement history/);
+  const postHtml = await postsPage.text();
+  assert.match(postHtml, /Measurement history/);
+  assert.match(postHtml, /What deserves your attention/);
+  assert.match(postHtml, /Post metrics are unavailable or not verified/);
+  const viewsPage = await fetch(base + "/dashboard/posts/x?metric=views", { headers: { Cookie: studioSession } });
+  assert.equal(viewsPage.status, 200);
+  assert.match((await viewsPage.text()).replace(/<!--.*?-->/g, ""), /saved posts have usable views/);
   // Full refresh flow with isolated provider responses and encrypted dummy tokens.
   const allowRefresh = () => prisma.metricSync.update({ where: { connectedAccountId: xAccount.id }, data: { nextAllowedAt: null } });
   await prisma.connectedAccount.update({ where: { id: xAccount.id }, data: { accessToken: encrypt("signal-metric-fixture-credits") } });

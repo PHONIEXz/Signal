@@ -1,3 +1,5 @@
+import ContentPerformance from "@/components/dashboard/ContentPerformance";
+import { performanceMetric } from "@/lib/content-performance";
 import { getMetricRefreshGate } from "@/lib/metric-refresh-gate";
 import { attachMeasurementEvidence } from "@/lib/measurement-evidence";
 import SyncDetails from "@/components/dashboard/SyncDetails";
@@ -17,12 +19,14 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 export default async function PlatformPostsPage({
-  params,
+  params, searchParams,
 }: {
   params: Promise<{ platform: string }>;
+  searchParams: Promise<{metric?:string}>;
 }) {
   const { platform } = await params;
   const session = await auth();
+  const metric = performanceMetric((await searchParams).metric);
 
   if (!session?.user?.id) {
     notFound();
@@ -52,7 +56,8 @@ export default async function PlatformPostsPage({
     take: 50,
   });
   const posts = await attachMeasurementEvidence(storedPosts);
-  const snapshot = await prisma.metricSnapshot.findFirst({ where: { connectedAccountId: connectedAccount.id }, orderBy: { fetchedAt: "desc" } });
+  const history = await prisma.metricSnapshot.findMany({where:{connectedAccountId:connectedAccount.id},orderBy:{fetchedAt:"desc"},take:90,select:{fetchedAt:true,followersCount:true,postMetricsStatus:true}});
+  const snapshot = history[0];
   const contentOnly = snapshot?.postMetricsStatus === "CONTENT_ONLY";
 
   const platformLabel =
@@ -85,6 +90,7 @@ export default async function PlatformPostsPage({
       <SyncDetails accountId={connectedAccount.id} />
       <MetricsImport platform={platform} />
       {contentOnly && <p className="text-sm text-ink-muted">Post content is available. Engagement counts could not be retrieved and are shown as unavailable.</p>}
+      <ContentPerformance posts={storedPosts} platform={platform} status={snapshot?.postMetricsStatus ?? "UNAVAILABLE"} metric={metric} snapshots={history}/>
       <PostsList platform={platform}
         posts={posts.map((p) => ({
           id: p.id,
