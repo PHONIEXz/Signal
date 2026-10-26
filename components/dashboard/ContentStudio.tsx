@@ -25,6 +25,8 @@ type Draft = {
 };
 
 type Props = {
+  sourcePost?: { text: string; connectedAccountId: string; connectedAccount: { platform: string; displayName: string | null } } | null;
+  sourceUnavailable?: boolean;
   userId: string;
   plan: "FREE" | "PRO";
   draftLimit: number | null;
@@ -55,7 +57,7 @@ function dateTimeInputValue(value: string | null) {
   return local.toISOString().slice(0, 16);
 }
 
-export default function ContentStudio({ userId, plan, draftLimit, accounts, initialDrafts }: Props) {
+export default function ContentStudio({ userId, plan, draftLimit, accounts, initialDrafts, sourcePost, sourceUnavailable }: Props) {
   const [drafts, setDrafts] = useState(initialDrafts);
   const [view, setView] = useState<"compose" | "library" | "calendar">("compose");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -275,6 +277,22 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
         </div>
       </div>
 
+      {sourceUnavailable && <p role="status" className="rounded-xl border border-border bg-surface p-4 text-sm text-ink-muted">This source post is unavailable. Choose another post from your accounts, or start a new draft below.</p>}
+      {sourcePost && <section aria-label="Source post" className="workspace-panel rounded-xl border border-border bg-surface p-5 sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-navy">Reference from {PLATFORM_NAMES[sourcePost.connectedAccount.platform] ?? sourcePost.connectedAccount.platform} · {sourcePost.connectedAccount.displayName}</p>
+        <h2 className="mt-2 text-lg font-semibold text-ink">Build on a previous post</h2>
+        <p className="mt-2 text-sm text-ink-muted">Review the idea and update any dates or claims. This is source material, not a performance recommendation. Nothing is saved or published until you choose.</p>
+        <details className="mt-4"><summary className="cursor-pointer text-sm font-semibold text-navy">Read source text</summary><p className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words text-sm text-ink">{sourcePost.text}</p></details>
+        <button type="button" disabled={busy || !recoveryReady || Boolean(recovery)} onClick={() => {
+          if (!canReplaceEditor()) return;
+          resetEditor();
+          setText(sourcePost.text);
+          setTargetIds(accounts.some(account => account.id === sourcePost.connectedAccountId) ? [sourcePost.connectedAccountId] : []);
+          setView("compose");
+          setMessage("Source copied into a new unsaved draft. Review the text and destination before saving.");
+        }} className="mt-4 min-h-11 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Copy into a new draft</button>
+        {recovery && <p className="mt-2 text-xs text-ink-muted">Restore or discard the recovered draft below before copying a source.</p>}
+      </section>}
       {recovery && <section className="workspace-panel rounded-xl border border-border bg-surface p-4"><p className="text-sm">An unsaved draft was recovered from this browser tab.</p><div className="mt-3 flex gap-3"><button type="button" onClick={restoreRecovery} className="rounded bg-action px-3 py-2 text-sm text-white">Restore as new draft</button><button type="button" onClick={()=>{try{sessionStorage.removeItem(recoveryKey);}catch{} setRecovery(null);}} className="text-sm">Discard recovery</button></div></section>}
       <p className="text-xs text-ink-muted">Unsaved work is kept temporarily in this browser tab when storage is available. Save your draft to keep it across devices.</p>
       <div className="grid grid-cols-3 gap-3">

@@ -1,6 +1,7 @@
 "use client";
 
 import { LocalTime } from "@/components/dashboard/TimePreferences";
+import Link from "next/link";
 import { useState } from "react";
 import MeasurementHistory, {
   type MeasurementPoint,
@@ -117,6 +118,11 @@ export default function PostsList({
             >
               View original post ↗
             </a>
+          )}
+          {post.text.trim() && post.text !== "(No text)" && (
+            <div className="mt-4">
+              <Link href={`/dashboard/content?source=${encodeURIComponent(post.id)}`} className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 py-2 text-sm font-semibold text-navy">Use as draft →</Link>
+            </div>
           )}
           <div className="mt-3 flex items-center gap-2">
             <input
