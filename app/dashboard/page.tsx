@@ -1,3 +1,4 @@
+import ChannelComparison from "@/components/dashboard/ChannelComparison";
 import OverviewHistory from "@/components/dashboard/OverviewHistory";
 import EmptyState from "@/components/dashboard/EmptyState";
 import AccountCard from "@/components/dashboard/AccountCard";
@@ -192,6 +193,12 @@ export default async function DashboardPage({
         })}/>
         <div className="space-y-5"><SignalScore result={score}/><section className="workspace-panel rounded-xl border border-border bg-surface p-6"><span className="ai-orb" aria-hidden="true"/><h2 className="mt-4 text-lg font-bold text-ink">A little more perspective</h2><p className="mt-2 text-sm leading-6 text-ink-muted">Explore a question about your available account data, or build a focused report when you need one.</p><div className="mt-5 flex flex-wrap gap-3"><Link href="/dashboard/insights" className="rounded-lg bg-action px-4 py-3 text-sm font-semibold text-white">Ask a question ↗</Link><Link href="/dashboard/reports" className="rounded-lg border border-border px-4 py-3 text-sm font-semibold text-ink">Reports</Link></div></section></div>
       </div>
+
+      <ChannelComparison asOf={new Date().toISOString()} accounts={connections.map(connection=>({
+        id:connection.id, name:connection.displayName || connection.platform, platform:connection.platform,
+        limited:connection.metricSnapshots.length>90,
+        data:connection.metricSnapshots.slice(0,90).map(snapshot=>({date:snapshot.fetchedAt.toISOString(),followers:snapshot.followersCount,posts:snapshot.postCount,likes:null,views:null})),
+      }))}/>
 
       <section className="animate-reveal [animation-delay:160ms]">
         <div className="mb-4 flex items-end justify-between">
