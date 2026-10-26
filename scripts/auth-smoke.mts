@@ -194,6 +194,7 @@ try {
   assert.equal(sourcePage.status, 200);
   const sourceHtml = await sourcePage.text();
   assert.match(sourceHtml, /Build on a previous post/);
+  assert.match(sourceHtml, /Send directly/);
   assert.match(sourceHtml, /Imported fixture/);
   const foreignOwner = await prisma.user.create({ data: { email: "source-owner@example.com" } });
   const sourceForeignAccount = await prisma.connectedAccount.create({ data: { userId: foreignOwner.id, platform: "x", platformUserId: "private", displayName: "Private fixture", accessToken: "test-only" } });
