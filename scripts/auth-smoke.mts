@@ -189,6 +189,21 @@ try {
   assert.equal((await metricRequest("/api/metrics/import/x", { ...csvBody, confirm: true })).status, 200);
   const imported = await prisma.post.findFirstOrThrow({ where: { connectedAccountId: xAccount.id } });
   assert.equal(imported.likeCount, 0); assert.equal(imported.viewCount, null);
+  const sourcePath = "/dashboard/content?source=" + encodeURIComponent(imported.id);
+  const sourcePage = await fetch(base + sourcePath, { headers: { Cookie: studioSession } });
+  assert.equal(sourcePage.status, 200);
+  const sourceHtml = await sourcePage.text();
+  assert.match(sourceHtml, /Build on a previous post/);
+  assert.match(sourceHtml, /Imported fixture/);
+  const foreignOwner = await prisma.user.create({ data: { email: "source-owner@example.com" } });
+  const sourceForeignAccount = await prisma.connectedAccount.create({ data: { userId: foreignOwner.id, platform: "x", platformUserId: "private", displayName: "Private fixture", accessToken: "test-only" } });
+  const foreignPost = await prisma.post.create({ data: { connectedAccountId: sourceForeignAccount.id, platformPostId: "private", text: "PRIVATE_SOURCE_MUST_NOT_LEAK" } });
+  const deniedSource = await fetch(base + "/dashboard/content?source=" + foreignPost.id, { headers: { Cookie: studioSession } });
+  const deniedHtml = await deniedSource.text();
+  assert.match(deniedHtml, /This source post is unavailable/);
+  assert.ok(!deniedHtml.includes("PRIVATE_SOURCE_MUST_NOT_LEAK"));
+  await prisma.user.delete({ where: { id: foreignOwner.id } });
+
   assert.equal(await prisma.metricSnapshot.count(), 0);
   assert.equal((await metricRequest("/api/metrics/import/x", { ...csvBody, confirm: true })).status, 429);
   const cached = await metricRequest("/api/metrics/refresh/x", {});
