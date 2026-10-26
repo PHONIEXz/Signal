@@ -1,23 +1,11 @@
 "use client";
 import { LocalTime } from "./TimePreferences";
 
-import { useState } from "react";
+import { useReducer, useRef, useState } from "react";
+import { validAiReport } from "@/lib/ai-report";
+import { initialReportState, reportReducer, reportText } from "@/lib/report-workspace";
 import SignalThinkingState from "@/components/dashboard/SignalThinkingState";
 import { waitForSignalAnalysis } from "@/lib/minimum-duration";
-
-type PlatformNote = {
-  platform: string;
-  headline: string;
-  detail: string;
-};
-
-type Report = {
-  summary: string;
-  wins: string[];
-  opportunities: string[];
-  actions: string[];
-  platformNotes: PlatformNote[];
-};
 
 function cleanText(value: string) {
   return value.replace(/[—–]/g, "-");
@@ -36,7 +24,8 @@ async function requestReport(sampleSize: number, accountId?: string) {
     throw new Error(data.error || "Could not generate the report.");
   }
 
-  return data.report as Report;
+  if (!validAiReport(data.report)) throw new Error("The response was incomplete. Please try again.");
+  return data.report;
 }
 
 type ReportProps = { sampleSize: number; accountId?: string; scopeLabel: string };
@@ -45,34 +34,43 @@ export default function SignalReport(props: ReportProps) {
 }
 
 function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
-  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
-  const [report, setReport] = useState<Report | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [{ report, receivedAt: generatedAt, loading, error }, dispatch] = useReducer(reportReducer, initialReportState);
+  const [exportMessage, setExportMessage] = useState("");
+  const inFlight = useRef(false);
 
   async function generateReport() {
-    setLoading(true);
-    setError("");
-
+    if (inFlight.current) return;
+    inFlight.current = true;
+    dispatch({ type: "start" });
+    setExportMessage("");
     try {
-      const [nextReport] = await Promise.all([
-        requestReport(sampleSize, accountId),
-        waitForSignalAnalysis(),
-      ]);
-      setReport(nextReport);
-      setGeneratedAt(new Date().toISOString());
+      const [nextReport] = await Promise.all([requestReport(sampleSize, accountId), waitForSignalAnalysis()]);
+      dispatch({ type: "success", report: nextReport, receivedAt: new Date().toISOString() });
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not generate the report."
-      );
-    } finally {
-      setLoading(false);
-    }
+      dispatch({ type: "failure", error: err instanceof Error ? err.message : "Could not generate the report." });
+    } finally { inFlight.current = false; }
   }
 
-  if (loading) {
+  async function exportReport(copy: boolean) {
+    if (!report || !generatedAt) return;
+    const text = reportText(report, scopeLabel, sampleSize, generatedAt);
+    try {
+      if (copy) {
+        await navigator.clipboard.writeText(text);
+        setExportMessage("Report copied, including its scope and timestamp.");
+      } else {
+        const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `socialpanora-ai-report-${new Date().toISOString().replace(/[:.]/g, "-")}-${crypto.randomUUID().slice(0, 8)}.txt`;
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        setExportMessage("Download requested. Check your browser downloads.");
+      }
+    } catch { setExportMessage(copy ? "Copy was unavailable. Try downloading the report instead." : "The download could not start. Try copying the report instead."); }
+  }
+
+  if (loading && !report) {
     return (
       <div className="workspace-panel rounded-xl border border-border bg-surface p-6">
         <SignalThinkingState />
@@ -83,7 +81,7 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
     );
   }
 
-  if (error) {
+  if (error && !report) {
     return (
       <div className="rounded-xl border border-red-500/20 bg-surface p-6">
         <p className="font-display text-lg font-medium text-ink">
@@ -103,12 +101,16 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
 
   if (!report) return <section className="workspace-panel rounded-xl border border-border bg-surface p-6">
     <h2 className="font-display text-lg font-medium text-ink">Your AI report</h2>
-    <p className="mt-2 text-sm text-ink-muted">Generate a report for {scopeLabel} from your selected post sample. Analysis starts only when you choose Generate.</p>
+    <p className="mt-2 text-sm text-ink-muted">Generate a report for {scopeLabel} from your selected post sample. Analysis starts only when you choose Generate. You can copy or download the result to keep it.</p>
     <button type="button" onClick={generateReport} className="mt-4 rounded-md bg-action px-4 py-2 text-sm text-white">Generate report</button>
   </section>;
 
   return (
     <div className="space-y-6">
+      {loading && <p role="status" className="rounded-xl border border-border bg-surface p-4 text-sm text-ink">Generating a replacement. Your previous report remains visible and available to download.</p>}
+      {error && <div role="alert" className="rounded-xl border border-red-500/20 bg-surface p-4"><p className="font-semibold text-ink">Regeneration failed. Your previous report is still below.</p><p className="mt-2 text-sm text-red-600">{cleanText(error)}</p></div>}
+      <p className="text-sm leading-6 text-ink-muted">Scope: {scopeLabel}. Requested sample: {sampleSize} recent posts per account; actual availability may be lower. Download before leaving or changing the account/sample selection. This report is not saved as history.</p>
+      {exportMessage && <p role="status" className="text-sm text-ink">{exportMessage}</p>}
       <section className="workspace-panel overflow-hidden rounded-xl border border-border bg-surface">
         <div className="border-b border-border bg-paper px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -126,13 +128,18 @@ function ReportContent({ sampleSize, accountId, scopeLabel }: ReportProps) {
               </div>
             </div>
 
+            <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => exportReport(true)} className="min-h-11 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-ink">Copy report</button>
+            <button type="button" onClick={() => exportReport(false)} className="min-h-11 rounded-lg bg-action px-3 py-2 text-sm font-semibold text-white">Download report (.txt)</button>
             <button
               type="button"
+              disabled={loading}
               onClick={generateReport}
               className="workspace-panel rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink hover:bg-surface"
             >
-              Regenerate
+              {loading ? "Generating…" : "Regenerate"}
             </button>
+            </div>
           </div>
         </div>
 
