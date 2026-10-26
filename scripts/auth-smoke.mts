@@ -265,9 +265,14 @@ try {
   assert.equal((await metricRequest("/api/reports/generate", {accountId:123})).status,400);
   const reportPage = await fetch(base + `/dashboard/reports?account=${xAccount.id}&posts=10`, {headers:{Cookie:studioSession}});
   assert.equal(reportPage.status,200);
-  assert.match(await reportPage.text(),/Fixture X/);
+  const reportHtml = await reportPage.text();
+  assert.match(reportHtml,/Fixture X/);
+  assert.match(reportHtml,/Your performance snapshot/);
+  assert.match(reportHtml,/Download snapshot CSV/);
   const invalidReportPage = await fetch(base + `/dashboard/reports?account=${foreignAccount.id}`, {headers:{Cookie:studioSession}});
-  assert.match(await invalidReportPage.text(),/That account is unavailable/);
+  const invalidReportHtml = await invalidReportPage.text();
+  assert.match(invalidReportHtml,/That account is unavailable/);
+  assert.ok(!invalidReportHtml.includes("Download snapshot CSV"));
 
   await prisma.authRateLimit.update({ where: { key: `usage:metrics:user:${owner.id}:${new Date().toISOString().slice(0,10)}` }, data: { count: 8 } });
   for (const path of ["/dashboard/accounts/x","/dashboard/posts/x"]) {

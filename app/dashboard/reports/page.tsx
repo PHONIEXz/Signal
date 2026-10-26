@@ -1,3 +1,5 @@
+import PerformanceSnapshot from "@/components/dashboard/PerformanceSnapshot";
+import { performanceSnapshot } from "@/lib/performance-snapshot";
 import ReportAccountSelector from "@/components/dashboard/ReportAccountSelector";
 import Link from "next/link";
 import { auth } from "@/auth";
@@ -36,7 +38,11 @@ export default async function ReportsPage({
     }),
     prisma.connectedAccount.findMany({
       where: { userId: session.user.id },
-      select: { id: true, platform: true, displayName: true },
+      select: { id: true, platform: true, displayName: true,
+        metricSnapshots: { orderBy: { fetchedAt: "desc" }, take: 90, select: { fetchedAt: true, followersCount: true, postCount: true, postMetricsStatus: true } },
+        metricSync: { select: { status: true, source: true, lastSuccessAt: true } },
+        _count: { select: { posts: true, metricSnapshots: true } },
+      },
     }),
   ]);
   const plan = normalizePlan(user?.plan);
@@ -45,6 +51,15 @@ export default async function ReportsPage({
   const selectedAccount = connections.find(account => account.id === query.account);
   const invalidSelection = Boolean(query.account && !selectedAccount);
   const scopeLabel = selectedAccount ? `${selectedAccount.displayName || selectedAccount.platform} (${selectedAccount.platform})` : "all connected accounts";
+
+  const asOf = new Date().toISOString();
+  const snapshotRows = (selectedAccount ? [selectedAccount] : connections).map(account => performanceSnapshot({
+    id: account.id, platform: account.platform, name: account.displayName || account.platform,
+    availablePosts: account._count.posts, historyLimited: account._count.metricSnapshots > 90,
+    collectionStatus: account.metricSync?.status ?? "NEVER", collectionSource: account.metricSync?.source ?? null,
+    lastCollectionAt: account.metricSync?.lastSuccessAt?.toISOString() ?? null,
+    observations: account.metricSnapshots.map(point => ({ date: point.fetchedAt.toISOString(), followers: point.followersCount, posts: point.postCount, postMetricsStatus: point.postMetricsStatus })),
+  }, sampleSize, asOf));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -56,13 +71,15 @@ export default async function ReportsPage({
           Reports
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
-          Choose an account or compare all your platforms. Generate deeper analysis from saved metrics and posts when you need it.
+          Review saved performance, download a snapshot, or generate optional AI analysis. Choose one account or view all your platforms.
         </p>
       </div>
 
-      <ReportAccountSelector accounts={connections} selected={query.account || ""} />
+      <ReportAccountSelector accounts={connections.map(({ id, platform, displayName }) => ({ id, platform, displayName }))} selected={query.account || ""} />
       {invalidSelection && <p role="alert" className="workspace-panel rounded-xl border border-border bg-surface p-4 text-sm text-ink">That account is unavailable. Choose a connected account or select all accounts to continue.</p>}
       <PostSampleSelector plan={plan} selected={sampleSize} />
+
+      {!invalidSelection && connections.length > 0 && <PerformanceSnapshot rows={snapshotRows} asOf={asOf} />}
 
       {connections.length === 0 ? (
         <div className="workspace-panel rounded-xl border border-dashed border-border bg-surface px-8 py-16 text-center">
