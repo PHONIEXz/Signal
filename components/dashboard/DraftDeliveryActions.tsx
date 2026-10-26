@@ -2,12 +2,14 @@
 import { LocalTime } from "./TimePreferences";
 import { isDraftImage } from "@/lib/draft-image";
 import StudioMediaPreview from "./StudioMediaPreview";
+import { publishingReadiness, publishingMessage } from "@/lib/publishing-readiness";
+import Link from "next/link";
 import { useState } from "react";
 import { assistedPublishUrl, deliveryText, RETRYABLE_DELIVERIES } from "@/lib/content-publishing";
-export type DeliveryReceipt = { id: string; connectedAccountId: string; status: string; permalinkUrl: string | null; errorMessage: string | null; publishedAt: string | null };
+export type DeliveryReceipt = { attemptedAt?: string | null; id: string; connectedAccountId: string; status: string; permalinkUrl: string | null; errorMessage: string | null; publishedAt: string | null };
 type Account = { id: string; platform: string; displayName: string | null; platformUserId?: string | null };
 type Draft = { id: string; text: string; mediaUrl: string | null; targets: Array<{ connectedAccount: Account }>; publications: DeliveryReceipt[] };
-const LABELS: Record<string, string> = { PUBLISHED: "Published", PUBLISHING: "Check platform", UNKNOWN: "Check platform", FAILED: "Not sent", PERMISSION_REQUIRED: "Reconnect needed", RATE_LIMITED: "Wait before retrying", BILLING_REQUIRED: "API credits needed" };
+const LABELS: Record<string, string> = { PUBLISHED: "Published", PUBLISHING: "Check platform", UNKNOWN: "Check platform", FAILED: "Not sent", PERMISSION_REQUIRED: "Reconnect needed", RATE_LIMITED: "Wait before retrying", BILLING_REQUIRED: "Not sent" };
 export default function DraftDeliveryActions({ draft, refresh, notify }: { draft: Draft; refresh: () => Promise<void>; notify: (message: string) => void }) {
   const [sending, setSending] = useState<string | null>(null);
   async function publish(account: Account) {
@@ -16,7 +18,7 @@ export default function DraftDeliveryActions({ draft, refresh, notify }: { draft
     try {
       const response = await fetch(`/api/drafts/${draft.id}/publish`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accountId: account.id, confirm: true }) });
       const data = await response.json();
-      notify(response.ok ? "Post published. Your delivery receipt is saved below." : data.error || "Delivery could not be confirmed. Check the platform.");
+      notify(response.ok ? "Post published. Your delivery receipt is saved below." : publishingMessage(data.code, data.error));
     } catch { notify("Delivery could not be confirmed. Refresh and check the platform before reposting."); }
     finally { await refresh().catch(() => notify("Refresh the library to check the latest delivery status.")); setSending(null); }
   }
@@ -34,15 +36,16 @@ export default function DraftDeliveryActions({ draft, refresh, notify }: { draft
       const retryable = !receipt || RETRYABLE_DELIVERIES.includes(receipt.status);
       return <div key={account.id} className="rounded-lg bg-paper p-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><p className="text-sm font-medium text-ink">{account.displayName || account.platform}</p><p className="mt-1 text-xs text-ink-muted">{receipt ? LABELS[receipt.status] || "Ready to send" : direct ? "Ready for confirmation" : "Attach manually on the platform"}</p></div>
+          <div><p className="text-sm font-medium text-ink">{account.displayName || account.platform}</p><p className="mt-1 text-xs text-ink-muted">{receipt && ["PUBLISHED", "PUBLISHING", "UNKNOWN"].includes(receipt.status) ? LABELS[receipt.status] : publishingReadiness(account.platform, draft.mediaUrl, receipt?.status)}</p></div>
           <div className="flex flex-wrap gap-2">
+            {receipt?.status === "PERMISSION_REQUIRED" && <Link href="/dashboard/accounts" className="rounded-md border border-border px-3 py-2 text-xs text-navy">Reconnect account</Link>}
             {receipt?.permalinkUrl && <a href={receipt.permalinkUrl} target="_blank" rel="noopener noreferrer" className="rounded-md border border-border px-3 py-2 text-xs text-navy">View post</a>}
             {direct && retryable && <button disabled={sending !== null} onClick={() => publish(account)} className="rounded-md bg-action px-3 py-2 text-xs font-medium text-white disabled:opacity-50">{sending === account.id ? "Sending..." : "Publish now"}</button>}
             {!locked && receipt?.status !== "PUBLISHED" && <button disabled={sending !== null} onClick={() => copyAndOpen(account)} className="rounded-md border border-border px-3 py-2 text-xs text-ink disabled:opacity-50">Copy and open {account.platform === "x" ? "X" : account.platform === "facebook" ? "Facebook" : "TikTok"}</button>}
             {locked && <a href={assistedPublishUrl(account.platform, "", null, account.platformUserId).split("?")[0].replace("/intent/post", "/home")} target="_blank" rel="noopener noreferrer" className="rounded-md border border-border px-3 py-2 text-xs text-ink">Check platform</a>}
           </div>
         </div>
-        {receipt?.errorMessage && <p className="mt-2 text-xs leading-5 text-ink-muted">{receipt.errorMessage}</p>}
+        {receipt?.errorMessage && <p className="mt-2 text-xs leading-5 text-ink-muted">{publishingMessage(receipt.status, receipt.errorMessage)}</p>}
         {receipt?.publishedAt && <p className="mt-2 text-xs text-ink-muted">Sent <LocalTime value={receipt.publishedAt} /></p>}
       </div>;
     })}
