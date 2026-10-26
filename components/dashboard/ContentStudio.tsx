@@ -8,10 +8,11 @@ import { isDraftImage, MAX_IMAGE_BYTES } from "@/lib/draft-image";
 import Image from "next/image";
 import DraftDeliveryActions, { type DeliveryReceipt } from "./DraftDeliveryActions";
 import StudioMediaPreview from "./StudioMediaPreview";
+import { publishingReadiness, publishingMessage } from "@/lib/publishing-readiness";
 import { deliveryText, LOCKED_DELIVERIES } from "@/lib/content-publishing";
 import { editorFingerprint } from "@/lib/studio-editor";
 
-type Account = { id: string; platform: string; displayName: string | null; platformUserId?: string | null };
+type Account = { reconnectNeeded?: boolean; connectedAt?: string; id: string; platform: string; displayName: string | null; platformUserId?: string | null };
 type Draft = {
   id: string;
   text: string;
@@ -179,7 +180,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       setMessage("Add some content and choose at least one account.");
       return;
     }
-    if (sendNow && (!directSendSupported || !window.confirm(`Send this post now to ${selectedAccounts.map(account => account.displayName || labelFor(account.platform)).join(", ")}? This saves a draft first, then publishes immediately. API credits may be used.`))) return;
+    if (sendNow && (!directSendSupported || !window.confirm(`Send this post now to ${selectedAccounts.map(account => account.displayName || labelFor(account.platform)).join(", ")}? This saves a draft first, then publishes immediately.`))) return;
     setBusy(true);
     setMessage("");
     const id = asDuplicate ? null : editingId;
@@ -220,7 +221,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
             body: JSON.stringify({ accountId, confirm: true }),
           });
           const result = await delivery.json();
-          return { ok: delivery.ok, error: result.error };
+          return { ok: delivery.ok, error: publishingMessage(result.code, result.error) };
         }));
         const sent = results.filter(result => result.status === "fulfilled" && result.value.ok).length;
         const details = results.map((result, index) => {
@@ -384,11 +385,12 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                       onChange={() => toggleTarget(account.id)}
                       className="h-4 w-4 accent-navy"
                     />
-                    <span>{labelFor(account.platform)}</span>
-                    <span className="truncate text-xs text-ink-muted">{account.displayName}</span>
+                    <span className="min-w-0 flex-1"><span className="block">{labelFor(account.platform)}</span><span className="block truncate text-xs text-ink-muted">{account.displayName}</span><span className="mt-2 inline-block rounded-full border border-border px-2 py-1 text-xs font-semibold">{publishingReadiness(account.platform, mediaUrl, drafts.flatMap(draft => draft.publications).filter(receipt => receipt.connectedAccountId === account.id && (receipt.status !== "PERMISSION_REQUIRED" || !account.connectedAt || (receipt.attemptedAt && receipt.attemptedAt > account.connectedAt))).sort((a,b) => (b.attemptedAt ?? "").localeCompare(a.attemptedAt ?? ""))[0]?.status, account.reconnectNeeded)}</span></span>
                   </label>
                 ))}
               </div>
+              <p className="mt-3 text-xs text-ink-muted">Ready means direct posting is supported with no known blocker, not guaranteed delivery. Availability is checked when sending. If unavailable, use Copy and open from the Library.</p>
+              <Link href="/dashboard/accounts" className="mt-2 inline-block text-sm font-semibold text-navy underline">Manage or reconnect accounts</Link>
             </fieldset>
 
             <div className="space-y-3">
@@ -448,7 +450,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                 </>
               )}
             </div>
-            <p className="text-xs text-ink-muted">Send directly saves your work, then sends immediately after confirmation. Requires platform permissions and API credits where applicable. {directSendSupported ? "Any planned date is cleared when sending now." : "Select X or Facebook for direct text/link posts. Images can be sent directly to X; use the Library’s copy-and-open option for TikTok or Facebook images."}</p>
+            <p className="text-xs text-ink-muted">Send directly saves your work, then sends immediately after confirmation. Availability is checked when sending. {directSendSupported ? "Any planned date is cleared when sending now." : "Select X or Facebook for direct text/link posts. Images can be sent directly to X; use the Library’s copy-and-open option for TikTok or Facebook images."}</p>
             {conflict && <p role="alert" className="text-sm leading-6 text-ink">A newer version exists. Save your writing as a copy, or refresh the Library and open the latest version.</p>}
             </fieldset>
           </section>

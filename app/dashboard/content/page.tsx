@@ -17,7 +17,7 @@ export default async function ContentStudioPage({ searchParams }: { searchParams
     prisma.connectedAccount.findMany({
       where: { userId },
       orderBy: { createdAt: "asc" },
-      select: { id: true, platform: true, displayName: true },
+      select: { id: true, platform: true, displayName: true, expiresAt: true, updatedAt: true },
     }),
     loadStudioDrafts(userId),
     sourceId ? prisma.post.findFirst({
@@ -36,7 +36,7 @@ export default async function ContentStudioPage({ searchParams }: { searchParams
       userId={userId}
       plan={plan}
       draftLimit={draftLimitForPlan(plan)}
-      accounts={accounts}
+      accounts={accounts.map(({ expiresAt, updatedAt, ...account }) => ({ ...account, connectedAt: updatedAt.toISOString(), reconnectNeeded: account.platform !== "x" && Boolean(expiresAt && expiresAt <= new Date()) }))}
       initialDrafts={drafts.map((draft) => ({
         ...draft,
         publications: draft.publications.map((receipt) => ({
