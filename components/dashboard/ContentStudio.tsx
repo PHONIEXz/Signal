@@ -169,12 +169,17 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
     });
   }
 
-  async function saveDraft(asDuplicate = false) {
+  const directSendSupported = selectedAccounts.length > 0 && selectedAccounts.every(account =>
+    ["x", "facebook"].includes(account.platform) && (!isDraftImage(mediaUrl) || account.platform === "x")
+  );
+
+  async function saveDraft(asDuplicate = false, sendNow = false) {
     if (busy) return;
     if (!text.trim() || !targetIds.length) {
       setMessage("Add some content and choose at least one account.");
       return;
     }
+    if (sendNow && (!directSendSupported || !window.confirm(`Send this post now to ${selectedAccounts.map(account => account.displayName || labelFor(account.platform)).join(", ")}? This saves a draft first, then publishes immediately. API credits may be used.`))) return;
     setBusy(true);
     setMessage("");
     const id = asDuplicate ? null : editingId;
@@ -186,7 +191,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
           text,
           mediaUrl,
           targetIds,
-          scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+          scheduledFor: !sendNow && scheduledFor ? new Date(scheduledFor).toISOString() : null,
           expectedUpdatedAt: id ? revision : undefined,
         }),
       });
@@ -207,7 +212,27 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
       setConflict(false);
       setBaseline(editorFingerprint({ text: data.text, mediaUrl: data.mediaUrl ?? "", scheduledFor: dateTimeInputValue(data.scheduledFor), targetIds }));
       setView("library");
-      setMessage(asDuplicate ? "Draft duplicated." : id ? "Draft updated." : "Draft saved.");
+      if (sendNow) {
+        setMessage("Draft saved. Sending to your selected accounts…");
+        const results = await Promise.allSettled(targetIds.map(async accountId => {
+          const delivery = await fetch(`/api/drafts/${data.id}/publish`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accountId, confirm: true }),
+          });
+          const result = await delivery.json();
+          return { ok: delivery.ok, error: result.error };
+        }));
+        const sent = results.filter(result => result.status === "fulfilled" && result.value.ok).length;
+        const details = results.map((result, index) => {
+          const account = accounts.find(account => account.id === targetIds[index]);
+          const label = account?.displayName || account?.platform || "Account";
+          return `${label}: ${result.status === "rejected" ? "delivery unconfirmed; check the platform before retrying" : result.value.ok ? "published" : result.value.error || "not sent"}`;
+        }).join(". ");
+        await refreshDrafts().catch(() => {});
+        setMessage(`${sent} of ${targetIds.length} destinations published. ${details}. Review delivery receipts below; retry only failed destinations.`);
+      } else {
+        setMessage(asDuplicate ? "Draft duplicated." : id ? "Draft updated." : "Draft saved.");
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save this draft.");
     } finally {
@@ -413,6 +438,9 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
               <button onClick={() => saveDraft(false)} disabled={busy || conflict || (!!editingId && !dirty)} className="rounded-md bg-action px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">
                 {busy ? "Saving..." : editingId ? "Update draft" : "Save draft"}
               </button>
+              <button type="button" onClick={() => saveDraft(false, true)} disabled={busy || conflict || !directSendSupported || !text.trim()} className="rounded-md border border-action px-5 py-2.5 text-sm font-semibold text-navy disabled:opacity-50">
+                Send directly
+              </button>
               {editingId && (
                 <>
                   <button onClick={() => saveDraft(true)} disabled={busy} className="rounded-md border border-border px-4 py-2.5 text-sm font-medium text-ink">Save as copy</button>
@@ -420,6 +448,7 @@ export default function ContentStudio({ userId, plan, draftLimit, accounts, init
                 </>
               )}
             </div>
+            <p className="text-xs text-ink-muted">Send directly saves your work, then sends immediately after confirmation. Requires platform permissions and API credits where applicable. {directSendSupported ? "Any planned date is cleared when sending now." : "Select X or Facebook for direct text/link posts. Images can be sent directly to X; use the Library’s copy-and-open option for TikTok or Facebook images."}</p>
             {conflict && <p role="alert" className="text-sm leading-6 text-ink">A newer version exists. Save your writing as a copy, or refresh the Library and open the latest version.</p>}
             </fieldset>
           </section>
